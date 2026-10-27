@@ -1,0 +1,18 @@
+# Dépendances
+node_modules/
+
+# Build Next.js
+.next/
+out/
+
+# Secrets — ne jamais commiter
+.env*
+!.env.example
+
+# Supabase local
+supabase/.temp/
+
+# Divers
+.DS_Store
+*.log
+coverage/
