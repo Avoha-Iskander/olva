@@ -30,9 +30,17 @@ Tu écris tout le code. Je ne code pas, mais je veux **comprendre** ce que tu fa
 - Lint : `npm run lint`
 - Vérification des types : `npm run typecheck`
 - Formater tout le code : `npm run format`
-- Nouvelle migration : `npx supabase migration new <nom>`
+- Se connecter au CLI Supabase (une fois par machine) : `npx supabase login`
+- Lier le dépôt au projet dev (une fois) : `npx supabase link --project-ref pchopmvcwbablzuozqgn`
+- Nouvelle migration : `npm run db:new <nom>`
 - Appliquer les migrations (dev) : `npx supabase db push`
-- Générer les types : `npx supabase gen types typescript`
+- Générer les types TypeScript : `npm run db:types`
+
+## Projets Supabase
+
+- `olva-dev` : `pchopmvcwbablzuozqgn` (région Paris) — développement, seul projet modifié par Claude
+- `olva-prod` : `sskxpttvlnepnhyealzj` (région Paris) — production, migrations appliquées par Alex
+- Variables : copier `.env.example` en `.env.local`
 
 ## Conventions
 
