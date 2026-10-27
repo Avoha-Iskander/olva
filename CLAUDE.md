@@ -14,6 +14,7 @@ Olva (nom provisoire) — application de recettes et de listes de courses (Next.
 ## Mode explication
 
 Tu écris tout le code. Je ne code pas, mais je veux **comprendre** ce que tu fais. Je suis en formation (The Odin Project, Foundations terminé). Donc :
+
 - Explique en français, au fil de l'eau, ce que fait chaque fichier ou bloc important et pourquoi tu l'écris ainsi.
 - Introduis chaque notion nouvelle (hook React, RLS, migration, service worker…) en 2 ou 3 phrases simples, avec une analogie si utile.
 - Privilégie le code lisible au code astucieux ; commente les passages non évidents.
@@ -23,10 +24,12 @@ Tu écris tout le code. Je ne code pas, mais je veux **comprendre** ce que tu fa
 ## Commandes
 
 <!-- [À COMPLÉTER au lot 0] -->
+
 - Lancer en local : `npm run dev`
 - Tests : `npm test`
 - Lint : `npm run lint`
 - Vérification des types : `npm run typecheck`
+- Formater tout le code : `npm run format`
 - Nouvelle migration : `npx supabase migration new <nom>`
 - Appliquer les migrations (dev) : `npx supabase db push`
 - Générer les types : `npx supabase gen types typescript`
