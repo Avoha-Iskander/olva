@@ -1,0 +1,35 @@
+# Intégration continue : à chaque envoi de code, GitHub vérifie que tout est en ordre.
+# Si une étape échoue, la pull request est marquée en rouge.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    name: Lint, types et tests
+    runs-on: ubuntu-latest
+    steps:
+      # 1. Récupère le code du dépôt
+      - uses: actions/checkout@v4
+
+      # 2. Installe Node.js 22 (même version qu'en local et sur Vercel)
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      # 3. Installe les dépendances exactement comme dans package-lock.json
+      - run: npm ci
+
+      # 4. Les trois contrôles
+      - name: Lint
+        run: npm run lint
+      - name: Format
+        run: npm run format:check
+      - name: Types
+        run: npm run typecheck
+      - name: Tests
+        run: npm test
