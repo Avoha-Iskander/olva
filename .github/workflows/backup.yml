@@ -1,0 +1,48 @@
+# Sauvegarde automatique de la base de PRODUCTION (SPEC §9.4).
+#
+# Chaque dimanche à 3 h (UTC), GitHub :
+#   1. exporte la base olva-prod (structure + données),
+#   2. CHIFFRE l'export avec une phrase secrète (le dépôt est public :
+#      sans chiffrement, n'importe qui pourrait télécharger les données),
+#   3. le conserve 90 jours dans l'onglet Actions du dépôt.
+#
+# Lancement manuel possible : onglet Actions → Sauvegarde base prod → Run workflow.
+name: Sauvegarde base prod
+
+on:
+  schedule:
+    - cron: "0 3 * * 0"
+  workflow_dispatch:
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Export de la base
+        env:
+          PROD_DB_URL: ${{ secrets.PROD_DB_URL }}
+        run: |
+          supabase db dump --db-url "$PROD_DB_URL" -f schema.sql
+          supabase db dump --db-url "$PROD_DB_URL" --data-only -f data.sql
+          supabase db dump --db-url "$PROD_DB_URL" --role-only -f roles.sql
+
+      - name: Archivage et chiffrement
+        env:
+          BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+        run: |
+          STAMP=$(date -u +%Y-%m-%d)
+          tar -czf "olva-prod-$STAMP.tar.gz" roles.sql schema.sql data.sql
+          gpg --batch --yes --pinentry-mode loopback --passphrase "$BACKUP_PASSPHRASE" \
+            --symmetric --cipher-algo AES256 -o "olva-prod-$STAMP.tar.gz.gpg" "olva-prod-$STAMP.tar.gz"
+          rm -f roles.sql schema.sql data.sql "olva-prod-$STAMP.tar.gz"
+          echo "STAMP=$STAMP" >> "$GITHUB_ENV"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: olva-prod-${{ env.STAMP }}
+          path: olva-prod-${{ env.STAMP }}.tar.gz.gpg
+          retention-days: 90
