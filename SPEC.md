@@ -2,7 +2,7 @@
 
 > **Statut** : v0.3 — fonctionnel et choix techniques tranchés
 > **Auteur** : Alex
-> **Dernière mise à jour** : 2026-10-26
+> **Dernière mise à jour** : 2026-10-29
 >
 > Légende : `[À COMPLÉTER]` = à remplir · `[À DÉCIDER]` = choix ouvert · `[PRÉ-REMPLI]` = proposé, à valider
 >
@@ -381,17 +381,17 @@ Toutes les tables d'un foyer sont protégées par Row Level Security (un foyer n
 
 > Claude Code écrit le code ; mon rôle : valider les plans, tester, comprendre. Les notions listées sont celles à comprendre pendant le lot (explications de Claude + vidéos/tutoriels si besoin), pas des prérequis bloquants.
 
-| Lot | Contenu                                                                                                                                           | Stories                          | Notions à comprendre                                              | Repère indicatif                           |
-| --- | ------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------- | ----------------------------------------------------------------- | ------------------------------------------ |
-| 0   | Setup : dépôt, Next.js + TS, ESLint/Prettier, Vitest, CI GitHub Actions, Supabase dev + prod (UE), CLI migrations, Vercel, sauvegarde automatique | —                                | Structure d'un projet Next.js, npm, variables d'environnement, CI | début nov.                                 |
-| 1   | Catalogue (rayons, articles, unités, conversions, catalogue initial généré) + recettes manuelles, collections, recherche, photo d'illustration    | US-CAT-01/02/04, US-REC-01/03/04 | Composants React, TypeScript de base, SQL et tables               | nov.                                       |
-| 2   | Auth, foyer, rôles, invitation, RLS, parcours d'accueil, recettes d'exemple, suppression de compte                                                | US-CPT-*                         | Authentification, Row Level Security                              | début déc. · **révision de la date cible** |
-| 3   | Créer une liste — étape 1 : recettes, portions, regroupement, conversions                                                                         | US-LST-01/05                     | Fonctions pures et tests                                          | déc.                                       |
-| 4   | Créer une liste — étapes 2 et 3 : placard, pré-liste, articles libres, personnalisation catalogue, listes en cours                                | US-LST-02/03/04/06, US-CAT-03    | Formulaires, état d'un parcours en plusieurs étapes               | début janv. · décision Playwright          |
-| 5   | Import photo IA + test Haiku/Sonnet                                                                                                               | US-REC-02                        | async/await, appels d'API côté serveur                            | janv.                                      |
-| 6   | Faire ses courses : liste par rayon, temps réel, PWA hors ligne, report, historique ; achat du domaine                                            | US-CRS-*                         | Temps réel, service workers, stockage hors ligne                  | janv.                                      |
-| 7   | Import des ~100 recettes du Sheets (CSV → base, correspondance des ingrédients assistée par IA, liste des cas non résolus)                        | —                                | Scripts de migration de données                                   | fin janv.                                  |
-| 8   | Période d'usage : 4 semaines, corrections uniquement                                                                                              | —                                | —                                                                 | févr.                                      |
+| Lot | Contenu                                                                                                                                                                                     | Stories                                                           | Notions à comprendre                                              | Repère indicatif                           |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------- | ----------------------------------------------------------------- | ------------------------------------------ |
+| 0   | Setup : dépôt, Next.js + TS, ESLint/Prettier, Vitest, CI GitHub Actions, Supabase dev + prod (UE), CLI migrations, Vercel, sauvegarde automatique                                           | —                                                                 | Structure d'un projet Next.js, npm, variables d'environnement, CI | début nov.                                 |
+| 1   | Comptes et foyer : connexion Google + email/mot de passe, mot de passe oublié, création/rejoindre un foyer, rôles, invitation, RLS, portions par défaut                                     | US-CPT-01/03, US-CPT-02 (sans exemples)                           | Authentification, Row Level Security, fonctions SQL               | nov.                                       |
+| 2   | Catalogue (rayons, articles, unités, conversions, catalogue initial généré) + recettes manuelles, collections, recherche, photo d'illustration ; recettes d'exemple ; suppression de compte | US-CAT-01/02/04, US-REC-01/03/04, US-CPT-02 (exemples), US-CPT-04 | Composants React, formulaires, SQL et relations entre tables      | début déc. · **révision de la date cible** |
+| 3   | Créer une liste — étape 1 : recettes, portions, regroupement, conversions                                                                                                                   | US-LST-01/05                                                      | Fonctions pures et tests                                          | déc.                                       |
+| 4   | Créer une liste — étapes 2 et 3 : placard, pré-liste, articles libres, personnalisation catalogue, listes en cours                                                                          | US-LST-02/03/04/06, US-CAT-03                                     | Formulaires, état d'un parcours en plusieurs étapes               | début janv. · décision Playwright          |
+| 5   | Import photo IA + test Haiku/Sonnet                                                                                                                                                         | US-REC-02                                                         | async/await, appels d'API côté serveur                            | janv.                                      |
+| 6   | Faire ses courses : liste par rayon, temps réel, PWA hors ligne, report, historique ; achat du domaine                                                                                      | US-CRS-*                                                          | Temps réel, service workers, stockage hors ligne                  | janv.                                      |
+| 7   | Import des ~100 recettes du Sheets (CSV → base, correspondance des ingrédients assistée par IA, liste des cas non résolus)                                                                  | —                                                                 | Scripts de migration de données                                   | fin janv.                                  |
+| 8   | Période d'usage : 4 semaines, corrections uniquement                                                                                                                                        | —                                                                 | —                                                                 | févr.                                      |
 
 **Fin du MVP** = lots 0 à 7 livrés **et** 4 semaines de courses avec l'app sans le Sheets (lot 8). Pendant le lot 8, aucune nouvelle fonctionnalité : les idées vont en issues étiquetées `post-mvp`.
 
@@ -418,38 +418,39 @@ Toutes les tables d'un foyer sont protégées par Row Level Security (un foyer n
 
 ## 14. Journal des décisions
 
-| #   | Date       | Décision                                                                      | Alternatives écartées                            |
-| --- | ---------- | ----------------------------------------------------------------------------- | ------------------------------------------------ |
-| 001 | 2026-10-25 | TypeScript, mode peu strict au départ                                         | JavaScript ; JS puis TS                          |
-| 002 | 2026-10-25 | ESLint + Prettier                                                             | Biome ; Prettier seul                            |
-| 003 | 2026-10-25 | Vitest, logique métier en priorité                                            | Jest                                             |
-| 004 | 2026-10-25 | GitHub Issues + Projects ; SPEC.md comme référence                            | Notion ; Todoist ; SPEC seul                     |
-| 005 | 2026-10-25 | CLAUDE.md court + SPEC.md ; dossier `docs/` plus tard                         | Tout dans SPEC                                   |
-| 006 | 2026-10-25 | Migrations SQL via le CLI Supabase                                            | Interface web ; ORM                              |
-| 007 | 2026-10-25 | Photos d'import conservées, compression côté client, miniatures               | Suppression après analyse ; photos brutes        |
-| 008 | 2026-10-25 | Plan gratuit + sauvegarde via GitHub Actions                                  | Supabase Pro ; export manuel                     |
-| 009 | 2026-10-25 | Catalogue commun + personnalisations par foyer ; base initiale générée par IA | Catalogue unique ; par foyer ; reprise du Sheets |
-| 010 | 2026-10-25 | Recettes du Sheets importées par script CSV                                   | Réimport par photo ; ressaisie                   |
-| 011 | 2026-10-25 | Environnements dev + prod                                                     | Prod seule ; 3 environnements                    |
-| 012 | 2026-10-25 | `*.vercel.app` puis domaine perso avant fin lot 6                             | Domaine dès le départ                            |
-| 013 | 2026-10-25 | CI bloquante ; migrations prod manuelles                                      | Vercel seul ; migrations auto                    |
-| 014 | 2026-10-25 | Journaux Vercel/Supabase uniquement                                           | Sentry                                           |
-| 015 | 2026-10-25 | Temps réel + « coché gagne » hors ligne                                       | Rafraîchissement manuel ; détection de conflits  |
-| 016 | 2026-10-25 | Lien d'invitation 7 jours ; propriétaire + membres                            | Code ; email ; tous égaux                        |
-| 017 | 2026-10-25 | Modèle IA configurable (admin) ; test Haiku/Sonnet ; plafond console          | Quota par foyer (post-MVP)                       |
-| 018 | 2026-10-26 | Réessai + bascule saisie manuelle ; champs douteux surlignés                  | File d'attente auto ; relecture sans indication  |
-| 019 | 2026-10-26 | Parcours d'accueil + recettes d'exemple                                       | Rien ; accueil sans exemples                     |
-| 020 | 2026-10-26 | Tailwind CSS + shadcn/ui                                                      | CSS Modules ; Material UI / Mantine              |
-| 021 | 2026-10-26 | Mode sombre auto, socle accessibilité, pas de notifications                   | Clair seul ; push au MVP                         |
-| 022 | 2026-10-26 | Bonnes pratiques RGPD dès le MVP (UE, suppression)                            | Rien ; conformité complète                       |
-| 023 | 2026-10-26 | Jalons sans dates + date cible MVP                                            | Planning daté par lot                            |
-| 024 | 2026-10-26 | Fin MVP = lots livrés + 4 semaines d'usage                                    | Critère fonctionnel ou d'usage seul              |
-| 025 | 2026-10-26 | Claude Code écrit tout le code et l'explique ; je valide et comprends         | Écrire moi-même certaines parties                |
-| 026 | 2026-10-26 | Date cible MVP : 28/02/2027                                                   | —                                                |
-| 027 | 2026-10-26 | Nom provisoire : Olva                                                         | —                                                |
-| 028 | 2026-10-26 | Suppression du compte propriétaire : transfert de propriété                   | Suppression du foyer                             |
-| 029 | 2026-10-26 | Direction visuelle inspirée de Notion, blanc et nuances de bleu               | —                                                |
-| 030 | 2026-10-26 | Connexion : Google + email/mot de passe                                       | Lien magique (problème PWA) ; code par email     |
+| #   | Date       | Décision                                                                                                                | Alternatives écartées                            |
+| --- | ---------- | ----------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ |
+| 001 | 2026-10-25 | TypeScript, mode peu strict au départ                                                                                   | JavaScript ; JS puis TS                          |
+| 002 | 2026-10-25 | ESLint + Prettier                                                                                                       | Biome ; Prettier seul                            |
+| 003 | 2026-10-25 | Vitest, logique métier en priorité                                                                                      | Jest                                             |
+| 004 | 2026-10-25 | GitHub Issues + Projects ; SPEC.md comme référence                                                                      | Notion ; Todoist ; SPEC seul                     |
+| 005 | 2026-10-25 | CLAUDE.md court + SPEC.md ; dossier `docs/` plus tard                                                                   | Tout dans SPEC                                   |
+| 006 | 2026-10-25 | Migrations SQL via le CLI Supabase                                                                                      | Interface web ; ORM                              |
+| 007 | 2026-10-25 | Photos d'import conservées, compression côté client, miniatures                                                         | Suppression après analyse ; photos brutes        |
+| 008 | 2026-10-25 | Plan gratuit + sauvegarde via GitHub Actions                                                                            | Supabase Pro ; export manuel                     |
+| 009 | 2026-10-25 | Catalogue commun + personnalisations par foyer ; base initiale générée par IA                                           | Catalogue unique ; par foyer ; reprise du Sheets |
+| 010 | 2026-10-25 | Recettes du Sheets importées par script CSV                                                                             | Réimport par photo ; ressaisie                   |
+| 011 | 2026-10-25 | Environnements dev + prod                                                                                               | Prod seule ; 3 environnements                    |
+| 012 | 2026-10-25 | `*.vercel.app` puis domaine perso avant fin lot 6                                                                       | Domaine dès le départ                            |
+| 013 | 2026-10-25 | CI bloquante ; migrations prod manuelles                                                                                | Vercel seul ; migrations auto                    |
+| 014 | 2026-10-25 | Journaux Vercel/Supabase uniquement                                                                                     | Sentry                                           |
+| 015 | 2026-10-25 | Temps réel + « coché gagne » hors ligne                                                                                 | Rafraîchissement manuel ; détection de conflits  |
+| 016 | 2026-10-25 | Lien d'invitation 7 jours ; propriétaire + membres                                                                      | Code ; email ; tous égaux                        |
+| 017 | 2026-10-25 | Modèle IA configurable (admin) ; test Haiku/Sonnet ; plafond console                                                    | Quota par foyer (post-MVP)                       |
+| 018 | 2026-10-26 | Réessai + bascule saisie manuelle ; champs douteux surlignés                                                            | File d'attente auto ; relecture sans indication  |
+| 019 | 2026-10-26 | Parcours d'accueil + recettes d'exemple                                                                                 | Rien ; accueil sans exemples                     |
+| 020 | 2026-10-26 | Tailwind CSS + shadcn/ui                                                                                                | CSS Modules ; Material UI / Mantine              |
+| 021 | 2026-10-26 | Mode sombre auto, socle accessibilité, pas de notifications                                                             | Clair seul ; push au MVP                         |
+| 022 | 2026-10-26 | Bonnes pratiques RGPD dès le MVP (UE, suppression)                                                                      | Rien ; conformité complète                       |
+| 023 | 2026-10-26 | Jalons sans dates + date cible MVP                                                                                      | Planning daté par lot                            |
+| 024 | 2026-10-26 | Fin MVP = lots livrés + 4 semaines d'usage                                                                              | Critère fonctionnel ou d'usage seul              |
+| 025 | 2026-10-26 | Claude Code écrit tout le code et l'explique ; je valide et comprends                                                   | Écrire moi-même certaines parties                |
+| 026 | 2026-10-26 | Date cible MVP : 28/02/2027                                                                                             | —                                                |
+| 027 | 2026-10-26 | Nom provisoire : Olva                                                                                                   | —                                                |
+| 028 | 2026-10-26 | Suppression du compte propriétaire : transfert de propriété                                                             | Suppression du foyer                             |
+| 029 | 2026-10-26 | Direction visuelle inspirée de Notion, blanc et nuances de bleu                                                         | —                                                |
+| 030 | 2026-10-26 | Connexion : Google + email/mot de passe                                                                                 | Lien magique (problème PWA) ; code par email     |
+| 033 | 2026-10-29 | Lots 1 et 2 inversés : comptes et foyer avant catalogue et recettes (une recette appartient à un foyer protégé par RLS) | Foyer de test avec RLS ouverte temporairement    |
 
 ---
 
