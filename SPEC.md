@@ -407,7 +407,7 @@ Toutes les tables sont protégées par Row Level Security : je vois mes données
 - Aucune donnée personnelle dans les journaux
 - Suppression de compte au MVP ; export des données après MVP
 - Photos de livres : usage privé ; politique de conservation à revoir avant toute ouverture au public
-- Avant ouverture au public : politique de confidentialité, CGU, mentions légales, passage aux plans payants (usage commercial interdit sur Vercel Hobby)
+- Avant ouverture au public : politique de confidentialité, CGU, mentions légales, passage aux plans payants (usage commercial interdit sur Vercel Hobby), **publication de l'app Google OAuth** (aujourd'hui en mode test : connexion Google limitée aux comptes ajoutés comme testeurs)
 
 ---
 
