@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { GoogleButton, OrSeparator } from "@/components/auth/google-button";
 import { SignUpForm } from "@/components/auth/sign-up-form";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -15,6 +16,8 @@ export default function SignUpPage() {
         </CardDescription>
       </CardHeader>
       <CardContent className="grid gap-6">
+        <GoogleButton />
+        <OrSeparator />
         <SignUpForm />
         <p className="text-muted-foreground text-center text-sm">
           Déjà un compte ?{" "}

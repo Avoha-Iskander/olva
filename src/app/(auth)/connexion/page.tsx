@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Suspense } from "react";
 
+import { GoogleButton, OrSeparator } from "@/components/auth/google-button";
 import { SignInForm } from "@/components/auth/sign-in-form";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -19,7 +20,15 @@ export default function SignInPage({ searchParams }: PageProps<"/connexion">) {
         <CardDescription>Retrouvez vos recettes et vos listes.</CardDescription>
       </CardHeader>
       <CardContent className="grid gap-6">
-        <Suspense fallback={<SignInForm />}>
+        <Suspense
+          fallback={
+            <>
+              <GoogleButton />
+              <OrSeparator />
+              <SignInForm />
+            </>
+          }
+        >
           <SignInFormWithParams searchParams={searchParams} />
         </Suspense>
         <p className="text-muted-foreground text-center text-sm">
@@ -39,14 +48,19 @@ async function SignInFormWithParams({
   searchParams: PageProps<"/connexion">["searchParams"];
 }) {
   const { suite, erreur } = await searchParams;
+  const suitePath = typeof suite === "string" ? suite : undefined;
+  const messages: Record<string, string> = {
+    lien: "Ce lien est invalide ou a expiré. Ouvrez-le dans le navigateur où vous avez fait la demande, ou recommencez.",
+    google: "La connexion avec Google n'a pas abouti. Réessayez.",
+  };
   return (
-    <SignInForm
-      suite={typeof suite === "string" ? suite : undefined}
-      initialMessage={
-        erreur === "lien"
-          ? "Ce lien est invalide ou a expiré. Ouvrez-le dans le navigateur où vous avez fait la demande, ou recommencez."
-          : undefined
-      }
-    />
+    <>
+      <GoogleButton suite={suitePath} />
+      <OrSeparator />
+      <SignInForm
+        suite={suitePath}
+        initialMessage={typeof erreur === "string" ? messages[erreur] : undefined}
+      />
+    </>
   );
 }
