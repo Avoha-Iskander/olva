@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Suspense } from "react";
 
 import { signOut } from "@/app/(auth)/actions";
@@ -15,11 +16,16 @@ export default function Home() {
       <p className="text-muted-foreground max-w-sm text-lg">
         Toutes vos recettes à un endroit, vos listes de courses en 2 minutes.
       </p>
-      <form action={signOut}>
-        <Button type="submit" variant="outline">
-          Se déconnecter
+      <div className="flex flex-wrap justify-center gap-3">
+        <Button asChild variant="secondary">
+          <Link href="/parametres">Paramètres</Link>
         </Button>
-      </form>
+        <form action={signOut}>
+          <Button type="submit" variant="outline">
+            Se déconnecter
+          </Button>
+        </form>
+      </div>
     </main>
   );
 }

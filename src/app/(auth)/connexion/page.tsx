@@ -47,7 +47,7 @@ async function SignInFormWithParams({
 }: {
   searchParams: PageProps<"/connexion">["searchParams"];
 }) {
-  const { suite, erreur } = await searchParams;
+  const { suite, erreur, compte } = await searchParams;
   const suitePath = typeof suite === "string" ? suite : undefined;
   const messages: Record<string, string> = {
     lien: "Ce lien est invalide ou a expiré. Ouvrez-le dans le navigateur où vous avez fait la demande, ou recommencez.",
@@ -61,6 +61,11 @@ async function SignInFormWithParams({
         suite={suitePath}
         initialMessage={typeof erreur === "string" ? messages[erreur] : undefined}
       />
+      {compte === "supprime" && (
+        <p role="status" className="bg-secondary rounded-md px-3 py-2 text-sm">
+          Votre compte a bien été supprimé.
+        </p>
+      )}
     </>
   );
 }
