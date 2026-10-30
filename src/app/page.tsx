@@ -1,7 +1,10 @@
-import { Button } from "@/components/ui/button";
+import { Suspense } from "react";
 
-// Page d'accueil provisoire (lot 0) : vérifie le thème et le composant Bouton.
-// Le vrai menu à 4 entrées (SPEC §5) arrivera avec les lots suivants.
+import { signOut } from "@/app/(auth)/actions";
+import { Button } from "@/components/ui/button";
+import { createClient } from "@/lib/supabase/server";
+
+// Accueil provisoire : affiche l'utilisateur connecté (le vrai menu arrive plus tard).
 export default function Home() {
   return (
     <main className="flex flex-1 flex-col items-center justify-center gap-6 p-6 text-center">
@@ -9,11 +12,22 @@ export default function Home() {
       <p className="text-muted-foreground max-w-sm text-lg">
         Toutes vos recettes à un endroit, vos listes de courses en 2 minutes.
       </p>
-      <div className="flex flex-wrap justify-center gap-3">
-        <Button>Créer une liste</Button>
-        <Button variant="secondary">Mes recettes</Button>
-        <Button variant="outline">Paramètres</Button>
-      </div>
+      {/* La session est lue dans les cookies : partie dynamique, isolée dans Suspense */}
+      <Suspense fallback={<p className="text-muted-foreground h-5 text-sm">…</p>}>
+        <CurrentUser />
+      </Suspense>
+      <form action={signOut}>
+        <Button type="submit" variant="outline">
+          Se déconnecter
+        </Button>
+      </form>
     </main>
   );
+}
+
+async function CurrentUser() {
+  const supabase = await createClient();
+  const { data } = await supabase.auth.getClaims();
+  const email = data?.claims?.email;
+  return email ? <p className="text-sm">Connecté en tant que {email}</p> : null;
 }
