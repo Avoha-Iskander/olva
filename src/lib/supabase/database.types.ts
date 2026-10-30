@@ -47,6 +47,7 @@ export type Database = {
     }
     Functions: {
       delete_own_account: { Args: never; Returns: undefined }
+      ensure_my_profile: { Args: never; Returns: undefined }
     }
     Enums: {
       [_ in never]: never
