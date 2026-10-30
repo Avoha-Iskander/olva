@@ -54,7 +54,7 @@ Tu écris tout le code. Je ne code pas, mais je veux **comprendre** ce que tu fa
 - Toute évolution du schéma passe par une migration dans `supabase/migrations/`. Jamais de modification directe dans l'interface Supabase.
 - Les migrations sont testées sur **dev** ; je les applique moi-même en **prod**.
 - La clé API Claude et la clé service Supabase ne sont utilisées que côté serveur. Aucun secret dans le code ni dans Git.
-- Toute table de foyer a une politique Row Level Security.
+- Toute table a une politique Row Level Security (mes données + ce qui m'est partagé).
 - Logique métier (portions, regroupement, conversions, report) dans des fonctions pures testées avec Vitest.
 - Composants UI : shadcn/ui + Tailwind ; vérifier mode clair et sombre, et cibles tactiles ≥ 44 px.
 

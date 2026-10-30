@@ -115,6 +115,25 @@ export async function updatePassword(
   redirect("/");
 }
 
+/**
+ * Connexion avec Google : Supabase nous donne l'adresse de la page Google,
+ * on y envoie l'utilisateur. Google le renvoie ensuite vers Supabase, qui le
+ * renvoie vers /auth/confirm avec un code à échanger contre une session.
+ */
+export async function signInWithGoogle(formData: FormData) {
+  const suite = safeRedirectPath(String(formData.get("suite") ?? ""), "/");
+  const supabase = await createClient();
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider: "google",
+    options: {
+      redirectTo: `${await getOrigin()}/auth/confirm?suite=${encodeURIComponent(suite)}`,
+    },
+  });
+
+  if (error || !data.url) redirect("/connexion?erreur=google");
+  redirect(data.url);
+}
+
 export async function signOut() {
   const supabase = await createClient();
   await supabase.auth.signOut();
