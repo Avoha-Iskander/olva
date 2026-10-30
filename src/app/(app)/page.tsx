@@ -2,20 +2,19 @@ import { Suspense } from "react";
 
 import { signOut } from "@/app/(auth)/actions";
 import { Button } from "@/components/ui/button";
-import { createClient } from "@/lib/supabase/server";
+import { getCurrentProfile } from "@/lib/profile";
 
-// Accueil provisoire : affiche l'utilisateur connecté (le vrai menu arrive plus tard).
+// Accueil provisoire : salue l'utilisateur (le vrai menu à 4 entrées arrive plus tard).
 export default function Home() {
   return (
     <main className="flex flex-1 flex-col items-center justify-center gap-6 p-6 text-center">
       <h1 className="text-4xl font-semibold tracking-tight">Olva</h1>
+      <Suspense fallback={<p className="h-7" />}>
+        <Greeting />
+      </Suspense>
       <p className="text-muted-foreground max-w-sm text-lg">
         Toutes vos recettes à un endroit, vos listes de courses en 2 minutes.
       </p>
-      {/* La session est lue dans les cookies : partie dynamique, isolée dans Suspense */}
-      <Suspense fallback={<p className="text-muted-foreground h-5 text-sm">…</p>}>
-        <CurrentUser />
-      </Suspense>
       <form action={signOut}>
         <Button type="submit" variant="outline">
           Se déconnecter
@@ -25,9 +24,12 @@ export default function Home() {
   );
 }
 
-async function CurrentUser() {
-  const supabase = await createClient();
-  const { data } = await supabase.auth.getClaims();
-  const email = data?.claims?.email;
-  return email ? <p className="text-sm">Connecté en tant que {email}</p> : null;
+async function Greeting() {
+  const profile = await getCurrentProfile();
+  if (!profile) return null;
+  return (
+    <p className="text-lg">
+      Bonjour {profile.display_name} · {profile.default_servings} pers. par défaut
+    </p>
+  );
 }
