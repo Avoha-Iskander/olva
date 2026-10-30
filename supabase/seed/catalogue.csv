@@ -1,0 +1,335 @@
+nom,rayon,unite,placard
+Abricot,Fruits et légumes,piece,non
+Ail,Fruits et légumes,gousse,oui
+Ananas,Fruits et légumes,piece,non
+Asperge,Fruits et légumes,botte,non
+Aubergine,Fruits et légumes,piece,non
+Avocat,Fruits et légumes,piece,non
+Banane,Fruits et légumes,piece,non
+Basilic frais,Fruits et légumes,botte,non
+Betterave cuite,Fruits et légumes,piece,non
+Brocoli,Fruits et légumes,piece,non
+Butternut,Fruits et légumes,piece,non
+Carotte,Fruits et légumes,piece,non
+Céleri branche,Fruits et légumes,piece,non
+Céleri-rave,Fruits et légumes,piece,non
+Cerise,Fruits et légumes,g,non
+Champignon de Paris,Fruits et légumes,g,non
+Chou blanc,Fruits et légumes,piece,non
+Chou-fleur,Fruits et légumes,piece,non
+Chou rouge,Fruits et légumes,piece,non
+Ciboulette,Fruits et légumes,botte,non
+Citron,Fruits et légumes,piece,non
+Citron vert,Fruits et légumes,piece,non
+Clémentine,Fruits et légumes,piece,non
+Concombre,Fruits et légumes,piece,non
+Coriandre fraîche,Fruits et légumes,botte,non
+Courgette,Fruits et légumes,piece,non
+Échalote,Fruits et légumes,piece,oui
+Endive,Fruits et légumes,piece,non
+Épinards frais,Fruits et légumes,g,non
+Fenouil,Fruits et légumes,piece,non
+Fraise,Fruits et légumes,g,non
+Framboise,Fruits et légumes,g,non
+Gingembre frais,Fruits et légumes,g,non
+Haricots verts,Fruits et légumes,g,non
+Kiwi,Fruits et légumes,piece,non
+Laitue,Fruits et légumes,piece,non
+Mâche,Fruits et légumes,g,non
+Mangue,Fruits et légumes,piece,non
+Melon,Fruits et légumes,piece,non
+Menthe fraîche,Fruits et légumes,botte,non
+Myrtille,Fruits et légumes,g,non
+Navet,Fruits et légumes,piece,non
+Nectarine,Fruits et légumes,piece,non
+Oignon,Fruits et légumes,piece,oui
+Oignon rouge,Fruits et légumes,piece,non
+Orange,Fruits et légumes,piece,non
+Pamplemousse,Fruits et légumes,piece,non
+Panais,Fruits et légumes,piece,non
+Patate douce,Fruits et légumes,piece,non
+Persil frais,Fruits et légumes,botte,non
+Pêche,Fruits et légumes,piece,non
+Petits pois frais,Fruits et légumes,g,non
+Poire,Fruits et légumes,piece,non
+Poireau,Fruits et légumes,piece,non
+Poivron jaune,Fruits et légumes,piece,non
+Poivron rouge,Fruits et légumes,piece,non
+Poivron vert,Fruits et légumes,piece,non
+Pomme,Fruits et légumes,piece,non
+Pomme de terre,Fruits et légumes,kg,non
+Potimarron,Fruits et légumes,piece,non
+Potiron,Fruits et légumes,g,non
+Prune,Fruits et légumes,piece,non
+Radis,Fruits et légumes,botte,non
+Raisin,Fruits et légumes,g,non
+Roquette,Fruits et légumes,g,non
+Salade verte,Fruits et légumes,piece,non
+Thym frais,Fruits et légumes,brin,non
+Romarin frais,Fruits et légumes,brin,non
+Tomate,Fruits et légumes,piece,non
+Tomate cerise,Fruits et légumes,g,non
+Baguette,Boulangerie,piece,non
+Pain de campagne,Boulangerie,piece,non
+Pain complet,Boulangerie,piece,non
+Pain de mie,Boulangerie,paquet,non
+Pain burger,Boulangerie,paquet,non
+Pain pita,Boulangerie,paquet,non
+Brioche,Boulangerie,piece,non
+Croissant,Boulangerie,piece,non
+Pain au chocolat,Boulangerie,piece,non
+Tortilla de blé,Boulangerie,paquet,non
+Biscotte,Boulangerie,paquet,non
+Chapelure,Boulangerie,g,oui
+Bœuf haché,Boucherie et volaille,g,non
+Steak haché,Boucherie et volaille,piece,non
+Bœuf à bourguignon,Boucherie et volaille,g,non
+Entrecôte,Boucherie et volaille,piece,non
+Rôti de bœuf,Boucherie et volaille,g,non
+Escalope de veau,Boucherie et volaille,piece,non
+Blanquette de veau,Boucherie et volaille,g,non
+Côte de porc,Boucherie et volaille,piece,non
+Filet mignon de porc,Boucherie et volaille,g,non
+Rôti de porc,Boucherie et volaille,g,non
+Échine de porc,Boucherie et volaille,g,non
+Saucisse,Boucherie et volaille,piece,non
+Chair à saucisse,Boucherie et volaille,g,non
+Gigot d'agneau,Boucherie et volaille,g,non
+Côtelette d'agneau,Boucherie et volaille,piece,non
+Poulet entier,Boucherie et volaille,piece,non
+Blanc de poulet,Boucherie et volaille,g,non
+Cuisse de poulet,Boucherie et volaille,piece,non
+Pilon de poulet,Boucherie et volaille,piece,non
+Escalope de dinde,Boucherie et volaille,piece,non
+Magret de canard,Boucherie et volaille,piece,non
+Saumon frais,Poissonnerie,g,non
+Cabillaud,Poissonnerie,g,non
+Colin,Poissonnerie,g,non
+Lieu noir,Poissonnerie,g,non
+Truite,Poissonnerie,g,non
+Dorade,Poissonnerie,piece,non
+Crevettes,Poissonnerie,g,non
+Moules,Poissonnerie,kg,non
+Noix de Saint-Jacques,Poissonnerie,g,non
+Saumon fumé,Poissonnerie,tranche,non
+Jambon blanc,Charcuterie et traiteur,tranche,non
+Jambon cru,Charcuterie et traiteur,tranche,non
+Lardons,Charcuterie et traiteur,g,non
+Bacon,Charcuterie et traiteur,tranche,non
+Chorizo,Charcuterie et traiteur,g,non
+Saucisson,Charcuterie et traiteur,piece,non
+Knacki,Charcuterie et traiteur,paquet,non
+Rillettes,Charcuterie et traiteur,pot,non
+Pâté,Charcuterie et traiteur,g,non
+Blanc de dinde,Charcuterie et traiteur,tranche,non
+Pâte brisée,Charcuterie et traiteur,piece,non
+Pâte feuilletée,Charcuterie et traiteur,piece,non
+Pâte à pizza,Charcuterie et traiteur,piece,non
+Pâte sablée,Charcuterie et traiteur,piece,non
+Gnocchis,Charcuterie et traiteur,g,non
+Ravioles,Charcuterie et traiteur,g,non
+Houmous,Charcuterie et traiteur,pot,non
+Tofu,Charcuterie et traiteur,g,non
+Lait demi-écrémé,Crèmerie et œufs,l,non
+Lait entier,Crèmerie et œufs,l,non
+Beurre doux,Crèmerie et œufs,g,non
+Beurre demi-sel,Crèmerie et œufs,g,non
+Crème fraîche épaisse,Crèmerie et œufs,cl,non
+Crème liquide,Crèmerie et œufs,cl,non
+Œuf,Crèmerie et œufs,piece,non
+Yaourt nature,Crèmerie et œufs,piece,non
+Yaourt aux fruits,Crèmerie et œufs,piece,non
+Fromage blanc,Crèmerie et œufs,g,non
+Petit-suisse,Crèmerie et œufs,piece,non
+Skyr,Crèmerie et œufs,g,non
+Compote,Crèmerie et œufs,piece,non
+Crème dessert,Crèmerie et œufs,piece,non
+Lait de coco,Crèmerie et œufs,cl,non
+Boisson végétale,Crèmerie et œufs,l,non
+Emmental râpé,Fromages,g,non
+Parmesan,Fromages,g,non
+Mozzarella,Fromages,piece,non
+Comté,Fromages,g,non
+Gruyère,Fromages,g,non
+Camembert,Fromages,piece,non
+Brie,Fromages,g,non
+Chèvre bûche,Fromages,g,non
+Feta,Fromages,g,non
+Raclette,Fromages,g,non
+Reblochon,Fromages,piece,non
+Roquefort,Fromages,g,non
+Ricotta,Fromages,g,non
+Mascarpone,Fromages,g,non
+Fromage frais à tartiner,Fromages,g,non
+Burrata,Fromages,piece,non
+Spaghetti,"Pâtes, riz et féculents",g,non
+Penne,"Pâtes, riz et féculents",g,non
+Coquillettes,"Pâtes, riz et féculents",g,non
+Tagliatelles,"Pâtes, riz et féculents",g,non
+Lasagnes (feuilles),"Pâtes, riz et féculents",g,non
+Riz basmati,"Pâtes, riz et féculents",g,non
+Riz rond,"Pâtes, riz et féculents",g,non
+Riz arborio,"Pâtes, riz et féculents",g,non
+Semoule,"Pâtes, riz et féculents",g,non
+Quinoa,"Pâtes, riz et féculents",g,non
+Boulgour,"Pâtes, riz et féculents",g,non
+Lentilles vertes,"Pâtes, riz et féculents",g,non
+Lentilles corail,"Pâtes, riz et féculents",g,non
+Pois chiches secs,"Pâtes, riz et féculents",g,non
+Nouilles chinoises,"Pâtes, riz et féculents",g,non
+Purée en flocons,"Pâtes, riz et féculents",sachet,non
+Polenta,"Pâtes, riz et féculents",g,non
+Tomates pelées,Conserves et bocaux,boite,non
+Concentré de tomate,Conserves et bocaux,boite,oui
+Coulis de tomate,Conserves et bocaux,g,non
+Pois chiches en conserve,Conserves et bocaux,boite,non
+Haricots rouges,Conserves et bocaux,boite,non
+Haricots blancs,Conserves et bocaux,boite,non
+Maïs,Conserves et bocaux,boite,non
+Petits pois en conserve,Conserves et bocaux,boite,non
+Thon au naturel,Conserves et bocaux,boite,non
+Sardines,Conserves et bocaux,boite,non
+Olives noires,Conserves et bocaux,pot,non
+Olives vertes,Conserves et bocaux,pot,non
+Cornichons,Conserves et bocaux,pot,non
+Câpres,Conserves et bocaux,pot,oui
+Champignons en conserve,Conserves et bocaux,boite,non
+Sauce tomate cuisinée,Conserves et bocaux,pot,non
+Pesto,Conserves et bocaux,pot,non
+Huile d'olive,"Huiles, vinaigres et condiments",cas,oui
+Huile de tournesol,"Huiles, vinaigres et condiments",cas,oui
+Huile de sésame,"Huiles, vinaigres et condiments",cas,oui
+Vinaigre balsamique,"Huiles, vinaigres et condiments",cas,oui
+Vinaigre de vin,"Huiles, vinaigres et condiments",cas,oui
+Vinaigre de cidre,"Huiles, vinaigres et condiments",cas,oui
+Moutarde,"Huiles, vinaigres et condiments",cac,oui
+Moutarde à l'ancienne,"Huiles, vinaigres et condiments",cac,oui
+Mayonnaise,"Huiles, vinaigres et condiments",cas,oui
+Ketchup,"Huiles, vinaigres et condiments",cas,oui
+Sauce soja,"Huiles, vinaigres et condiments",cas,oui
+Sauce Worcestershire,"Huiles, vinaigres et condiments",cac,oui
+Tabasco,"Huiles, vinaigres et condiments",cac,oui
+Nuoc-mâm,"Huiles, vinaigres et condiments",cas,oui
+Sel,"Épices, herbes séchées et aides culinaires",pincee,oui
+Gros sel,"Épices, herbes séchées et aides culinaires",cac,oui
+Fleur de sel,"Épices, herbes séchées et aides culinaires",pincee,oui
+Poivre,"Épices, herbes séchées et aides culinaires",pincee,oui
+Paprika,"Épices, herbes séchées et aides culinaires",cac,oui
+Piment d'Espelette,"Épices, herbes séchées et aides culinaires",pincee,oui
+Cumin,"Épices, herbes séchées et aides culinaires",cac,oui
+Curry,"Épices, herbes séchées et aides culinaires",cac,oui
+Curcuma,"Épices, herbes séchées et aides culinaires",cac,oui
+Cannelle,"Épices, herbes séchées et aides culinaires",cac,oui
+Muscade,"Épices, herbes séchées et aides culinaires",pincee,oui
+Ras el hanout,"Épices, herbes séchées et aides culinaires",cac,oui
+Herbes de Provence,"Épices, herbes séchées et aides culinaires",cac,oui
+Thym séché,"Épices, herbes séchées et aides culinaires",cac,oui
+Origan,"Épices, herbes séchées et aides culinaires",cac,oui
+Laurier,"Épices, herbes séchées et aides culinaires",feuille,oui
+Bouillon de volaille,"Épices, herbes séchées et aides culinaires",piece,oui
+Bouillon de légumes,"Épices, herbes séchées et aides culinaires",piece,oui
+Bouillon de bœuf,"Épices, herbes séchées et aides culinaires",piece,oui
+Fond de veau,"Épices, herbes séchées et aides culinaires",cas,oui
+Maïzena,"Épices, herbes séchées et aides culinaires",cas,oui
+Farine,Épicerie sucrée et pâtisserie,g,oui
+Sucre en poudre,Épicerie sucrée et pâtisserie,g,oui
+Sucre roux,Épicerie sucrée et pâtisserie,g,oui
+Sucre glace,Épicerie sucrée et pâtisserie,g,oui
+Sucre vanillé,Épicerie sucrée et pâtisserie,sachet,oui
+Levure chimique,Épicerie sucrée et pâtisserie,sachet,oui
+Levure boulangère,Épicerie sucrée et pâtisserie,sachet,oui
+Chocolat noir pâtissier,Épicerie sucrée et pâtisserie,g,non
+Chocolat au lait,Épicerie sucrée et pâtisserie,g,non
+Pépites de chocolat,Épicerie sucrée et pâtisserie,g,non
+Cacao en poudre,Épicerie sucrée et pâtisserie,cas,oui
+Poudre d'amande,Épicerie sucrée et pâtisserie,g,non
+Amandes,Épicerie sucrée et pâtisserie,g,non
+Noix,Épicerie sucrée et pâtisserie,g,non
+Noisettes,Épicerie sucrée et pâtisserie,g,non
+Raisins secs,Épicerie sucrée et pâtisserie,g,non
+Extrait de vanille,Épicerie sucrée et pâtisserie,cac,oui
+Gousse de vanille,Épicerie sucrée et pâtisserie,piece,non
+Miel,Épicerie sucrée et pâtisserie,cas,oui
+Sirop d'érable,Épicerie sucrée et pâtisserie,cas,oui
+Biscuits,Épicerie sucrée et pâtisserie,paquet,non
+Gâteaux secs,Épicerie sucrée et pâtisserie,paquet,non
+Bonbons,Épicerie sucrée et pâtisserie,paquet,non
+Céréales,Petit-déjeuner,paquet,non
+Flocons d'avoine,Petit-déjeuner,g,non
+Muesli,Petit-déjeuner,paquet,non
+Confiture,Petit-déjeuner,pot,non
+Pâte à tartiner,Petit-déjeuner,pot,non
+Beurre de cacahuète,Petit-déjeuner,pot,non
+Café moulu,Petit-déjeuner,paquet,non
+Café en capsules,Petit-déjeuner,paquet,non
+Thé,Petit-déjeuner,paquet,non
+Tisane,Petit-déjeuner,paquet,non
+Chocolat en poudre,Petit-déjeuner,paquet,non
+Chips,Apéritif,paquet,non
+Biscuits apéritif,Apéritif,paquet,non
+Cacahuètes,Apéritif,paquet,non
+Pistaches,Apéritif,paquet,non
+Tapenade,Apéritif,pot,non
+Petits pois surgelés,Surgelés,g,non
+Haricots verts surgelés,Surgelés,g,non
+Épinards surgelés,Surgelés,g,non
+Poêlée de légumes surgelée,Surgelés,sachet,non
+Frites surgelées,Surgelés,sachet,non
+Poisson pané,Surgelés,paquet,non
+Pizza surgelée,Surgelés,piece,non
+Fruits rouges surgelés,Surgelés,g,non
+Glace,Surgelés,piece,non
+Herbes surgelées,Surgelés,sachet,non
+Eau plate,Boissons,bouteille,non
+Eau gazeuse,Boissons,bouteille,non
+Jus d'orange,Boissons,bouteille,non
+Jus de pomme,Boissons,bouteille,non
+Sirop,Boissons,bouteille,non
+Soda,Boissons,bouteille,non
+Bière,Boissons,bouteille,non
+Vin rouge,Boissons,bouteille,non
+Vin blanc,Boissons,bouteille,non
+Cidre,Boissons,bouteille,non
+Couches,Bébé,paquet,non
+Lingettes bébé,Bébé,paquet,non
+Petits pots bébé,Bébé,piece,non
+Lait infantile,Bébé,piece,non
+Liniment,Bébé,piece,non
+Papier toilette,Hygiène et beauté,paquet,non
+Mouchoirs,Hygiène et beauté,paquet,non
+Dentifrice,Hygiène et beauté,piece,non
+Brosse à dents,Hygiène et beauté,piece,non
+Gel douche,Hygiène et beauté,piece,non
+Shampooing,Hygiène et beauté,piece,non
+Savon,Hygiène et beauté,piece,non
+Déodorant,Hygiène et beauté,piece,non
+Coton,Hygiène et beauté,paquet,non
+Coton-tiges,Hygiène et beauté,paquet,non
+Rasoirs,Hygiène et beauté,paquet,non
+Crème hydratante,Hygiène et beauté,piece,non
+Protections hygiéniques,Hygiène et beauté,paquet,non
+Liquide vaisselle,Entretien et maison,bouteille,non
+Pastilles lave-vaisselle,Entretien et maison,paquet,non
+Lessive,Entretien et maison,piece,non
+Adoucissant,Entretien et maison,bouteille,non
+Éponges,Entretien et maison,paquet,non
+Essuie-tout,Entretien et maison,paquet,non
+Sacs poubelle,Entretien et maison,paquet,non
+Nettoyant multi-surfaces,Entretien et maison,piece,non
+Javel,Entretien et maison,bouteille,non
+Papier aluminium,Entretien et maison,piece,non
+Film étirable,Entretien et maison,piece,non
+Papier cuisson,Entretien et maison,piece,non
+Sacs congélation,Entretien et maison,paquet,non
+Ampoules,Entretien et maison,piece,non
+Piles,Entretien et maison,paquet,non
+Croquettes chat,Animalerie,sachet,non
+Pâtée chat,Animalerie,piece,non
+Litière,Animalerie,sachet,non
+Friandises chat,Animalerie,sachet,non
+Croquettes chien,Animalerie,sachet,non
+Pâtée chien,Animalerie,piece,non
+Fleurs,Divers,piece,non
+Bougies d'anniversaire,Divers,paquet,non
+Serviettes en papier,Divers,paquet,non
+Charbon de bois,Divers,sachet,non
