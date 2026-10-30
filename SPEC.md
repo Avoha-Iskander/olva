@@ -1,8 +1,8 @@
 # Cahier des charges — Olva (nom provisoire)
 
-> **Statut** : v0.3 — fonctionnel et choix techniques tranchés
+> **Statut** : v0.4 — modèle par utilisateur avec partage (remplace le foyer)
 > **Auteur** : Alex
-> **Dernière mise à jour** : 2026-10-29
+> **Dernière mise à jour** : 2026-10-30
 >
 > Légende : `[À COMPLÉTER]` = à remplir · `[À DÉCIDER]` = choix ouvert · `[PRÉ-REMPLI]` = proposé, à valider
 >
@@ -39,9 +39,9 @@ Proposition de valeur : **Toutes vos recettes à un endroit, vos listes de cours
 
 | #   | Objectif                                            | Indicateur de réussite                                                                                                                                                       |
 | --- | --------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| O1  | Remplacer le prototype Sheets pour le foyer         | 4 semaines consécutives de courses avec l'app, sans revenir au Sheets                                                                                                        |
+| O1  | Remplacer le prototype Sheets à la maison           | 4 semaines consécutives de courses avec l'app, sans revenir au Sheets                                                                                                        |
 | O2  | Comprendre le code de l'app, sans l'écrire moi-même | Claude Code écrit tout le code et l'explique au fil de l'eau ; chaque notion non comprise est approfondie (vidéo, tutoriel) ; je sais expliquer ce que fait chaque lot livré |
-| O3  | Garder la porte ouverte à une ouverture au public   | Architecture multi-foyers, données hébergées en UE, catalogue commun + personnalisations                                                                                     |
+| O3  | Garder la porte ouverte à une ouverture au public   | Comptes individuels avec partage, données hébergées en UE, catalogue commun + personnalisations                                                                              |
 
 ### 2.1 Non-objectifs (MVP)
 
@@ -57,17 +57,25 @@ Proposition de valeur : **Toutes vos recettes à un endroit, vos listes de cours
 
 ## 3. Utilisateurs
 
-| Persona         | Besoin principal                                                       | Contexte d'usage                          |
-| --------------- | ---------------------------------------------------------------------- | ----------------------------------------- |
-| Préparateur     | Stocker ses recettes et préparer la liste de la semaine                | Mobile ou desktop, à la maison            |
-| Acheteur        | Cocher sa liste en magasin, rapidement                                 | Mobile, une main, réseau faible ou absent |
-| Membre du foyer | Ajouter un article depuis la maison pendant que l'autre est en magasin | Mobile                                    |
+| Persona     | Besoin principal                                                       | Contexte d'usage                          |
+| ----------- | ---------------------------------------------------------------------- | ----------------------------------------- |
+| Préparateur | Stocker ses recettes et préparer la liste de la semaine                | Mobile ou desktop, à la maison            |
+| Acheteur    | Cocher sa liste en magasin, rapidement                                 | Mobile, une main, réseau faible ou absent |
+| Co-acheteur | Ajouter un article depuis la maison pendant que l'autre est en magasin | Mobile                                    |
 
-### 3.1 Foyer
+### 3.1 Comptes et partage
 
-- Recettes, catalogue personnalisé et listes appartiennent à un **foyer**, partagé entre plusieurs membres.
-- Rôles : **propriétaire** (invite, exclut, supprime le foyer) et **membre** (tout le reste).
-- Rejoindre un foyer : **lien d'invitation à usage unique, valable 7 jours**, envoyé par le propriétaire (SMS, WhatsApp…).
+Chaque utilisateur possède ses propres données ; il n'y a pas de « foyer ».
+
+| Objet                                     | Appartient à       | Partage                                                                                                           |
+| ----------------------------------------- | ------------------ | ----------------------------------------------------------------------------------------------------------------- |
+| Recette                                   | Son créateur       | **En lecture**, recette par recette **ou toute ma bibliothèque** d'un coup ; bouton « Copier dans mes recettes »  |
+| Liste de courses                          | Son créateur       | **En co-édition** (cocher, ajouter, retirer, modifier) ; option « partager automatiquement mes nouvelles listes » |
+| Catalogue, pré-liste, portions par défaut | Chaque utilisateur | Pas de partage ; une liste partagée est triée selon les rayons de son créateur                                    |
+
+- Seul le créateur peut modifier ou supprimer une recette, supprimer une liste, ou retirer un partage. La personne qui reçoit un partage peut aussi y renoncer.
+- Partager avec quelqu'un : **lien à usage unique valable 7 jours** (SMS, WhatsApp…) ou **email** d'un utilisateur Olva existant.
+- Partager « toute ma bibliothèque » inclut les recettes créées ensuite.
 
 ---
 
@@ -75,11 +83,12 @@ Proposition de valeur : **Toutes vos recettes à un endroit, vos listes de cours
 
 ### 4.1 MVP
 
-- [ ] Comptes, foyer, invitation, rôles, suppression de compte
+- [ ] Comptes, profil, suppression de compte
+- [ ] Partage : recettes (en lecture, une ou toutes), listes (en co-édition, avec partage automatique)
 - [ ] Parcours d'accueil + recettes d'exemple
 - [ ] Recettes : saisie manuelle, collections, photo d'illustration, recherche
 - [ ] Import de recette par photo (IA) avec relecture
-- [ ] Catalogue d'articles (commun + personnalisations du foyer), rayons, unités, conversions
+- [ ] Catalogue d'articles (commun + personnalisations de chaque utilisateur), rayons, unités, conversions
 - [ ] Création de liste en 3 étapes : recettes → placard → pré-liste et articles libres
 - [ ] Regroupement des ingrédients et conversions d'unités
 - [ ] Mes listes en cours
@@ -93,8 +102,8 @@ Proposition de valeur : **Toutes vos recettes à un endroit, vos listes de cours
 - Planning des repas : affecter une recette à un jour
 - Commande drive : tout ce qui est disponible au drive est commandé automatiquement, le reste (et les rayons exclus, ex. fruits et légumes) va sur la liste à cocher. Un drive au début, d'autres ensuite. Nécessite un partenariat ou un agrégateur (pas d'API publique côté enseignes)
 - Notifications push
-- Export des données du foyer
-- Quota d'imports IA par foyer
+- Export de ses données
+- Quota d'imports IA par utilisateur
 - Documents juridiques (avant toute ouverture au public)
 
 ---
@@ -108,7 +117,9 @@ Menu principal (accueil) avec 4 entrées :
 3. **Mes listes en cours** — listes en préparation, à reprendre ou modifier
 4. **Faire ses courses** — ouvre une liste finalisée en mode cases à cocher
 
-Paramètres : nombre de personnes par défaut, membres du foyer, invitation, compte.
+Paramètres : nom affiché, nombre de personnes par défaut, mes partages (envoyés et reçus), compte.
+
+« Mes recettes » et « Mes listes en cours » affichent aussi ce qui m'est partagé, signalé par « Partagé par … ».
 
 ---
 
@@ -145,21 +156,32 @@ Champs : titre (obligatoire), nombre de personnes (obligatoire), ingrédients (q
 - [ ] Recherche par titre et par ingrédient
 - [ ] [À COMPLÉTER : autres filtres ?]
 
+**US-REC-05 — Partager mes recettes** · M
+
+- [ ] Je partage une recette, ou toute ma bibliothèque (y compris les recettes futures), par lien ou par email
+- [ ] La personne voit mes recettes dans « Mes recettes », signalées « Partagé par … », sans pouvoir les modifier
+- [ ] Je peux retirer un partage ; la personne peut y renoncer
+
+**US-REC-06 — Copier une recette partagée** · S
+
+- [ ] Depuis une recette partagée, « Copier dans mes recettes » crée une copie indépendante que je peux modifier
+- [ ] Les ingrédients de la copie sont rattachés à mon catalogue (articles personnels du créateur copiés si besoin)
+
 ### 6.2 Catalogue d'articles
 
 **US-CAT-01 — Catalogue commun** · M
 
 - [ ] Un catalogue de base (~300 articles courants, généré par IA puis relu) fournit pour chaque article : nom, rayon, type d'unité (pièce, poids, volume), indicateur « produit de placard »
-- [ ] Le catalogue commun est en lecture seule pour les foyers
+- [ ] Le catalogue commun est en lecture seule pour les utilisateurs
 
-**US-CAT-02 — Ajouter un article au catalogue du foyer** · M
+**US-CAT-02 — Ajouter un article à mon catalogue** · M
 
 - [ ] Quand un article tapé n'existe pas, l'utilisateur le crée en indiquant rayon et unité
-- [ ] L'article créé n'est visible que dans son foyer
+- [ ] L'article créé n'est visible que par moi (et par ceux qui voient une de mes recettes ou listes partagées)
 
 **US-CAT-03 — Personnaliser un article commun** · S
 
-- [ ] Un foyer peut changer le rayon, l'indicateur placard ou une conversion d'un article commun ; la valeur du foyer remplace celle du catalogue
+- [ ] Je peux changer le rayon, l'indicateur placard ou une conversion d'un article commun ; ma valeur remplace celle du catalogue
 
 **US-CAT-04 — Conversions d'unités** · M
 
@@ -188,8 +210,8 @@ Champs : titre (obligatoire), nombre de personnes (obligatoire), ingrédients (q
 
 **US-LST-03 — Pré-liste anti-oubli** · M
 
-- [ ] Une pré-liste des articles habituels du foyer (alimentaires et non alimentaires) est présentée ; l'utilisateur coche ce qui manque
-- [ ] Le foyer peut ajouter ou retirer des articles de sa pré-liste
+- [ ] Une pré-liste de mes articles habituels (alimentaires et non alimentaires) est présentée ; je coche ce qui manque
+- [ ] Je peux ajouter ou retirer des articles de ma pré-liste
 
 **US-LST-04 — Ajouter un article libre** · M
 
@@ -207,15 +229,21 @@ Champs : titre (obligatoire), nombre de personnes (obligatoire), ingrédients (q
 - [ ] Une liste peut être enregistrée en brouillon et reprise plus tard
 - [ ] Une liste finalisée devient disponible dans « Faire ses courses »
 
+**US-LST-07 — Partager une liste** · M
+
+- [ ] Je partage une liste par lien ou par email ; la personne peut cocher, ajouter, retirer et modifier des articles
+- [ ] Option « Partager automatiquement mes nouvelles listes avec … » (une ou plusieurs personnes)
+- [ ] Seul le créateur peut supprimer la liste ou retirer un partage
+
 ### 6.4 Faire ses courses
 
 **US-CRS-01 — Liste à cocher par rayon** · M
 
 - [ ] La liste est groupée par rayon ; cases larges (≥ 44 px), utilisables d'une main
 
-**US-CRS-02 — Synchronisation du foyer** · M
+**US-CRS-02 — Synchronisation entre co-acheteurs** · M
 
-- [ ] Avec réseau : un article coché ou ajouté par un membre apparaît en temps réel chez les autres
+- [ ] Avec réseau : un article coché ou ajouté par une personne avec qui la liste est partagée apparaît en temps réel chez les autres
 - [ ] Hors ligne : la liste reste consultable et cochable ; synchronisation au retour du réseau
 - [ ] Conflits : **« coché » gagne** (un article coché par quelqu'un reste coché ; décocher n'est possible qu'en ligne) ; pour les autres modifications, la dernière modification gagne
 
@@ -224,7 +252,7 @@ Champs : titre (obligatoire), nombre de personnes (obligatoire), ingrédients (q
 - [ ] L'utilisateur termine la liste ; les articles non cochés sont reportés sur la prochaine liste
 - [ ] La liste terminée passe dans l'historique
 
-### 6.5 Compte et foyer
+### 6.5 Compte et partages
 
 **US-CPT-01 — Créer un compte / se connecter** · M
 
@@ -232,47 +260,55 @@ Champs : titre (obligatoire), nombre de personnes (obligatoire), ingrédients (q
 - [ ] Connexion par email + mot de passe, avec confirmation de l'email à l'inscription
 - [ ] Parcours « mot de passe oublié » (réinitialisation par email)
 - [ ] La session reste ouverte longtemps sur mobile (pas de reconnexion à chaque ouverture)
-- [ ] En prod, les emails passent par un service d'envoi dédié [À DÉCIDER au lot 2] (l'envoi intégré de Supabase est trop limité)
+- [ ] En prod, les emails passent par un service d'envoi dédié [À DÉCIDER au lot 1] (l'envoi intégré de Supabase est trop limité)
 
 **US-CPT-02 — Parcours d'accueil** · M
 
-- [ ] Après inscription : créer un foyer ou rejoindre un foyer (lien d'invitation), puis nombre de personnes par défaut
-- [ ] Un nouveau foyer reçoit 3 à 5 recettes d'exemple, étiquetées « exemple », supprimables d'un coup (« Supprimer les exemples »)
+- [ ] Après inscription : nom affiché, puis nombre de personnes par défaut
+- [ ] Si l'inscription part d'un lien de partage, le partage est accepté à la fin du parcours
+- [ ] Un nouvel utilisateur reçoit 3 à 5 recettes d'exemple, étiquetées « exemple », supprimables d'un coup (« Supprimer les exemples »)
 - [ ] Les écrans vides affichent un message et une action claire
 
-**US-CPT-03 — Inviter un membre** · M (voir 3.1)
+**US-CPT-03 — Gérer mes partages** · M
+
+- [ ] Paramètres → « Mes partages » : ce que je partage (avec qui, quoi) et ce qu'on me partage
+- [ ] Retirer un partage envoyé, renoncer à un partage reçu
+- [ ] Un lien de partage est à usage unique et expire après 7 jours ; un lien expiré ou déjà utilisé affiche un message clair
 
 **US-CPT-04 — Supprimer son compte** · M
 
-- [ ] Suppression complète du compte et de ses données personnelles
-- [ ] Si l'utilisateur est propriétaire et que le foyer a d'autres membres : il choisit à qui **transférer la propriété** avant la suppression
-- [ ] S'il est le seul membre : le foyer et ses données sont supprimés (après confirmation)
+- [ ] Suppression complète du compte et de toutes ses données (recettes, listes, catalogue personnel, partages), après confirmation
+- [ ] Les personnes avec qui je partageais perdent l'accès ; un avertissement le rappelle avant la suppression
+- [ ] Les copies de mes recettes faites par d'autres (US-REC-06) leur restent
 
 ---
 
 ## 7. Modèle de données (conceptuel)
 
-| Entité                  | Champs principaux                                                                                                           | Notes                                             |
-| ----------------------- | --------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------- |
-| `households`            | id, nom, portions_par_défaut                                                                                                |                                                   |
-| `household_members`     | household_id, user_id, rôle (owner / member)                                                                                |                                                   |
-| `invitations`           | id, household_id, token, expire_le, utilisée                                                                                | Usage unique, 7 jours                             |
-| `recipes`               | id, household_id, titre, portions, étapes, livre_titre, livre_page, photo_url, photo_import_url, est_exemple                |                                                   |
-| `collections`           | id, household_id, nom                                                                                                       |                                                   |
-| `recipe_collections`    | recipe_id, collection_id                                                                                                    |                                                   |
-| `aisles` (rayons)       | id, nom, ordre                                                                                                              |                                                   |
-| `items` (catalogue)     | id, household_id (null = commun), nom, aisle_id, type_unité, est_placard                                                    |                                                   |
-| `item_overrides`        | household_id, item_id, aisle_id, est_placard                                                                                | Personnalisation d'un article commun              |
-| `item_aliases`          | alias, item_id                                                                                                              | Correspondances (« oignons jaunes » → « oignon ») |
-| `unit_conversions`      | item_id (null = universelle), unité_source, facteur, unité_cible                                                            | Ex. tomates cerises : boîte → 250 g               |
-| `recipe_ingredients`    | recipe_id, item_id, quantité, unité, remarque                                                                               |                                                   |
-| `prelist_items`         | household_id, item_id, ordre                                                                                                | Pré-liste anti-oubli                              |
-| `shopping_lists`        | id, household_id, statut (brouillon / prête / en cours / terminée), créée_le, terminée_le                                   |                                                   |
-| `shopping_list_recipes` | list_id, recipe_id, portions                                                                                                | Recettes choisies à l'étape 1                     |
-| `shopping_list_items`   | id, list_id, item_id, quantité, unité, origine (recette / placard / pré-liste / libre / report), coché, coché_par, coché_le |                                                   |
-| `recipe_imports`        | id, household_id, photo_url, statut, résultat_json, modèle_utilisé                                                          | Suivi des imports IA                              |
+| Entité                  | Champs principaux                                                                                                           | Notes                                               |
+| ----------------------- | --------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------- |
+| `profiles`              | id (= utilisateur), nom_affiché, portions_par_défaut                                                                        | Créé automatiquement à l'inscription                |
+| `recipes`               | id, owner_id, titre, portions, étapes, livre_titre, livre_page, photo_url, photo_import_url, est_exemple, copiée_de         |                                                     |
+| `collections`           | id, owner_id, nom                                                                                                           |                                                     |
+| `recipe_collections`    | recipe_id, collection_id                                                                                                    |                                                     |
+| `aisles` (rayons)       | id, nom, ordre                                                                                                              |                                                     |
+| `items` (catalogue)     | id, owner_id (null = commun), nom, aisle_id, type_unité, est_placard                                                        |                                                     |
+| `item_overrides`        | user_id, item_id, aisle_id, est_placard                                                                                     | Personnalisation d'un article commun                |
+| `item_aliases`          | alias, item_id                                                                                                              | Correspondances (« oignons jaunes » → « oignon »)   |
+| `unit_conversions`      | item_id (null = universelle), owner_id, unité_source, facteur, unité_cible                                                  | Ex. tomates cerises : boîte → 250 g                 |
+| `recipe_ingredients`    | recipe_id, item_id, quantité, unité, remarque                                                                               |                                                     |
+| `prelist_items`         | user_id, item_id, ordre                                                                                                     | Pré-liste anti-oubli                                |
+| `shopping_lists`        | id, owner_id, statut (brouillon / prête / en cours / terminée), créée_le, terminée_le                                       |                                                     |
+| `shopping_list_recipes` | list_id, recipe_id, portions                                                                                                | Recettes choisies à l'étape 1                       |
+| `shopping_list_items`   | id, list_id, item_id, quantité, unité, origine (recette / placard / pré-liste / libre / report), coché, coché_par, coché_le |                                                     |
+| `recipe_shares`         | recipe_id, shared_with                                                                                                      | Une recette, en lecture                             |
+| `library_shares`        | owner_id, shared_with                                                                                                       | Toutes mes recettes, en lecture (y compris futures) |
+| `list_shares`           | list_id, shared_with                                                                                                        | Une liste, en co-édition                            |
+| `auto_list_shares`      | owner_id, shared_with                                                                                                       | Partage automatique de mes nouvelles listes         |
+| `share_links`           | id, owner_id, type (recette / bibliothèque / liste / listes auto), cible_id, token, expire_le, utilisé_le, utilisé_par      | Lien à usage unique, 7 jours                        |
+| `recipe_imports`        | id, owner_id, photo_url, statut, résultat_json, modèle_utilisé                                                              | Suivi des imports IA                                |
 
-Toutes les tables d'un foyer sont protégées par Row Level Security (un foyer ne voit que ses données + le catalogue commun).
+Toutes les tables sont protégées par Row Level Security : je vois mes données, ce qu'on m'a partagé, et le catalogue commun ; je ne modifie que mes données, plus le contenu des listes partagées avec moi.
 
 ---
 
@@ -281,7 +317,7 @@ Toutes les tables d'un foyer sont protégées par Row Level Security (un foyer n
 | Écran                     | Points clés                                             | Priorité d'affichage |
 | ------------------------- | ------------------------------------------------------- | -------------------- |
 | Accueil                   | 4 entrées (section 5)                                   | Mobile               |
-| Parcours d'accueil        | Foyer, portions par défaut                              | Mobile               |
+| Parcours d'accueil        | Nom affiché, portions par défaut                        | Mobile               |
 | Mes recettes              | Recherche, filtre par collection, cartes avec miniature | Mobile + desktop     |
 | Détail / édition recette  | Ingrédients, étapes, livre/page, collections            | Mobile + desktop     |
 | Import photo              | Capture, analyse, relecture avec champs surlignés       | Mobile               |
@@ -291,7 +327,7 @@ Toutes les tables d'un foyer sont protégées par Row Level Security (un foyer n
 | Mes listes en cours       | Brouillons et listes prêtes                             | Mobile               |
 | Faire ses courses         | Groupée par rayon, cases larges, hors ligne             | Mobile               |
 | Historique                | Listes terminées                                        | Mobile               |
-| Paramètres                | Portions par défaut, foyer, invitations, compte         | Mobile + desktop     |
+| Paramètres                | Profil, portions par défaut, mes partages, compte       | Mobile + desktop     |
 
 ### 8.1 Direction visuelle
 
@@ -365,7 +401,7 @@ Toutes les tables d'un foyer sont protégées par Row Level Security (un foyer n
 
 ## 11. Sécurité et données personnelles
 
-- Row Level Security sur toutes les tables de foyer
+- Row Level Security sur toutes les tables (mes données + ce qui m'est partagé)
 - Secrets (clé API Claude, clé service Supabase) uniquement en variables d'environnement ; `.env*` dans `.gitignore`
 - Données hébergées en UE (région Supabase choisie au lot 0)
 - Aucune donnée personnelle dans les journaux
@@ -381,17 +417,17 @@ Toutes les tables d'un foyer sont protégées par Row Level Security (un foyer n
 
 > Claude Code écrit le code ; mon rôle : valider les plans, tester, comprendre. Les notions listées sont celles à comprendre pendant le lot (explications de Claude + vidéos/tutoriels si besoin), pas des prérequis bloquants.
 
-| Lot | Contenu                                                                                                                                                                                     | Stories                                                           | Notions à comprendre                                              | Repère indicatif                           |
-| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------- | ----------------------------------------------------------------- | ------------------------------------------ |
-| 0   | Setup : dépôt, Next.js + TS, ESLint/Prettier, Vitest, CI GitHub Actions, Supabase dev + prod (UE), CLI migrations, Vercel, sauvegarde automatique                                           | —                                                                 | Structure d'un projet Next.js, npm, variables d'environnement, CI | début nov.                                 |
-| 1   | Comptes et foyer : connexion Google + email/mot de passe, mot de passe oublié, création/rejoindre un foyer, rôles, invitation, RLS, portions par défaut                                     | US-CPT-01/03, US-CPT-02 (sans exemples)                           | Authentification, Row Level Security, fonctions SQL               | nov.                                       |
-| 2   | Catalogue (rayons, articles, unités, conversions, catalogue initial généré) + recettes manuelles, collections, recherche, photo d'illustration ; recettes d'exemple ; suppression de compte | US-CAT-01/02/04, US-REC-01/03/04, US-CPT-02 (exemples), US-CPT-04 | Composants React, formulaires, SQL et relations entre tables      | début déc. · **révision de la date cible** |
-| 3   | Créer une liste — étape 1 : recettes, portions, regroupement, conversions                                                                                                                   | US-LST-01/05                                                      | Fonctions pures et tests                                          | déc.                                       |
-| 4   | Créer une liste — étapes 2 et 3 : placard, pré-liste, articles libres, personnalisation catalogue, listes en cours                                                                          | US-LST-02/03/04/06, US-CAT-03                                     | Formulaires, état d'un parcours en plusieurs étapes               | début janv. · décision Playwright          |
-| 5   | Import photo IA + test Haiku/Sonnet                                                                                                                                                         | US-REC-02                                                         | async/await, appels d'API côté serveur                            | janv.                                      |
-| 6   | Faire ses courses : liste par rayon, temps réel, PWA hors ligne, report, historique ; achat du domaine                                                                                      | US-CRS-*                                                          | Temps réel, service workers, stockage hors ligne                  | janv.                                      |
-| 7   | Import des ~100 recettes du Sheets (CSV → base, correspondance des ingrédients assistée par IA, liste des cas non résolus)                                                                  | —                                                                 | Scripts de migration de données                                   | fin janv.                                  |
-| 8   | Période d'usage : 4 semaines, corrections uniquement                                                                                                                                        | —                                                                 | —                                                                 | févr.                                      |
+| Lot | Contenu                                                                                                                                                                                                                                          | Stories                                                                 | Notions à comprendre                                              | Repère indicatif                           |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------- | ----------------------------------------------------------------- | ------------------------------------------ |
+| 0   | Setup : dépôt, Next.js + TS, ESLint/Prettier, Vitest, CI GitHub Actions, Supabase dev + prod (UE), CLI migrations, Vercel, sauvegarde automatique                                                                                                | —                                                                       | Structure d'un projet Next.js, npm, variables d'environnement, CI | début nov.                                 |
+| 1   | Comptes et profil : connexion Google + email/mot de passe, mot de passe oublié, profil (nom affiché, portions par défaut), parcours d'accueil, suppression de compte, RLS                                                                        | US-CPT-01, US-CPT-02 (sans exemples), US-CPT-04                         | Authentification, Row Level Security, fonctions SQL               | nov.                                       |
+| 2   | Catalogue (rayons, articles, unités, conversions, catalogue initial généré) + recettes manuelles, collections, recherche, photo d'illustration ; recettes d'exemple ; **partage des recettes** (une ou toutes, lecture), copie, « Mes partages » | US-CAT-01/02/04, US-REC-01/03/04/05/06, US-CPT-02 (exemples), US-CPT-03 | Composants React, formulaires, SQL et relations entre tables      | début déc. · **révision de la date cible** |
+| 3   | Créer une liste — étape 1 : recettes, portions, regroupement, conversions                                                                                                                                                                        | US-LST-01/05                                                            | Fonctions pures et tests                                          | déc.                                       |
+| 4   | Créer une liste — étapes 2 et 3 : placard, pré-liste, articles libres, personnalisation catalogue, listes en cours ; **partage des listes** (co-édition, partage automatique)                                                                    | US-LST-02/03/04/06/07, US-CAT-03                                        | Formulaires, état d'un parcours en plusieurs étapes               | début janv. · décision Playwright          |
+| 5   | Import photo IA + test Haiku/Sonnet                                                                                                                                                                                                              | US-REC-02                                                               | async/await, appels d'API côté serveur                            | janv.                                      |
+| 6   | Faire ses courses : liste par rayon, temps réel entre co-acheteurs, PWA hors ligne, report, historique ; achat du domaine                                                                                                                        | US-CRS-*                                                                | Temps réel, service workers, stockage hors ligne                  | janv.                                      |
+| 7   | Import des ~100 recettes du Sheets (CSV → base, correspondance des ingrédients assistée par IA, liste des cas non résolus)                                                                                                                       | —                                                                       | Scripts de migration de données                                   | fin janv.                                  |
+| 8   | Période d'usage : 4 semaines, corrections uniquement                                                                                                                                                                                             | —                                                                       | —                                                                 | févr.                                      |
 
 **Fin du MVP** = lots 0 à 7 livrés **et** 4 semaines de courses avec l'app sans le Sheets (lot 8). Pendant le lot 8, aucune nouvelle fonctionnalité : les idées vont en issues étiquetées `post-mvp`.
 
@@ -418,39 +454,40 @@ Toutes les tables d'un foyer sont protégées par Row Level Security (un foyer n
 
 ## 14. Journal des décisions
 
-| #   | Date       | Décision                                                                                                                | Alternatives écartées                            |
-| --- | ---------- | ----------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ |
-| 001 | 2026-10-25 | TypeScript, mode peu strict au départ                                                                                   | JavaScript ; JS puis TS                          |
-| 002 | 2026-10-25 | ESLint + Prettier                                                                                                       | Biome ; Prettier seul                            |
-| 003 | 2026-10-25 | Vitest, logique métier en priorité                                                                                      | Jest                                             |
-| 004 | 2026-10-25 | GitHub Issues + Projects ; SPEC.md comme référence                                                                      | Notion ; Todoist ; SPEC seul                     |
-| 005 | 2026-10-25 | CLAUDE.md court + SPEC.md ; dossier `docs/` plus tard                                                                   | Tout dans SPEC                                   |
-| 006 | 2026-10-25 | Migrations SQL via le CLI Supabase                                                                                      | Interface web ; ORM                              |
-| 007 | 2026-10-25 | Photos d'import conservées, compression côté client, miniatures                                                         | Suppression après analyse ; photos brutes        |
-| 008 | 2026-10-25 | Plan gratuit + sauvegarde via GitHub Actions                                                                            | Supabase Pro ; export manuel                     |
-| 009 | 2026-10-25 | Catalogue commun + personnalisations par foyer ; base initiale générée par IA                                           | Catalogue unique ; par foyer ; reprise du Sheets |
-| 010 | 2026-10-25 | Recettes du Sheets importées par script CSV                                                                             | Réimport par photo ; ressaisie                   |
-| 011 | 2026-10-25 | Environnements dev + prod                                                                                               | Prod seule ; 3 environnements                    |
-| 012 | 2026-10-25 | `*.vercel.app` puis domaine perso avant fin lot 6                                                                       | Domaine dès le départ                            |
-| 013 | 2026-10-25 | CI bloquante ; migrations prod manuelles                                                                                | Vercel seul ; migrations auto                    |
-| 014 | 2026-10-25 | Journaux Vercel/Supabase uniquement                                                                                     | Sentry                                           |
-| 015 | 2026-10-25 | Temps réel + « coché gagne » hors ligne                                                                                 | Rafraîchissement manuel ; détection de conflits  |
-| 016 | 2026-10-25 | Lien d'invitation 7 jours ; propriétaire + membres                                                                      | Code ; email ; tous égaux                        |
-| 017 | 2026-10-25 | Modèle IA configurable (admin) ; test Haiku/Sonnet ; plafond console                                                    | Quota par foyer (post-MVP)                       |
-| 018 | 2026-10-26 | Réessai + bascule saisie manuelle ; champs douteux surlignés                                                            | File d'attente auto ; relecture sans indication  |
-| 019 | 2026-10-26 | Parcours d'accueil + recettes d'exemple                                                                                 | Rien ; accueil sans exemples                     |
-| 020 | 2026-10-26 | Tailwind CSS + shadcn/ui                                                                                                | CSS Modules ; Material UI / Mantine              |
-| 021 | 2026-10-26 | Mode sombre auto, socle accessibilité, pas de notifications                                                             | Clair seul ; push au MVP                         |
-| 022 | 2026-10-26 | Bonnes pratiques RGPD dès le MVP (UE, suppression)                                                                      | Rien ; conformité complète                       |
-| 023 | 2026-10-26 | Jalons sans dates + date cible MVP                                                                                      | Planning daté par lot                            |
-| 024 | 2026-10-26 | Fin MVP = lots livrés + 4 semaines d'usage                                                                              | Critère fonctionnel ou d'usage seul              |
-| 025 | 2026-10-26 | Claude Code écrit tout le code et l'explique ; je valide et comprends                                                   | Écrire moi-même certaines parties                |
-| 026 | 2026-10-26 | Date cible MVP : 28/02/2027                                                                                             | —                                                |
-| 027 | 2026-10-26 | Nom provisoire : Olva                                                                                                   | —                                                |
-| 028 | 2026-10-26 | Suppression du compte propriétaire : transfert de propriété                                                             | Suppression du foyer                             |
-| 029 | 2026-10-26 | Direction visuelle inspirée de Notion, blanc et nuances de bleu                                                         | —                                                |
-| 030 | 2026-10-26 | Connexion : Google + email/mot de passe                                                                                 | Lien magique (problème PWA) ; code par email     |
-| 033 | 2026-10-29 | Lots 1 et 2 inversés : comptes et foyer avant catalogue et recettes (une recette appartient à un foyer protégé par RLS) | Foyer de test avec RLS ouverte temporairement    |
+| #   | Date       | Décision                                                                                                                                                                                                                                          | Alternatives écartées                            |
+| --- | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ |
+| 001 | 2026-10-25 | TypeScript, mode peu strict au départ                                                                                                                                                                                                             | JavaScript ; JS puis TS                          |
+| 002 | 2026-10-25 | ESLint + Prettier                                                                                                                                                                                                                                 | Biome ; Prettier seul                            |
+| 003 | 2026-10-25 | Vitest, logique métier en priorité                                                                                                                                                                                                                | Jest                                             |
+| 004 | 2026-10-25 | GitHub Issues + Projects ; SPEC.md comme référence                                                                                                                                                                                                | Notion ; Todoist ; SPEC seul                     |
+| 005 | 2026-10-25 | CLAUDE.md court + SPEC.md ; dossier `docs/` plus tard                                                                                                                                                                                             | Tout dans SPEC                                   |
+| 006 | 2026-10-25 | Migrations SQL via le CLI Supabase                                                                                                                                                                                                                | Interface web ; ORM                              |
+| 007 | 2026-10-25 | Photos d'import conservées, compression côté client, miniatures                                                                                                                                                                                   | Suppression après analyse ; photos brutes        |
+| 008 | 2026-10-25 | Plan gratuit + sauvegarde via GitHub Actions                                                                                                                                                                                                      | Supabase Pro ; export manuel                     |
+| 009 | 2026-10-25 | Catalogue commun + personnalisations par utilisateur (initialement par foyer, cf. 034) ; base initiale générée par IA                                                                                                                             | Catalogue unique ; par foyer ; reprise du Sheets |
+| 010 | 2026-10-25 | Recettes du Sheets importées par script CSV                                                                                                                                                                                                       | Réimport par photo ; ressaisie                   |
+| 011 | 2026-10-25 | Environnements dev + prod                                                                                                                                                                                                                         | Prod seule ; 3 environnements                    |
+| 012 | 2026-10-25 | `*.vercel.app` puis domaine perso avant fin lot 6                                                                                                                                                                                                 | Domaine dès le départ                            |
+| 013 | 2026-10-25 | CI bloquante ; migrations prod manuelles                                                                                                                                                                                                          | Vercel seul ; migrations auto                    |
+| 014 | 2026-10-25 | Journaux Vercel/Supabase uniquement                                                                                                                                                                                                               | Sentry                                           |
+| 015 | 2026-10-25 | Temps réel + « coché gagne » hors ligne                                                                                                                                                                                                           | Rafraîchissement manuel ; détection de conflits  |
+| 016 | 2026-10-25 | ~~Lien d'invitation 7 jours ; propriétaire + membres~~ (remplacée par 034)                                                                                                                                                                        | Code ; email ; tous égaux                        |
+| 017 | 2026-10-25 | Modèle IA configurable (admin) ; test Haiku/Sonnet ; plafond console                                                                                                                                                                              | Quota par utilisateur (post-MVP)                 |
+| 018 | 2026-10-26 | Réessai + bascule saisie manuelle ; champs douteux surlignés                                                                                                                                                                                      | File d'attente auto ; relecture sans indication  |
+| 019 | 2026-10-26 | Parcours d'accueil + recettes d'exemple                                                                                                                                                                                                           | Rien ; accueil sans exemples                     |
+| 020 | 2026-10-26 | Tailwind CSS + shadcn/ui                                                                                                                                                                                                                          | CSS Modules ; Material UI / Mantine              |
+| 021 | 2026-10-26 | Mode sombre auto, socle accessibilité, pas de notifications                                                                                                                                                                                       | Clair seul ; push au MVP                         |
+| 022 | 2026-10-26 | Bonnes pratiques RGPD dès le MVP (UE, suppression)                                                                                                                                                                                                | Rien ; conformité complète                       |
+| 023 | 2026-10-26 | Jalons sans dates + date cible MVP                                                                                                                                                                                                                | Planning daté par lot                            |
+| 024 | 2026-10-26 | Fin MVP = lots livrés + 4 semaines d'usage                                                                                                                                                                                                        | Critère fonctionnel ou d'usage seul              |
+| 025 | 2026-10-26 | Claude Code écrit tout le code et l'explique ; je valide et comprends                                                                                                                                                                             | Écrire moi-même certaines parties                |
+| 026 | 2026-10-26 | Date cible MVP : 28/02/2027                                                                                                                                                                                                                       | —                                                |
+| 027 | 2026-10-26 | Nom provisoire : Olva                                                                                                                                                                                                                             | —                                                |
+| 028 | 2026-10-26 | ~~Suppression du compte propriétaire : transfert de propriété~~ (remplacée par 034)                                                                                                                                                               | Suppression du foyer                             |
+| 029 | 2026-10-26 | Direction visuelle inspirée de Notion, blanc et nuances de bleu                                                                                                                                                                                   | —                                                |
+| 030 | 2026-10-26 | Connexion : Google + email/mot de passe                                                                                                                                                                                                           | Lien magique (problème PWA) ; code par email     |
+| 033 | 2026-10-29 | Lots 1 et 2 inversés : comptes avant catalogue et recettes (sécurité en place dès la première recette)                                                                                                                                            | Foyer de test avec RLS ouverte temporairement    |
+| 034 | 2026-10-30 | **Abandon du foyer** : données par utilisateur ; partage des recettes en lecture (une ou toute la bibliothèque, avec copie) et des listes en co-édition (avec partage automatique) ; par lien 7 jours ou email. Remplace les décisions 016 et 028 | Foyer avec propriétaire et membres               |
 
 ---
 
@@ -468,10 +505,10 @@ Toutes les tables d'un foyer sont protégées par Row Level Security (un foyer n
 
 | Terme              | Définition                                                                              |
 | ------------------ | --------------------------------------------------------------------------------------- |
-| Foyer              | Groupe d'utilisateurs partageant recettes, catalogue personnalisé et listes             |
-| Catalogue          | Référentiel des articles (commun + articles et personnalisations du foyer)              |
+| Partage            | Accès donné à un autre utilisateur : recette en lecture, liste en co-édition            |
+| Catalogue          | Référentiel des articles (commun + articles et personnalisations de chaque utilisateur) |
 | Rayon              | Zone du magasin ; détermine le tri de la liste                                          |
 | Produit de placard | Article de base (huile, sel, épices…) à confirmer à l'étape 2 plutôt qu'ajouté d'office |
-| Pré-liste          | Liste des articles habituels du foyer, passée en revue à l'étape 3 pour ne rien oublier |
+| Pré-liste          | Liste de mes articles habituels, passée en revue à l'étape 3 pour ne rien oublier       |
 | Collection         | Groupe de recettes (ex. « Plats d'hiver »)                                              |
 | Report             | Article non coché, reporté automatiquement sur la liste suivante                        |
