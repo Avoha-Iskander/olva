@@ -14,6 +14,102 @@ export type Database = {
   }
   public: {
     Tables: {
+      aisles: {
+        Row: {
+          id: number
+          name: string
+          position: number
+        }
+        Insert: {
+          id?: never
+          name: string
+          position: number
+        }
+        Update: {
+          id?: never
+          name?: string
+          position?: number
+        }
+        Relationships: []
+      }
+      item_aliases: {
+        Row: {
+          alias: string
+          item_id: string
+        }
+        Insert: {
+          alias: string
+          item_id: string
+        }
+        Update: {
+          alias?: string
+          item_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "item_aliases_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      items: {
+        Row: {
+          aisle_id: number
+          created_at: string
+          default_unit: string
+          id: string
+          is_staple: boolean
+          name: string
+          owner_id: string | null
+          purchase_unit: string | null
+        }
+        Insert: {
+          aisle_id: number
+          created_at?: string
+          default_unit: string
+          id?: string
+          is_staple?: boolean
+          name: string
+          owner_id?: string | null
+          purchase_unit?: string | null
+        }
+        Update: {
+          aisle_id?: number
+          created_at?: string
+          default_unit?: string
+          id?: string
+          is_staple?: boolean
+          name?: string
+          owner_id?: string | null
+          purchase_unit?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "items_aisle_id_fkey"
+            columns: ["aisle_id"]
+            isOneToOne: false
+            referencedRelation: "aisles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "items_default_unit_fkey"
+            columns: ["default_unit"]
+            isOneToOne: false
+            referencedRelation: "units"
+            referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "items_purchase_unit_fkey"
+            columns: ["purchase_unit"]
+            isOneToOne: false
+            referencedRelation: "units"
+            referencedColumns: ["code"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string
@@ -38,6 +134,79 @@ export type Database = {
           id?: string
           onboarded?: boolean
           updated_at?: string
+        }
+        Relationships: []
+      }
+      unit_conversions: {
+        Row: {
+          factor: number
+          from_unit: string
+          id: string
+          item_id: string
+          owner_id: string | null
+          to_unit: string
+        }
+        Insert: {
+          factor: number
+          from_unit: string
+          id?: string
+          item_id: string
+          owner_id?: string | null
+          to_unit: string
+        }
+        Update: {
+          factor?: number
+          from_unit?: string
+          id?: string
+          item_id?: string
+          owner_id?: string | null
+          to_unit?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "unit_conversions_from_unit_fkey"
+            columns: ["from_unit"]
+            isOneToOne: false
+            referencedRelation: "units"
+            referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "unit_conversions_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "unit_conversions_to_unit_fkey"
+            columns: ["to_unit"]
+            isOneToOne: false
+            referencedRelation: "units"
+            referencedColumns: ["code"]
+          },
+        ]
+      }
+      units: {
+        Row: {
+          code: string
+          kind: string
+          label: string
+          position: number
+          to_base: number | null
+        }
+        Insert: {
+          code: string
+          kind: string
+          label: string
+          position: number
+          to_base?: number | null
+        }
+        Update: {
+          code?: string
+          kind?: string
+          label?: string
+          position?: number
+          to_base?: number | null
         }
         Relationships: []
       }

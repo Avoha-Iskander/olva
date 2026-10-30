@@ -1,6 +1,6 @@
 # Cahier des charges — Olva (nom provisoire)
 
-> **Statut** : v0.4 — modèle par utilisateur avec partage (remplace le foyer)
+> **Statut** : v0.5 — revue des ingrédients, ingrédients de base
 > **Auteur** : Alex
 > **Dernière mise à jour** : 2026-10-30
 >
@@ -36,7 +36,7 @@ Concurrents :
 | **Jow**                                                         | Usage « recette d'abord », catalogue de recettes fourni, commande drive intégrée (partenariats enseignes)                                                                                          | Faible sur la gestion de liste au quotidien, les articles non alimentaires, les achats courants et l'accès hors ligne ; recettes imposées plutôt que les siennes                                 |
 | **WeChef – Carnet de recettes** (iPhone, 4,7/5 sur ~5 200 avis) | Très proche d'Olva sur les recettes personnelles : import par lien, scan de pages de livres (OCR), ajustement des portions, planning, listes de courses générées et triées par rayon, assistant IA | iPhone uniquement ; modèle freemium avec publicité et abonnement ; bibliothèque de recettes partagée seulement à l'étude ; pas de vérification du placard ni de pré-liste anti-oubli identifiées |
 
-**Conséquence pour Olva** : WeChef couvre déjà une grande partie du volet recettes. La différence d'Olva se joue sur la **préparation de la liste** (placard, pré-liste anti-oubli, articles non alimentaires, achats courants), le **mode courses à deux en temps réel et hors ligne**, le **partage de bibliothèque** et la disponibilité **web + Android + iPhone**.
+**Conséquence pour Olva** : WeChef couvre déjà une grande partie du volet recettes. La différence d'Olva se joue sur la **préparation de la liste** (revue des ingrédients, pré-liste anti-oubli, articles non alimentaires, achats courants), le **mode courses à deux en temps réel et hors ligne**, le **partage de bibliothèque** et la disponibilité **web + Android + iPhone**.
 
 Proposition de valeur : **Toutes vos recettes à un endroit, vos listes de courses en 2 minutes.**
 
@@ -96,7 +96,7 @@ Chaque utilisateur possède ses propres données ; il n'y a pas de « foyer ».
 - [ ] Recettes : saisie manuelle, collections, photo d'illustration, recherche
 - [ ] Import de recette par photo (IA) avec relecture
 - [ ] Catalogue d'articles (commun + personnalisations de chaque utilisateur), rayons, unités, conversions
-- [ ] Création de liste en 3 étapes : recettes → placard → pré-liste et articles libres
+- [ ] Création de liste en 3 étapes : recettes → revue des ingrédients → pré-liste et articles libres
 - [ ] Regroupement des ingrédients et conversions d'unités
 - [ ] Mes listes en cours
 - [ ] Mode courses : liste à cocher par rayon, temps réel, hors ligne
@@ -178,7 +178,7 @@ Champs : titre (obligatoire), nombre de personnes (obligatoire), ingrédients (q
 
 **US-CAT-01 — Catalogue commun** · M
 
-- [ ] Un catalogue de base (~300 articles courants, généré par IA puis relu) fournit pour chaque article : nom, rayon, type d'unité (pièce, poids, volume), indicateur « produit de placard »
+- [ ] Un catalogue de base (~300 articles courants, généré par IA puis relu) fournit pour chaque article : nom, rayon, unité par défaut, indicateur « ingrédient de base » et, pour ceux-ci, l'unité de conditionnement (bouteille, paquet, pot…)
 - [ ] Le catalogue commun est en lecture seule pour les utilisateurs
 
 **US-CAT-02 — Ajouter un article à mon catalogue** · M
@@ -188,7 +188,7 @@ Champs : titre (obligatoire), nombre de personnes (obligatoire), ingrédients (q
 
 **US-CAT-03 — Personnaliser un article commun** · S
 
-- [ ] Je peux changer le rayon, l'indicateur placard ou une conversion d'un article commun ; ma valeur remplace celle du catalogue
+- [ ] Je peux changer le rayon, l'indicateur « ingrédient de base » ou une conversion d'un article commun ; ma valeur remplace celle du catalogue
 
 **US-CAT-04 — Conversions d'unités** · M
 
@@ -205,13 +205,18 @@ Champs : titre (obligatoire), nombre de personnes (obligatoire), ingrédients (q
 - [ ] L'utilisateur choisit des recettes ; chacune reprend le nombre de personnes par défaut (paramètres), modifiable individuellement
 - [ ] Les quantités sont recalculées selon les portions choisies
 
-**Étape 2 — Placard**
+**Étape 2 — Revue des ingrédients**
 
-**US-LST-02 — Vérifier les produits de placard** · M
+**US-LST-02 — Revue des ingrédients** · M
 
-- [ ] Les ingrédients marqués « produit de placard » (huile, sel, épices…) ne vont pas directement dans la liste
-- [ ] Ils sont présentés pour confirmation : « j'en ai » / « à acheter »
-- [ ] Seuls ceux marqués « à acheter » rejoignent la liste
+En tant que préparateur, je veux revoir les ingrédients calculés à partir de mes recettes, afin d'ajuster les quantités et de retirer ce que j'ai déjà avant de compléter mes courses.
+
+- [ ] Les ingrédients des recettes choisies sont affichés regroupés (US-LST-05), avec leur quantité recalculée selon les portions
+- [ ] Pour chaque ligne : ajuster la quantité (« − + » ou saisie) ou retirer la ligne ; un retrait peut être annulé
+- [ ] Les **ingrédients de base** (huile, sel, épices…) apparaissent en bas, sous « Ingrédients de base — à cocher si besoin », **décochés par défaut**
+- [ ] Un ingrédient de base coché est ajouté à la liste avec son **unité de conditionnement** (ex. « Huile d'olive : 1 bouteille »), pas la somme des recettes
+- [ ] Revenir à l'étape 1 et changer une recette ou des portions recalcule la revue en **conservant mes ajustements** sur les ingrédients inchangés ; les ingrédients modifiés sont signalés
+- [ ] Une ligne retirée ne réapparaît pas après un recalcul
 
 **Étape 3 — Pré-liste et articles libres**
 
@@ -292,28 +297,28 @@ Champs : titre (obligatoire), nombre de personnes (obligatoire), ingrédients (q
 
 ## 7. Modèle de données (conceptuel)
 
-| Entité                  | Champs principaux                                                                                                           | Notes                                               |
-| ----------------------- | --------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------- |
-| `profiles`              | id (= utilisateur), nom_affiché, portions_par_défaut                                                                        | Créé automatiquement à l'inscription                |
-| `recipes`               | id, owner_id, titre, portions, étapes, livre_titre, livre_page, photo_url, photo_import_url, est_exemple, copiée_de         |                                                     |
-| `collections`           | id, owner_id, nom                                                                                                           |                                                     |
-| `recipe_collections`    | recipe_id, collection_id                                                                                                    |                                                     |
-| `aisles` (rayons)       | id, nom, ordre                                                                                                              |                                                     |
-| `items` (catalogue)     | id, owner_id (null = commun), nom, aisle_id, type_unité, est_placard                                                        |                                                     |
-| `item_overrides`        | user_id, item_id, aisle_id, est_placard                                                                                     | Personnalisation d'un article commun                |
-| `item_aliases`          | alias, item_id                                                                                                              | Correspondances (« oignons jaunes » → « oignon »)   |
-| `unit_conversions`      | item_id (null = universelle), owner_id, unité_source, facteur, unité_cible                                                  | Ex. tomates cerises : boîte → 250 g                 |
-| `recipe_ingredients`    | recipe_id, item_id, quantité, unité, remarque                                                                               |                                                     |
-| `prelist_items`         | user_id, item_id, ordre                                                                                                     | Pré-liste anti-oubli                                |
-| `shopping_lists`        | id, owner_id, statut (brouillon / prête / en cours / terminée), créée_le, terminée_le                                       |                                                     |
-| `shopping_list_recipes` | list_id, recipe_id, portions                                                                                                | Recettes choisies à l'étape 1                       |
-| `shopping_list_items`   | id, list_id, item_id, quantité, unité, origine (recette / placard / pré-liste / libre / report), coché, coché_par, coché_le |                                                     |
-| `recipe_shares`         | recipe_id, shared_with                                                                                                      | Une recette, en lecture                             |
-| `library_shares`        | owner_id, shared_with                                                                                                       | Toutes mes recettes, en lecture (y compris futures) |
-| `list_shares`           | list_id, shared_with                                                                                                        | Une liste, en co-édition                            |
-| `auto_list_shares`      | owner_id, shared_with                                                                                                       | Partage automatique de mes nouvelles listes         |
-| `share_links`           | id, owner_id, type (recette / bibliothèque / liste / listes auto), cible_id, token, expire_le, utilisé_le, utilisé_par      | Lien à usage unique, 7 jours                        |
-| `recipe_imports`        | id, owner_id, photo_url, statut, résultat_json, modèle_utilisé                                                              | Suivi des imports IA                                |
+| Entité                  | Champs principaux                                                                                                                                    | Notes                                               |
+| ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------- |
+| `profiles`              | id (= utilisateur), nom_affiché, portions_par_défaut                                                                                                 | Créé automatiquement à l'inscription                |
+| `recipes`               | id, owner_id, titre, portions, étapes, livre_titre, livre_page, photo_url, photo_import_url, est_exemple, copiée_de                                  |                                                     |
+| `collections`           | id, owner_id, nom                                                                                                                                    |                                                     |
+| `recipe_collections`    | recipe_id, collection_id                                                                                                                             |                                                     |
+| `aisles` (rayons)       | id, nom, ordre                                                                                                                                       |                                                     |
+| `items` (catalogue)     | id, owner_id (null = commun), nom, aisle_id, unité_par_défaut, est_de_base, unité_de_conditionnement                                                 |                                                     |
+| `item_overrides`        | user_id, item_id, aisle_id, est_de_base                                                                                                              | Personnalisation d'un article commun                |
+| `item_aliases`          | alias, item_id                                                                                                                                       | Correspondances (« oignons jaunes » → « oignon »)   |
+| `unit_conversions`      | item_id (null = universelle), owner_id, unité_source, facteur, unité_cible                                                                           | Ex. tomates cerises : boîte → 250 g                 |
+| `recipe_ingredients`    | recipe_id, item_id, quantité, unité, remarque                                                                                                        |                                                     |
+| `prelist_items`         | user_id, item_id, ordre                                                                                                                              | Pré-liste anti-oubli                                |
+| `shopping_lists`        | id, owner_id, statut (brouillon / prête / en cours / terminée), créée_le, terminée_le                                                                |                                                     |
+| `shopping_list_recipes` | list_id, recipe_id, portions                                                                                                                         | Recettes choisies à l'étape 1                       |
+| `shopping_list_items`   | id, list_id, item_id, quantité_calculée, quantité, unité, retirée, origine (recette / base / pré-liste / libre / report), coché, coché_par, coché_le |                                                     |
+| `recipe_shares`         | recipe_id, shared_with                                                                                                                               | Une recette, en lecture                             |
+| `library_shares`        | owner_id, shared_with                                                                                                                                | Toutes mes recettes, en lecture (y compris futures) |
+| `list_shares`           | list_id, shared_with                                                                                                                                 | Une liste, en co-édition                            |
+| `auto_list_shares`      | owner_id, shared_with                                                                                                                                | Partage automatique de mes nouvelles listes         |
+| `share_links`           | id, owner_id, type (recette / bibliothèque / liste / listes auto), cible_id, token, expire_le, utilisé_le, utilisé_par                               | Lien à usage unique, 7 jours                        |
+| `recipe_imports`        | id, owner_id, photo_url, statut, résultat_json, modèle_utilisé                                                                                       | Suivi des imports IA                                |
 
 Toutes les tables sont protégées par Row Level Security : je vois mes données, ce qu'on m'a partagé, et le catalogue commun ; je ne modifie que mes données, plus le contenu des listes partagées avec moi.
 
@@ -321,20 +326,20 @@ Toutes les tables sont protégées par Row Level Security : je vois mes données
 
 ## 8. Écrans
 
-| Écran                     | Points clés                                             | Priorité d'affichage |
-| ------------------------- | ------------------------------------------------------- | -------------------- |
-| Accueil                   | 4 entrées (section 5)                                   | Mobile               |
-| Parcours d'accueil        | Nom affiché, portions par défaut                        | Mobile               |
-| Mes recettes              | Recherche, filtre par collection, cartes avec miniature | Mobile + desktop     |
-| Détail / édition recette  | Ingrédients, étapes, livre/page, collections            | Mobile + desktop     |
-| Import photo              | Capture, analyse, relecture avec champs surlignés       | Mobile               |
-| Créer une liste — étape 1 | Sélection recettes + portions                           | Mobile + desktop     |
-| Créer une liste — étape 2 | Placard : « j'en ai » / « à acheter »                   | Mobile               |
-| Créer une liste — étape 3 | Pré-liste + champ auto-complétion                       | Mobile               |
-| Mes listes en cours       | Brouillons et listes prêtes                             | Mobile               |
-| Faire ses courses         | Groupée par rayon, cases larges, hors ligne             | Mobile               |
-| Historique                | Listes terminées                                        | Mobile               |
-| Paramètres                | Profil, portions par défaut, mes partages, compte       | Mobile + desktop     |
+| Écran                     | Points clés                                                             | Priorité d'affichage |
+| ------------------------- | ----------------------------------------------------------------------- | -------------------- |
+| Accueil                   | 4 entrées (section 5)                                                   | Mobile               |
+| Parcours d'accueil        | Nom affiché, portions par défaut                                        | Mobile               |
+| Mes recettes              | Recherche, filtre par collection, cartes avec miniature                 | Mobile + desktop     |
+| Détail / édition recette  | Ingrédients, étapes, livre/page, collections                            | Mobile + desktop     |
+| Import photo              | Capture, analyse, relecture avec champs surlignés                       | Mobile               |
+| Créer une liste — étape 1 | Sélection recettes + portions                                           | Mobile + desktop     |
+| Créer une liste — étape 2 | Revue des ingrédients : ajuster, retirer ; ingrédients de base décochés | Mobile + desktop     |
+| Créer une liste — étape 3 | Pré-liste + champ auto-complétion                                       | Mobile               |
+| Mes listes en cours       | Brouillons et listes prêtes                                             | Mobile               |
+| Faire ses courses         | Groupée par rayon, cases larges, hors ligne                             | Mobile               |
+| Historique                | Listes terminées                                                        | Mobile               |
+| Paramètres                | Profil, portions par défaut, mes partages, compte                       | Mobile + desktop     |
 
 ### 8.1 Direction visuelle
 
@@ -429,8 +434,8 @@ Toutes les tables sont protégées par Row Level Security : je vois mes données
 | 0   | Setup : dépôt, Next.js + TS, ESLint/Prettier, Vitest, CI GitHub Actions, Supabase dev + prod (UE), CLI migrations, Vercel, sauvegarde automatique                                                                                                | —                                                                       | Structure d'un projet Next.js, npm, variables d'environnement, CI | début nov.                                 |
 | 1   | Comptes et profil : connexion Google + email/mot de passe, mot de passe oublié, profil (nom affiché, portions par défaut), parcours d'accueil, suppression de compte, RLS                                                                        | US-CPT-01, US-CPT-02 (sans exemples), US-CPT-04                         | Authentification, Row Level Security, fonctions SQL               | nov.                                       |
 | 2   | Catalogue (rayons, articles, unités, conversions, catalogue initial généré) + recettes manuelles, collections, recherche, photo d'illustration ; recettes d'exemple ; **partage des recettes** (une ou toutes, lecture), copie, « Mes partages » | US-CAT-01/02/04, US-REC-01/03/04/05/06, US-CPT-02 (exemples), US-CPT-03 | Composants React, formulaires, SQL et relations entre tables      | début déc. · **révision de la date cible** |
-| 3   | Créer une liste — étape 1 : recettes, portions, regroupement, conversions                                                                                                                                                                        | US-LST-01/05                                                            | Fonctions pures et tests                                          | déc.                                       |
-| 4   | Créer une liste — étapes 2 et 3 : placard, pré-liste, articles libres, personnalisation catalogue, listes en cours ; **partage des listes** (co-édition, partage automatique)                                                                    | US-LST-02/03/04/06/07, US-CAT-03                                        | Formulaires, état d'un parcours en plusieurs étapes               | début janv. · décision Playwright          |
+| 3   | Créer une liste — étapes 1 et 2 : recettes, portions, regroupement, conversions, **revue des ingrédients** (ajuster, retirer, ingrédients de base)                                                                                               | US-LST-01/02/05                                                         | Fonctions pures et tests, état d'un formulaire                    | déc.                                       |
+| 4   | Créer une liste — étape 3 : pré-liste, articles libres ; personnalisation catalogue ; listes en cours ; **partage des listes** (co-édition, partage automatique)                                                                                 | US-LST-03/04/06/07, US-CAT-03                                           | Formulaires, état d'un parcours en plusieurs étapes               | début janv. · décision Playwright          |
 | 5   | Import photo IA + test Haiku/Sonnet                                                                                                                                                                                                              | US-REC-02                                                               | async/await, appels d'API côté serveur                            | janv.                                      |
 | 6   | Faire ses courses : liste par rayon, temps réel entre co-acheteurs, PWA hors ligne, report, historique ; achat du domaine                                                                                                                        | US-CRS-*                                                                | Temps réel, service workers, stockage hors ligne                  | janv.                                      |
 | 7   | Import des ~100 recettes du Sheets (CSV → base, correspondance des ingrédients assistée par IA, liste des cas non résolus)                                                                                                                       | —                                                                       | Scripts de migration de données                                   | fin janv.                                  |
@@ -495,6 +500,7 @@ Toutes les tables sont protégées par Row Level Security : je vois mes données
 | 030 | 2026-10-26 | Connexion : Google + email/mot de passe                                                                                                                                                                                                           | Lien magique (problème PWA) ; code par email     |
 | 033 | 2026-10-29 | Lots 1 et 2 inversés : comptes avant catalogue et recettes (sécurité en place dès la première recette)                                                                                                                                            | Foyer de test avec RLS ouverte temporairement    |
 | 034 | 2026-10-30 | **Abandon du foyer** : données par utilisateur ; partage des recettes en lecture (une ou toute la bibliothèque, avec copie) et des listes en co-édition (avec partage automatique) ; par lien 7 jours ou email. Remplace les décisions 016 et 028 | Foyer avec propriétaire et membres               |
+| 035 | 2026-10-30 | Étape 2 = **revue des ingrédients** (ajuster, retirer) ; l'étape « placard » y est fusionnée ; « produit de placard » devient « ingrédient de base » (décoché par défaut, acheté à l'unité de conditionnement)                                    | Étape placard séparée ; suppression de la notion |
 
 ---
 
@@ -510,12 +516,13 @@ Toutes les tables sont protégées par Row Level Security : je vois mes données
 
 ## 16. Glossaire
 
-| Terme              | Définition                                                                              |
-| ------------------ | --------------------------------------------------------------------------------------- |
-| Partage            | Accès donné à un autre utilisateur : recette en lecture, liste en co-édition            |
-| Catalogue          | Référentiel des articles (commun + articles et personnalisations de chaque utilisateur) |
-| Rayon              | Zone du magasin ; détermine le tri de la liste                                          |
-| Produit de placard | Article de base (huile, sel, épices…) à confirmer à l'étape 2 plutôt qu'ajouté d'office |
-| Pré-liste          | Liste de mes articles habituels, passée en revue à l'étape 3 pour ne rien oublier       |
-| Collection         | Groupe de recettes (ex. « Plats d'hiver »)                                              |
-| Report             | Article non coché, reporté automatiquement sur la liste suivante                        |
+| Terme                 | Définition                                                                                                                        |
+| --------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| Partage               | Accès donné à un autre utilisateur : recette en lecture, liste en co-édition                                                      |
+| Catalogue             | Référentiel des articles (commun + articles et personnalisations de chaque utilisateur)                                           |
+| Rayon                 | Zone du magasin ; détermine le tri de la liste                                                                                    |
+| Ingrédient de base    | Ingrédient courant (huile, sel, épices…) : décoché par défaut dans la revue ; s'il est coché, acheté à l'unité de conditionnement |
+| Revue des ingrédients | Étape 2 : ingrédients calculés depuis les recettes, à ajuster ou retirer avant de compléter la liste                              |
+| Pré-liste             | Liste de mes articles habituels, passée en revue à l'étape 3 pour ne rien oublier                                                 |
+| Collection            | Groupe de recettes (ex. « Plats d'hiver »)                                                                                        |
+| Report                | Article non coché, reporté automatiquement sur la liste suivante                                                                  |
