@@ -29,7 +29,14 @@ Le prototype contient environ **100 recettes** et reste utilisé jusqu'à la bas
 
 ### 1.3 Positionnement
 
-Concurrent principal : Jow. Fort sur l'usage « recette d'abord », faible sur la gestion de liste au quotidien, les articles non alimentaires, les achats courants et l'accès hors ligne.
+Concurrents :
+
+| Application                                                     | Points forts                                                                                                                                                                                       | Points faibles / différence avec Olva                                                                                                                                                            |
+| --------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Jow**                                                         | Usage « recette d'abord », catalogue de recettes fourni, commande drive intégrée (partenariats enseignes)                                                                                          | Faible sur la gestion de liste au quotidien, les articles non alimentaires, les achats courants et l'accès hors ligne ; recettes imposées plutôt que les siennes                                 |
+| **WeChef – Carnet de recettes** (iPhone, 4,7/5 sur ~5 200 avis) | Très proche d'Olva sur les recettes personnelles : import par lien, scan de pages de livres (OCR), ajustement des portions, planning, listes de courses générées et triées par rayon, assistant IA | iPhone uniquement ; modèle freemium avec publicité et abonnement ; bibliothèque de recettes partagée seulement à l'étude ; pas de vérification du placard ni de pré-liste anti-oubli identifiées |
+
+**Conséquence pour Olva** : WeChef couvre déjà une grande partie du volet recettes. La différence d'Olva se joue sur la **préparation de la liste** (placard, pré-liste anti-oubli, articles non alimentaires, achats courants), le **mode courses à deux en temps réel et hors ligne**, le **partage de bibliothèque** et la disponibilité **web + Android + iPhone**.
 
 Proposition de valeur : **Toutes vos recettes à un endroit, vos listes de courses en 2 minutes.**
 
