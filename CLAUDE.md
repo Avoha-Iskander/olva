@@ -42,6 +42,11 @@ Tu écris tout le code. Je ne code pas, mais je veux **comprendre** ce que tu fa
 - `olva-prod` : `sskxpttvlnepnhyealzj` (région Paris) — production, migrations appliquées par Alex
 - Variables : copier `.env.example` en `.env.local`
 
+## Adresses Vercel
+
+- Production : https://olva-jade.vercel.app (projet Supabase olva-prod)
+- Aperçus de PR : `https://olva-git-<branche>-alexandregueno14-2983.vercel.app` (projet Supabase olva-dev)
+
 ## Conventions
 
 - Code et noms techniques en anglais ; interface en français.
