@@ -61,27 +61,30 @@ export type Database = {
           created_at: string
           default_unit: string
           id: string
-          is_pantry: boolean
+          is_staple: boolean
           name: string
           owner_id: string | null
+          purchase_unit: string | null
         }
         Insert: {
           aisle_id: number
           created_at?: string
           default_unit: string
           id?: string
-          is_pantry?: boolean
+          is_staple?: boolean
           name: string
           owner_id?: string | null
+          purchase_unit?: string | null
         }
         Update: {
           aisle_id?: number
           created_at?: string
           default_unit?: string
           id?: string
-          is_pantry?: boolean
+          is_staple?: boolean
           name?: string
           owner_id?: string | null
+          purchase_unit?: string | null
         }
         Relationships: [
           {
@@ -94,6 +97,13 @@ export type Database = {
           {
             foreignKeyName: "items_default_unit_fkey"
             columns: ["default_unit"]
+            isOneToOne: false
+            referencedRelation: "units"
+            referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "items_purchase_unit_fkey"
+            columns: ["purchase_unit"]
             isOneToOne: false
             referencedRelation: "units"
             referencedColumns: ["code"]
