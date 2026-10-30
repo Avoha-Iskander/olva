@@ -1,0 +1,49 @@
+# Applique en PRODUCTION les migrations du dépôt qui n'y sont pas encore (décision 013).
+#
+# Lancement uniquement à la main : onglet Actions → « Appliquer les migrations en prod »
+# → Run workflow. Choisir « simulation » pour voir ce qui serait appliqué sans rien changer.
+#
+# À faire après chaque lot validé, une fois les migrations testées sur olva-dev.
+name: Appliquer les migrations en prod
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "simulation = afficher sans appliquer ; appliquer = mettre à jour la prod"
+        type: choice
+        options: [simulation, appliquer]
+        default: simulation
+
+# Une seule exécution à la fois
+concurrency: migrate-prod
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: État avant
+        env:
+          PROD_DB_URL: ${{ secrets.PROD_DB_URL }}
+        run: supabase migration list --db-url "$PROD_DB_URL"
+
+      - name: Simulation (rien n'est modifié)
+        if: inputs.mode == 'simulation'
+        env:
+          PROD_DB_URL: ${{ secrets.PROD_DB_URL }}
+        run: supabase db push --db-url "$PROD_DB_URL" --dry-run
+
+      - name: Application des migrations
+        if: inputs.mode == 'appliquer'
+        env:
+          PROD_DB_URL: ${{ secrets.PROD_DB_URL }}
+        run: |
+          supabase db push --db-url "$PROD_DB_URL" --yes
+          echo "--- État après ---"
+          supabase migration list --db-url "$PROD_DB_URL"

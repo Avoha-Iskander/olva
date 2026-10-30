@@ -35,6 +35,7 @@ Tu écris tout le code. Je ne code pas, mais je veux **comprendre** ce que tu fa
 - Nouvelle migration : `npm run db:new <nom>`
 - Appliquer les migrations (dev) : `npx supabase db push`
 - Générer les types TypeScript : `npm run db:types`
+- Appliquer les migrations en prod (Alex) : onglet Actions → « Appliquer les migrations en prod » → simulation, puis appliquer
 
 ## Projets Supabase
 
