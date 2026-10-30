@@ -493,7 +493,7 @@ Toutes les tables sont protégées par Row Level Security : je vois mes données
 
 ## 15. Questions ouvertes
 
-- [ ] Service d'envoi d'emails pour la prod — lot 2
+- [ ] Service d'envoi d'emails (SMTP) — **obligatoire pour personnaliser les emails** (en français, liens utilisables depuis n'importe quel navigateur) ; à mettre en place avec le nom de domaine, avant la mise en usage
 - [ ] Nom définitif (Olva est provisoire) — avant l'achat du domaine, lot 6
 - [ ] Playwright (lot 4)
 - [ ] Typographie et teintes exactes de bleu
