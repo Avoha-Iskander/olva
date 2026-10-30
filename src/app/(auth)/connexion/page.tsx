@@ -43,7 +43,9 @@ async function SignInFormWithParams({
     <SignInForm
       suite={typeof suite === "string" ? suite : undefined}
       initialMessage={
-        erreur === "lien" ? "Ce lien est invalide ou a expiré. Réessayez." : undefined
+        erreur === "lien"
+          ? "Ce lien est invalide ou a expiré. Ouvrez-le dans le navigateur où vous avez fait la demande, ou recommencez."
+          : undefined
       }
     />
   );

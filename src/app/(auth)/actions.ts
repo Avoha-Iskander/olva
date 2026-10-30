@@ -86,7 +86,7 @@ export async function requestPasswordReset(
 
   const supabase = await createClient();
   await supabase.auth.resetPasswordForEmail(parsed.data.email, {
-    redirectTo: `${await getOrigin()}/auth/confirm`,
+    redirectTo: `${await getOrigin()}/auth/confirm?suite=/nouveau-mot-de-passe`,
   });
 
   // Toujours le même message, que le compte existe ou non
