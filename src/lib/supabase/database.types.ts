@@ -379,6 +379,31 @@ export type Database = {
     Functions: {
       delete_own_account: { Args: never; Returns: undefined }
       ensure_my_profile: { Args: never; Returns: undefined }
+      search_my_recipes: {
+        Args: { collection?: string; search?: string }
+        Returns: {
+          book_page: number | null
+          book_title: string | null
+          copied_from: string | null
+          created_at: string
+          id: string
+          import_photo_path: string | null
+          is_example: boolean
+          owner_id: string
+          photo_path: string | null
+          servings: number
+          steps: string[]
+          thumb_path: string | null
+          title: string
+          updated_at: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "recipes"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
     }
     Enums: {
       [_ in never]: never
