@@ -19,3 +19,23 @@ export function scaleQuantity(
   // Arrondi à 2 décimales pour éviter les résultats du type 0.30000000000000004
   return Math.round(scaled * 100) / 100;
 }
+
+/**
+ * Recalcule toute la liste d'ingrédients d'une recette pour un autre nombre de personnes.
+ * Les ingrédients « au goût » (sans quantité) restent tels quels.
+ * Le type générique <T> permet de garder tous les autres champs (nom, unité, remarque…).
+ */
+export function scaleIngredients<T extends { quantity: number | null }>(
+  ingredients: T[],
+  baseServings: number,
+  targetServings: number,
+): T[] {
+  return ingredients.map((ingredient) =>
+    ingredient.quantity === null
+      ? ingredient
+      : {
+          ...ingredient,
+          quantity: scaleQuantity(ingredient.quantity, baseServings, targetServings),
+        },
+  );
+}

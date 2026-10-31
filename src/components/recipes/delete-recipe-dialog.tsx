@@ -19,11 +19,13 @@ export function DeleteRecipeDialog({
   recipeTitle,
   open,
   onOpenChange,
+  onDeleted,
 }: {
   recipeId: string;
   recipeTitle: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onDeleted?: () => void; // ex. revenir à la liste depuis la fiche
 }) {
   const [pending, startTransition] = useTransition();
   const [failed, setFailed] = useState(false);
@@ -31,8 +33,10 @@ export function DeleteRecipeDialog({
   function confirm() {
     startTransition(async () => {
       const { ok } = await deleteRecipeFromList(recipeId);
-      if (ok) onOpenChange(false);
-      else setFailed(true);
+      if (ok) {
+        onOpenChange(false);
+        onDeleted?.();
+      } else setFailed(true);
     });
   }
 

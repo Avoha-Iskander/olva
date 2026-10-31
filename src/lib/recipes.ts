@@ -82,6 +82,7 @@ export type RecipeForEdit = {
   thumbPath: string | null;
   photoUrl: string | null;
   collectionIds: string[];
+  collections: { id: string; name: string }[]; // pour l'affichage sur la fiche
   ingredients: {
     itemId: string;
     itemName: string;
@@ -91,13 +92,13 @@ export type RecipeForEdit = {
   }[];
 };
 
-/** Une de mes recettes, complète, pour la modifier (null si introuvable). */
+/** Une de mes recettes, complète, pour l'afficher ou la modifier (null si introuvable). */
 export async function getRecipeForEdit(id: string): Promise<RecipeForEdit | null> {
   const supabase = await createClient();
   const { data: recipe } = await supabase
     .from("recipes")
     .select(
-      "id, title, servings, steps, book_title, book_page, photo_path, thumb_path, recipe_ingredients(position, item_id, quantity, unit, note, items(name)), recipe_collections(collection_id)",
+      "id, title, servings, steps, book_title, book_page, photo_path, thumb_path, recipe_ingredients(position, item_id, quantity, unit, note, items(name)), recipe_collections(collection_id, collections(name))",
     )
     .eq("id", id)
     .maybeSingle();
@@ -122,6 +123,9 @@ export async function getRecipeForEdit(id: string): Promise<RecipeForEdit | null
     thumbPath: recipe.thumb_path,
     photoUrl,
     collectionIds: recipe.recipe_collections.map((c) => c.collection_id),
+    collections: recipe.recipe_collections
+      .map((c) => ({ id: c.collection_id, name: c.collections?.name ?? "" }))
+      .sort((a, b) => a.name.localeCompare(b.name, "fr")),
     ingredients: [...recipe.recipe_ingredients]
       .sort((a, b) => a.position - b.position)
       .map((i) => ({

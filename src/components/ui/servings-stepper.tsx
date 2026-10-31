@@ -6,7 +6,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 
 type ServingsStepperProps = {
-  name: string;
+  name?: string; // facultatif : sans nom, pas de champ envoyé avec un formulaire
   defaultValue: number;
   min?: number;
   max?: number;
@@ -58,7 +58,7 @@ export function ServingsStepper({
       >
         <Plus />
       </Button>
-      <input type="hidden" name={name} value={value} />
+      {name && <input type="hidden" name={name} value={value} />}
     </div>
   );
 }
