@@ -113,7 +113,9 @@ export function SwipeableRow({
         <Link
           href={editHref}
           tabIndex={isOpen ? 0 : -1}
-          className="bg-primary text-primary-foreground flex flex-col items-center justify-center gap-1 text-sm"
+          // Le bleu passe au-dessus du rouge, coins droits arrondis : même jonction
+          // que la carte au-dessus du bleu (« relative » le place devant le rouge)
+          className="bg-primary text-primary-foreground relative flex flex-col items-center justify-center gap-1 rounded-r-xl text-sm"
           style={{ width: ACTIONS_WIDTH / 2 + UNDERLAP, paddingLeft: UNDERLAP }}
         >
           <Pencil className="size-5" />
@@ -126,12 +128,12 @@ export function SwipeableRow({
             setOffset(0);
             onDelete();
           }}
-          // Le rouge chevauche le bleu, coins gauches arrondis : même jonction que carte / bleu
-          className="bg-destructive relative flex flex-col items-center justify-center gap-1 rounded-l-xl text-sm text-white"
+          // Le rouge glisse sous le bleu (marge négative) : il remplit le creux des coins
+          className="bg-destructive flex flex-col items-center justify-center gap-1 text-sm text-white"
           style={{
             width: ACTIONS_WIDTH / 2 + UNDERLAP,
             marginLeft: -UNDERLAP,
-            paddingLeft: UNDERLAP / 2,
+            paddingLeft: UNDERLAP,
           }}
         >
           <Trash2 className="size-5" />
