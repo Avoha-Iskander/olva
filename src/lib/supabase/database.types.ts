@@ -32,6 +32,27 @@ export type Database = {
         }
         Relationships: []
       }
+      collections: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          owner_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          owner_id?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          owner_id?: string
+        }
+        Relationships: []
+      }
       item_aliases: {
         Row: {
           alias: string
@@ -136,6 +157,147 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      recipe_collections: {
+        Row: {
+          collection_id: string
+          recipe_id: string
+        }
+        Insert: {
+          collection_id: string
+          recipe_id: string
+        }
+        Update: {
+          collection_id?: string
+          recipe_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recipe_collections_collection_id_fkey"
+            columns: ["collection_id"]
+            isOneToOne: false
+            referencedRelation: "collections"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recipe_collections_recipe_id_fkey"
+            columns: ["recipe_id"]
+            isOneToOne: false
+            referencedRelation: "recipes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      recipe_ingredients: {
+        Row: {
+          id: string
+          item_id: string
+          note: string | null
+          position: number
+          quantity: number | null
+          recipe_id: string
+          unit: string | null
+        }
+        Insert: {
+          id?: string
+          item_id: string
+          note?: string | null
+          position: number
+          quantity?: number | null
+          recipe_id: string
+          unit?: string | null
+        }
+        Update: {
+          id?: string
+          item_id?: string
+          note?: string | null
+          position?: number
+          quantity?: number | null
+          recipe_id?: string
+          unit?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recipe_ingredients_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recipe_ingredients_recipe_id_fkey"
+            columns: ["recipe_id"]
+            isOneToOne: false
+            referencedRelation: "recipes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recipe_ingredients_unit_fkey"
+            columns: ["unit"]
+            isOneToOne: false
+            referencedRelation: "units"
+            referencedColumns: ["code"]
+          },
+        ]
+      }
+      recipes: {
+        Row: {
+          book_page: number | null
+          book_title: string | null
+          copied_from: string | null
+          created_at: string
+          id: string
+          import_photo_path: string | null
+          is_example: boolean
+          owner_id: string
+          photo_path: string | null
+          servings: number
+          steps: string[]
+          thumb_path: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          book_page?: number | null
+          book_title?: string | null
+          copied_from?: string | null
+          created_at?: string
+          id?: string
+          import_photo_path?: string | null
+          is_example?: boolean
+          owner_id?: string
+          photo_path?: string | null
+          servings: number
+          steps?: string[]
+          thumb_path?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          book_page?: number | null
+          book_title?: string | null
+          copied_from?: string | null
+          created_at?: string
+          id?: string
+          import_photo_path?: string | null
+          is_example?: boolean
+          owner_id?: string
+          photo_path?: string | null
+          servings?: number
+          steps?: string[]
+          thumb_path?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recipes_copied_from_fkey"
+            columns: ["copied_from"]
+            isOneToOne: false
+            referencedRelation: "recipes"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       unit_conversions: {
         Row: {
