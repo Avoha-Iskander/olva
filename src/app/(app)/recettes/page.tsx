@@ -3,10 +3,11 @@ import { BookOpen, Plus } from "lucide-react";
 import { Suspense } from "react";
 
 import { CollectionFilter } from "@/components/recipes/collection-filter";
+import { ExamplesBanner } from "@/components/recipes/examples-banner";
 import { RecipeCard } from "@/components/recipes/recipe-card";
 import { RecipeSearch } from "@/components/recipes/recipe-search";
 import { Button } from "@/components/ui/button";
-import { listMyCollections, listMyRecipes } from "@/lib/recipes";
+import { hasExamples, listMyCollections, listMyRecipes } from "@/lib/recipes";
 
 export const metadata = { title: "Mes recettes — Olva" };
 
@@ -41,14 +42,16 @@ async function RecipeResults({
   const search = typeof params.q === "string" ? params.q : undefined;
   const collectionId = typeof params.collection === "string" ? params.collection : undefined;
 
-  const [recipes, collections] = await Promise.all([
+  const [recipes, collections, showExamplesBanner] = await Promise.all([
     listMyRecipes({ search, collectionId }),
     listMyCollections(),
+    hasExamples(),
   ]);
   const hasFilter = Boolean(search || collectionId);
 
   return (
     <>
+      {showExamplesBanner && <ExamplesBanner />}
       <CollectionFilter collections={collections} activeId={collectionId} search={search} />
       {recipes.length === 0 ? (
         hasFilter ? (
