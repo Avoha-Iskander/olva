@@ -141,6 +141,7 @@ Paramètres : nom affiché, nombre de personnes par défaut, mes partages (envoy
 Champs : titre (obligatoire), nombre de personnes (obligatoire), ingrédients (quantité, unité, article du catalogue, remarque), étapes (facultatives), référence livre (titre du livre, numéro de page — facultatifs), photo d'illustration (facultative), collections.
 
 - [ ] Une recette sans titre ou sans nombre de personnes ne peut pas être enregistrée
+- [ ] La quantité est facultative : un ingrédient sans quantité (sel, poivre, persil pour décorer…) s'affiche « au goût »
 - [ ] Chaque ingrédient est rattaché à un article du catalogue (auto-complétion) ou crée un nouvel article (voir US-CAT-02)
 - [ ] La photo est compressée côté téléphone avant envoi (~1 600 px, JPEG/WebP) ; une miniature est générée
 
@@ -217,6 +218,7 @@ En tant que préparateur, je veux revoir les ingrédients calculés à partir de
 - [ ] Un ingrédient de base coché est ajouté à la liste avec son **unité de conditionnement** (ex. « Huile d'olive : 1 bouteille »), pas la somme des recettes
 - [ ] Revenir à l'étape 1 et changer une recette ou des portions recalcule la revue en **conservant mes ajustements** sur les ingrédients inchangés ; les ingrédients modifiés sont signalés
 - [ ] Une ligne retirée ne réapparaît pas après un recalcul
+- [ ] Un ingrédient **sans quantité** (« au goût ») devient un conditionnement : ingrédient de base → son unité de conditionnement, décoché (« Sel : 1 paquet ») ; autre ingrédient → 1 de son unité par défaut, coché (« Persil frais : 1 botte »)
 
 **Étape 3 — Pré-liste et articles libres**
 
