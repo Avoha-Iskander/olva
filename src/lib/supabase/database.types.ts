@@ -379,6 +379,7 @@ export type Database = {
     Functions: {
       delete_own_account: { Args: never; Returns: undefined }
       ensure_my_profile: { Args: never; Returns: undefined }
+      save_recipe: { Args: { recipe: Json }; Returns: string }
       search_my_recipes: {
         Args: { collection?: string; search?: string }
         Returns: {
