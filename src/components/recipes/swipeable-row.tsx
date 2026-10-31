@@ -134,9 +134,10 @@ export function SwipeableRow({
         </button>
       </div>
 
-      {/* La carte, qui suit le doigt */}
+      {/* La carte, qui suit le doigt. Pas de fond ici : seuls les coins arrondis de la
+          carte sont visibles, et le bleu apparaît dans les creux (comme Outlook). */}
       <div
-        className={cn("bg-background relative touch-pan-y", !dragging && "transition-transform")}
+        className={cn("relative touch-pan-y", !dragging && "transition-transform")}
         style={{ transform: `translateX(${offset}px)` }}
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
