@@ -36,6 +36,7 @@ Tu écris tout le code. Je ne code pas, mais je veux **comprendre** ce que tu fa
 - Appliquer les migrations (dev) : `npx supabase db push`
 - Générer les types TypeScript : `npm run db:types`
 - Appliquer les migrations en prod (Alex) : onglet Actions → « Appliquer les migrations en prod » → simulation, puis appliquer
+- Appliquer les migrations en dev (si l'application directe demande une confirmation) : workflow « Appliquer les migrations en dev », lancé sur la branche concernée
 
 ## Projets Supabase
 

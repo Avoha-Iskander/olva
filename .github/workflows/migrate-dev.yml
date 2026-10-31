@@ -1,0 +1,50 @@
+# Applique sur la base de DÉVELOPPEMENT (olva-dev) les migrations du dépôt qui n'y sont pas encore.
+#
+# Lancement à la main (par Alex ou par Claude) : onglet Actions → « Appliquer les migrations en dev »
+# → Run workflow. Choisir « simulation » pour voir ce qui serait appliqué sans rien changer.
+#
+# Utile quand une migration ne peut pas être appliquée directement par Claude (opérations à confirmer).
+# Lancé depuis une branche : applique les migrations de cette branche.
+name: Appliquer les migrations en dev
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "simulation = afficher sans appliquer ; appliquer = mettre à jour la base dev"
+        type: choice
+        options: [simulation, appliquer]
+        default: simulation
+
+# Une seule exécution à la fois
+concurrency: migrate-dev
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: État avant
+        env:
+          DEV_DB_URL: ${{ secrets.DEV_DB_URL }}
+        run: supabase migration list --db-url "$DEV_DB_URL"
+
+      - name: Simulation (rien n'est modifié)
+        if: inputs.mode == 'simulation'
+        env:
+          DEV_DB_URL: ${{ secrets.DEV_DB_URL }}
+        run: supabase db push --db-url "$DEV_DB_URL" --dry-run
+
+      - name: Application des migrations
+        if: inputs.mode == 'appliquer'
+        env:
+          DEV_DB_URL: ${{ secrets.DEV_DB_URL }}
+        run: |
+          supabase db push --db-url "$DEV_DB_URL" --yes
+          echo "--- État après ---"
+          supabase migration list --db-url "$DEV_DB_URL"
