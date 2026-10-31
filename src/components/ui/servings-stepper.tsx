@@ -11,6 +11,7 @@ type ServingsStepperProps = {
   min?: number;
   max?: number;
   label: string; // décrit le champ pour les lecteurs d'écran
+  onValueChange?: (value: number) => void; // prévenu à chaque changement
 };
 
 /**
@@ -24,8 +25,13 @@ export function ServingsStepper({
   min = 1,
   max = 20,
   label,
+  onValueChange,
 }: ServingsStepperProps) {
   const [value, setValue] = useState(defaultValue);
+  const change = (next: number) => {
+    setValue(next);
+    onValueChange?.(next);
+  };
 
   return (
     <div className="flex items-center gap-3" role="group" aria-label={label}>
@@ -33,7 +39,7 @@ export function ServingsStepper({
         type="button"
         variant="outline"
         size="icon"
-        onClick={() => setValue((v) => Math.max(min, v - 1))}
+        onClick={() => change(Math.max(min, value - 1))}
         disabled={value <= min}
         aria-label="Une personne de moins"
       >
@@ -46,7 +52,7 @@ export function ServingsStepper({
         type="button"
         variant="outline"
         size="icon"
-        onClick={() => setValue((v) => Math.min(max, v + 1))}
+        onClick={() => change(Math.min(max, value + 1))}
         disabled={value >= max}
         aria-label="Une personne de plus"
       >

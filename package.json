@@ -17,12 +17,16 @@
     "db:new": "supabase migration new"
   },
   "dependencies": {
+    "@radix-ui/react-dialog": "^1.3.1",
     "@radix-ui/react-label": "^2.1.17",
+    "@radix-ui/react-popover": "^1.3.1",
     "@radix-ui/react-slot": "^1.5.0",
     "@supabase/ssr": "^0.12.7",
     "@supabase/supabase-js": "^2.118.0",
+    "browser-image-compression": "^2.0.2",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "cmdk": "^1.1.1",
     "lucide-react": "^1.62.0",
     "next": "16.4.3",
     "react": "19.3.0",

@@ -70,3 +70,66 @@ export async function listMyCollections() {
   const { data } = await supabase.from("collections").select("id, name").order("name");
   return data ?? [];
 }
+
+export type RecipeForEdit = {
+  id: string;
+  title: string;
+  servings: number;
+  steps: string[];
+  bookTitle: string | null;
+  bookPage: number | null;
+  photoPath: string | null;
+  thumbPath: string | null;
+  photoUrl: string | null;
+  collectionIds: string[];
+  ingredients: {
+    itemId: string;
+    itemName: string;
+    quantity: number | null;
+    unit: string | null;
+    note: string | null;
+  }[];
+};
+
+/** Une de mes recettes, complète, pour la modifier (null si introuvable). */
+export async function getRecipeForEdit(id: string): Promise<RecipeForEdit | null> {
+  const supabase = await createClient();
+  const { data: recipe } = await supabase
+    .from("recipes")
+    .select(
+      "id, title, servings, steps, book_title, book_page, photo_path, thumb_path, recipe_ingredients(position, item_id, quantity, unit, note, items(name)), recipe_collections(collection_id)",
+    )
+    .eq("id", id)
+    .maybeSingle();
+  if (!recipe) return null;
+
+  const photoUrl = recipe.photo_path
+    ? ((
+        await supabase.storage
+          .from("recipe-photos")
+          .createSignedUrl(recipe.photo_path, SIGNED_URL_SECONDS)
+      ).data?.signedUrl ?? null)
+    : null;
+
+  return {
+    id: recipe.id,
+    title: recipe.title,
+    servings: recipe.servings,
+    steps: recipe.steps,
+    bookTitle: recipe.book_title,
+    bookPage: recipe.book_page,
+    photoPath: recipe.photo_path,
+    thumbPath: recipe.thumb_path,
+    photoUrl,
+    collectionIds: recipe.recipe_collections.map((c) => c.collection_id),
+    ingredients: [...recipe.recipe_ingredients]
+      .sort((a, b) => a.position - b.position)
+      .map((i) => ({
+        itemId: i.item_id,
+        itemName: i.items?.name ?? "",
+        quantity: i.quantity,
+        unit: i.unit,
+        note: i.note,
+      })),
+  };
+}
