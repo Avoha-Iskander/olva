@@ -7,6 +7,9 @@ import { useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 
 const ACTIONS_WIDTH = 160; // deux boutons de 80 px
+// Le fond bleu démarre un peu SOUS la carte : ainsi ses coins arrondis se détachent
+// sur du bleu, sans laisser apparaître de blanc à la jonction.
+const UNDERLAP = 16;
 const OPEN_THRESHOLD = ACTIONS_WIDTH / 2; // au-delà de la moitié, la ligne reste ouverte
 const DIRECTION_THRESHOLD = 8; // px avant de décider : glissement horizontal ou défilement ?
 
@@ -104,13 +107,14 @@ export function SwipeableRow({
       {/* Masqués tant que la carte n'a pas bougé : sinon ils dépassent aux coins arrondis */}
       <div
         className={cn("absolute inset-y-0 right-0 flex", offset === 0 && "invisible")}
-        style={{ width: ACTIONS_WIDTH }}
+        style={{ width: ACTIONS_WIDTH + UNDERLAP }}
         aria-hidden={!isOpen}
       >
         <Link
           href={editHref}
           tabIndex={isOpen ? 0 : -1}
-          className="bg-primary text-primary-foreground flex flex-1 flex-col items-center justify-center gap-1 text-sm"
+          className="bg-primary text-primary-foreground flex flex-col items-center justify-center gap-1 text-sm"
+          style={{ width: ACTIONS_WIDTH / 2 + UNDERLAP, paddingLeft: UNDERLAP }}
         >
           <Pencil className="size-5" />
           Modifier
@@ -122,7 +126,8 @@ export function SwipeableRow({
             setOffset(0);
             onDelete();
           }}
-          className="bg-destructive flex flex-1 flex-col items-center justify-center gap-1 text-sm text-white"
+          className="bg-destructive flex flex-col items-center justify-center gap-1 text-sm text-white"
+          style={{ width: ACTIONS_WIDTH / 2 }}
         >
           <Trash2 className="size-5" />
           Supprimer

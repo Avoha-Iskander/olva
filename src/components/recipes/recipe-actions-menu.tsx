@@ -42,7 +42,7 @@ export function RecipeActionsMenu({
             open && "opacity-100",
           )}
         >
-          <MoreHorizontal />
+          <MoreHorizontal className="size-6" />
         </Button>
       </PopoverTrigger>
       <PopoverContent align="end" className="w-48 p-1">
