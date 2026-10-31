@@ -95,8 +95,8 @@ export async function saveRecipe(input: {
   return { ok: true, id: id.data };
 }
 
-/** Supprime une de mes recettes et ses photos, puis revient à la liste. */
-export async function deleteRecipe(recipeId: string) {
+/** Supprime une de mes recettes et ses photos (fichiers d'abord, puis la ligne en base). */
+async function removeRecipe(recipeId: string) {
   const id = z.uuid().parse(recipeId);
   const { supabase, userId } = await requireUser();
 
@@ -104,10 +104,30 @@ export async function deleteRecipe(recipeId: string) {
   if (files?.length) {
     await supabase.storage.from(BUCKET).remove(files.map((f) => `${userId}/${id}/${f.name}`));
   }
-  await supabase.from("recipes").delete().eq("id", id);
-
+  const { error } = await supabase.from("recipes").delete().eq("id", id);
   revalidatePath("/recettes");
+  return !error;
+}
+
+/** Suppression depuis le formulaire de modification : retour à la liste. */
+export async function deleteRecipe(recipeId: string) {
+  await removeRecipe(recipeId);
   redirect("/recettes");
+}
+
+/** Suppression depuis la liste (menu ⋯ ou glissement) : on reste sur la liste. */
+export async function deleteRecipeFromList(recipeId: string): Promise<{ ok: boolean }> {
+  return { ok: await removeRecipe(recipeId) };
+}
+
+/**
+ * Supprime des photos envoyées pour rien (l'enregistrement de la recette a échoué).
+ * Seuls des fichiers de mon propre dossier peuvent être supprimés.
+ */
+export async function discardPhotos(paths: string[]) {
+  const { supabase, userId } = await requireUser();
+  const own = paths.filter((p) => p.startsWith(`${userId}/`));
+  if (own.length) await supabase.storage.from(BUCKET).remove(own);
 }
 
 const newItemSchema = z
