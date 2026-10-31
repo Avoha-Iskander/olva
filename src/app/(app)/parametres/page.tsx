@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { Suspense } from "react";
 
 import { signOut } from "@/app/(auth)/actions";
@@ -12,13 +11,8 @@ export const metadata = { title: "Paramètres — Olva" };
 
 export default function SettingsPage() {
   return (
-    <main className="mx-auto grid w-full max-w-lg gap-6 px-4 py-8">
-      <div className="flex items-center justify-between gap-4">
-        <h1 className="text-2xl font-semibold tracking-tight">Paramètres</h1>
-        <Link href="/" className="text-primary text-sm underline-offset-4 hover:underline">
-          Retour à l&apos;accueil
-        </Link>
-      </div>
+    <main className="mx-auto grid w-full max-w-lg gap-6 px-4 py-6">
+      <h1 className="text-2xl font-semibold tracking-tight">Paramètres</h1>
 
       <Card>
         <CardHeader>
