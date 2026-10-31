@@ -126,8 +126,13 @@ export function SwipeableRow({
             setOffset(0);
             onDelete();
           }}
-          className="bg-destructive flex flex-col items-center justify-center gap-1 text-sm text-white"
-          style={{ width: ACTIONS_WIDTH / 2 }}
+          // Le rouge chevauche le bleu, coins gauches arrondis : même jonction que carte / bleu
+          className="bg-destructive relative flex flex-col items-center justify-center gap-1 rounded-l-xl text-sm text-white"
+          style={{
+            width: ACTIONS_WIDTH / 2 + UNDERLAP,
+            marginLeft: -UNDERLAP,
+            paddingLeft: UNDERLAP / 2,
+          }}
         >
           <Trash2 className="size-5" />
           Supprimer
