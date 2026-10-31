@@ -1,10 +1,10 @@
 "use client";
 
-import { Plus } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
-import { deleteRecipe, saveRecipe } from "@/app/(app)/recettes/actions";
+import { deleteRecipe, discardPhotos, saveRecipe } from "@/app/(app)/recettes/actions";
 import { FormField } from "@/components/auth/form-field";
 import { FormMessage } from "@/components/auth/form-message";
 import { CollectionsPicker } from "@/components/recipe-form/collections-picker";
@@ -127,12 +127,18 @@ export function RecipeForm(props: RecipeFormProps) {
         // 1. Photo : compressée et envoyée depuis le navigateur si elle a changé
         let photoPath = photoRemoved ? null : (initial?.photoPath ?? null);
         let thumbPath = photoRemoved ? null : (initial?.thumbPath ?? null);
+        let uploaded: string[] = [];
         if (photoFile) {
           ({ photoPath, thumbPath } = await compressAndUploadPhoto(photoFile, userId, recipeId));
+          uploaded = [photoPath, thumbPath];
         }
         // 2. Recette, ingrédients et collections, en un seul bloc
         const saved = await saveRecipe({ id: recipeId, recipe: result.data, photoPath, thumbPath });
-        if (!saved.ok) return setMessage(saved.message);
+        if (!saved.ok) {
+          // Échec : la photo qu'on vient d'envoyer ne servira pas, on la supprime
+          if (uploaded.length) await discardPhotos(uploaded);
+          return setMessage(saved.message);
+        }
         router.push(`/recettes/${saved.id}`);
       } catch {
         setMessage("L'envoi de la photo a échoué. Vérifiez votre connexion et réessayez.");
@@ -316,10 +322,11 @@ export function RecipeForm(props: RecipeFormProps) {
             ) : (
               <Button
                 type="button"
-                variant="outline"
+                variant="destructive"
                 className="justify-self-start"
                 onClick={() => setConfirmDelete(true)}
               >
+                <Trash2 />
                 Supprimer la recette…
               </Button>
             )}

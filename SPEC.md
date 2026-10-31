@@ -328,20 +328,20 @@ Toutes les tables sont protégées par Row Level Security : je vois mes données
 
 ## 8. Écrans
 
-| Écran                     | Points clés                                                             | Priorité d'affichage |
-| ------------------------- | ----------------------------------------------------------------------- | -------------------- |
-| Accueil                   | 4 entrées (section 5)                                                   | Mobile               |
-| Parcours d'accueil        | Nom affiché, portions par défaut                                        | Mobile               |
-| Mes recettes              | Recherche, filtre par collection, cartes avec miniature                 | Mobile + desktop     |
-| Détail / édition recette  | Ingrédients, étapes, livre/page, collections                            | Mobile + desktop     |
-| Import photo              | Capture, analyse, relecture avec champs surlignés                       | Mobile               |
-| Créer une liste — étape 1 | Sélection recettes + portions                                           | Mobile + desktop     |
-| Créer une liste — étape 2 | Revue des ingrédients : ajuster, retirer ; ingrédients de base décochés | Mobile + desktop     |
-| Créer une liste — étape 3 | Pré-liste + champ auto-complétion                                       | Mobile               |
-| Mes listes en cours       | Brouillons et listes prêtes                                             | Mobile               |
-| Faire ses courses         | Groupée par rayon, cases larges, hors ligne                             | Mobile               |
-| Historique                | Listes terminées                                                        | Mobile               |
-| Paramètres                | Profil, portions par défaut, mes partages, compte                       | Mobile + desktop     |
+| Écran                     | Points clés                                                                                                                                           | Priorité d'affichage |
+| ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------- |
+| Accueil                   | 4 entrées (section 5)                                                                                                                                 | Mobile               |
+| Parcours d'accueil        | Nom affiché, portions par défaut                                                                                                                      | Mobile               |
+| Mes recettes              | Recherche, filtre par collection, cartes avec miniature ; Modifier / Supprimer : menu ⋯ (ordinateur), glissement à gauche (mobile), avec confirmation | Mobile + desktop     |
+| Détail / édition recette  | Ingrédients, étapes, livre/page, collections                                                                                                          | Mobile + desktop     |
+| Import photo              | Capture, analyse, relecture avec champs surlignés                                                                                                     | Mobile               |
+| Créer une liste — étape 1 | Sélection recettes + portions                                                                                                                         | Mobile + desktop     |
+| Créer une liste — étape 2 | Revue des ingrédients : ajuster, retirer ; ingrédients de base décochés                                                                               | Mobile + desktop     |
+| Créer une liste — étape 3 | Pré-liste + champ auto-complétion                                                                                                                     | Mobile               |
+| Mes listes en cours       | Brouillons et listes prêtes                                                                                                                           | Mobile               |
+| Faire ses courses         | Groupée par rayon, cases larges, hors ligne                                                                                                           | Mobile               |
+| Historique                | Listes terminées                                                                                                                                      | Mobile               |
+| Paramètres                | Profil, portions par défaut, mes partages, compte                                                                                                     | Mobile + desktop     |
 
 ### 8.1 Direction visuelle
 
@@ -503,6 +503,7 @@ Toutes les tables sont protégées par Row Level Security : je vois mes données
 | 033 | 2026-10-29 | Lots 1 et 2 inversés : comptes avant catalogue et recettes (sécurité en place dès la première recette)                                                                                                                                            | Foyer de test avec RLS ouverte temporairement    |
 | 034 | 2026-10-30 | **Abandon du foyer** : données par utilisateur ; partage des recettes en lecture (une ou toute la bibliothèque, avec copie) et des listes en co-édition (avec partage automatique) ; par lien 7 jours ou email. Remplace les décisions 016 et 028 | Foyer avec propriétaire et membres               |
 | 035 | 2026-10-30 | Étape 2 = **revue des ingrédients** (ajuster, retirer) ; l'étape « placard » y est fusionnée ; « produit de placard » devient « ingrédient de base » (décoché par défaut, acheté à l'unité de conditionnement)                                    | Étape placard séparée ; suppression de la notion |
+| 036 | 2026-10-31 | Modifier / Supprimer depuis la liste : menu ⋯ au survol (ordinateur), glissement à gauche façon Outlook (mobile) ; suppression toujours confirmée ; bouton Supprimer conservé dans le formulaire                                                  | Suppression immédiate avec « Annuler »           |
 
 ---
 
