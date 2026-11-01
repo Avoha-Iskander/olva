@@ -3,9 +3,10 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { ArrowLeft, BookOpen, Pencil, Trash2 } from "lucide-react";
+import { ArrowLeft, BookOpen, Pencil, Share2, Trash2 } from "lucide-react";
 
 import { DeleteRecipeDialog } from "@/components/recipes/delete-recipe-dialog";
+import { ShareDialog } from "@/components/sharing/share-dialog";
 import { Button } from "@/components/ui/button";
 import { ServingsStepper } from "@/components/ui/servings-stepper";
 import type { RecipeForEdit } from "@/lib/recipes";
@@ -27,6 +28,8 @@ export function RecipeView({
   const router = useRouter();
   const [servings, setServings] = useState(defaultServings);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
+  const isMine = recipe.sharedBy === null;
 
   // Recalculé à chaque rendu : la liste est courte, inutile de mémoriser le résultat
   const ingredients = scaleIngredients(recipe.ingredients, recipe.servings, servings);
@@ -61,6 +64,12 @@ export function RecipeView({
               Exemple
             </span>
             Modifiez-la pour en faire votre recette.
+          </p>
+        )}
+        {recipe.sharedBy && (
+          <p className="text-muted-foreground flex items-center gap-2 text-sm">
+            <Share2 className="size-4 shrink-0" />
+            Partagé par {recipe.sharedBy}, en lecture seule
           </p>
         )}
         {(recipe.bookTitle || recipe.bookPage) && (
@@ -155,26 +164,45 @@ export function RecipeView({
         </section>
       </div>
 
-      <div className="flex flex-wrap gap-3 border-t pt-6">
-        <Button asChild>
-          <Link href={`/recettes/${recipe.id}/modifier`}>
-            <Pencil />
-            Modifier
-          </Link>
-        </Button>
-        <Button type="button" variant="destructive" onClick={() => setDeleteOpen(true)}>
-          <Trash2 />
-          Supprimer
-        </Button>
-      </div>
+      {/* Actions réservées à mes recettes ; une recette partagée se consulte seulement */}
+      {isMine && (
+        <>
+          <div className="flex flex-wrap gap-3 border-t pt-6">
+            <Button asChild>
+              <Link href={`/recettes/${recipe.id}/modifier`}>
+                <Pencil />
+                Modifier
+              </Link>
+            </Button>
+            {/* Les exemples ne se partagent pas (décision 039) */}
+            {!recipe.isExample && (
+              <Button type="button" variant="outline" onClick={() => setShareOpen(true)}>
+                <Share2 />
+                Partager
+              </Button>
+            )}
+            <Button type="button" variant="destructive" onClick={() => setDeleteOpen(true)}>
+              <Trash2 />
+              Supprimer
+            </Button>
+          </div>
 
-      <DeleteRecipeDialog
-        recipeId={recipe.id}
-        recipeTitle={recipe.title}
-        open={deleteOpen}
-        onOpenChange={setDeleteOpen}
-        onDeleted={() => router.replace("/recettes")}
-      />
+          <DeleteRecipeDialog
+            recipeId={recipe.id}
+            recipeTitle={recipe.title}
+            open={deleteOpen}
+            onOpenChange={setDeleteOpen}
+            onDeleted={() => router.replace("/recettes")}
+          />
+          <ShareDialog
+            target={{ kind: "recipe", recipeId: recipe.id }}
+            title={`Partager « ${recipe.title} »`}
+            description="La personne pourra consulter cette recette, sans la modifier."
+            open={shareOpen}
+            onOpenChange={setShareOpen}
+          />
+        </>
+      )}
     </article>
   );
 }

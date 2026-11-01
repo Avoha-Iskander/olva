@@ -1,7 +1,9 @@
 "use server";
 
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
+import { isShareLinkPath, PENDING_SHARE_COOKIE } from "@/lib/share-cookie";
 import { createClient } from "@/lib/supabase/server";
 import { type FieldErrors, toFieldErrors } from "@/lib/validation/auth";
 import { profileSchema } from "@/lib/validation/profile";
@@ -33,5 +35,7 @@ export async function completeOnboarding(
 
   if (error) return { message: "L'enregistrement a échoué. Réessayez.", displayName };
 
-  redirect("/");
+  // Inscription partie d'un lien de partage : on y retourne pour l'accepter
+  const pendingShare = (await cookies()).get(PENDING_SHARE_COOKIE)?.value;
+  redirect(isShareLinkPath(pendingShare) ? pendingShare : "/");
 }
