@@ -19,10 +19,15 @@ export type Aisle = { id: number; name: string };
  */
 export async function getCatalogue(): Promise<{ items: CatalogueItem[]; aisles: Aisle[] }> {
   const supabase = await createClient();
+  const { data: claims } = await supabase.auth.getClaims();
+  const userId = claims?.claims?.sub ?? "";
   const [{ data: items }, { data: aisles }] = await Promise.all([
     supabase
       .from("items")
       .select("id, name, aisle_id, default_unit, is_staple, purchase_unit, owner_id")
+      // Commun + mes articles. Les règles d'accès laissent aussi voir les articles
+      // personnels des recettes qu'on me partage : ils n'ont pas leur place ici.
+      .or(`owner_id.is.null,owner_id.eq.${userId}`)
       .order("name"),
     supabase.from("aisles").select("id, name").order("position"),
   ]);
