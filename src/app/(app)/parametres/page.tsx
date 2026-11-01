@@ -3,9 +3,11 @@ import { Suspense } from "react";
 import { signOut } from "@/app/(auth)/actions";
 import { DeleteAccount } from "@/components/profile/delete-account";
 import { ProfileForm } from "@/components/profile/profile-form";
+import { MyShares } from "@/components/sharing/my-shares";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { getCurrentProfile } from "@/lib/profile";
+import { getMyShares } from "@/lib/sharing";
 
 export const metadata = { title: "Paramètres — Olva" };
 
@@ -30,6 +32,20 @@ export default function SettingsPage() {
 
       <Card>
         <CardHeader>
+          <CardTitle>Mes partages</CardTitle>
+          <CardDescription>
+            Les recettes partagées se consultent sans être modifiées.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Suspense fallback={<p className="text-muted-foreground h-24 text-sm">Chargement…</p>}>
+            <SharesSection />
+          </Suspense>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
           <CardTitle>Compte</CardTitle>
         </CardHeader>
         <CardContent className="grid gap-6">
@@ -38,7 +54,9 @@ export default function SettingsPage() {
               Se déconnecter
             </Button>
           </form>
-          <DeleteAccount />
+          <Suspense fallback={null}>
+            <DeleteAccountSection />
+          </Suspense>
         </CardContent>
       </Card>
     </main>
@@ -51,4 +69,15 @@ async function ProfileSection() {
   return (
     <ProfileForm displayName={profile.display_name} defaultServings={profile.default_servings} />
   );
+}
+
+async function SharesSection() {
+  return <MyShares shares={await getMyShares()} />;
+}
+
+/** Suppression du compte : l'avertissement cite les personnes qui perdront l'accès. */
+async function DeleteAccountSection() {
+  const { sent } = await getMyShares();
+  const names = [...new Set(sent.map((share) => share.personName))];
+  return <DeleteAccount sharedWith={names} />;
 }

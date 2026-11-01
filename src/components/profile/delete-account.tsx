@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
  * Zone « Supprimer mon compte ». Deux sécurités contre les erreurs :
  * il faut d'abord ouvrir la zone, puis taper SUPPRIMER pour activer le bouton.
  */
-export function DeleteAccount() {
+export function DeleteAccount({ sharedWith = [] }: { sharedWith?: string[] }) {
   const [open, setOpen] = useState(false);
   const [typed, setTyped] = useState("");
   const [state, formAction, pending] = useActionState<DeleteAccountState, FormData>(
@@ -31,10 +31,13 @@ export function DeleteAccount() {
     <form action={formAction} className="grid gap-4">
       <div className="bg-destructive/10 text-destructive rounded-md p-3 text-sm">
         <p className="font-medium">Cette action est définitive.</p>
-        <p>
-          Votre compte, vos recettes, vos listes et vos partages seront effacés. Les personnes avec
-          qui vous partagez perdront l&apos;accès.
-        </p>
+        <p>Votre compte, vos recettes, vos listes et vos partages seront effacés.</p>
+        {sharedWith.length > 0 && (
+          <p className="mt-2">
+            {sharedWith.join(", ")} {sharedWith.length > 1 ? "perdront" : "perdra"} l&apos;accès aux
+            recettes que vous partagez.
+          </p>
+        )}
       </div>
       <FormField
         label="Tapez SUPPRIMER pour confirmer"
