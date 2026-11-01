@@ -37,7 +37,9 @@ export function RecipeCard({ recipe }: { recipe: RecipeSummary }) {
                 <Users className="size-4" aria-hidden="true" />
                 {recipe.servings} pers.
                 {recipe.isExample && (
-                  <span className="bg-muted ml-2 rounded px-1.5 text-xs">exemple</span>
+                  <span className="bg-muted text-foreground ml-2 rounded px-1.5 text-xs">
+                    Exemple
+                  </span>
                 )}
               </p>
               {recipe.collections.length > 0 && (

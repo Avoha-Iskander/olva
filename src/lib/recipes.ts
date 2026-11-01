@@ -65,6 +65,21 @@ export async function listMyRecipes({
 }
 
 /** Mes collections, par ordre alphabétique. */
+/** Ai-je encore des recettes d'exemple ? (affiche le bandeau « Supprimer les exemples ») */
+export async function hasExamples(): Promise<boolean> {
+  const supabase = await createClient();
+  const { data: claims } = await supabase.auth.getClaims();
+  const userId = claims?.claims?.sub;
+  if (!userId) return false;
+  // Filtre sur owner_id : au lot 2.7, je verrai aussi les recettes qu'on me partage
+  const { count } = await supabase
+    .from("recipes")
+    .select("id", { count: "exact", head: true }) // head : on ne veut que le nombre
+    .eq("owner_id", userId)
+    .eq("is_example", true);
+  return (count ?? 0) > 0;
+}
+
 export async function listMyCollections() {
   const supabase = await createClient();
   const { data } = await supabase.from("collections").select("id, name").order("name");
@@ -73,6 +88,7 @@ export async function listMyCollections() {
 
 export type RecipeForEdit = {
   id: string;
+  isExample: boolean;
   title: string;
   servings: number;
   steps: string[];
@@ -98,7 +114,7 @@ export async function getRecipeForEdit(id: string): Promise<RecipeForEdit | null
   const { data: recipe } = await supabase
     .from("recipes")
     .select(
-      "id, title, servings, steps, book_title, book_page, photo_path, thumb_path, recipe_ingredients(position, item_id, quantity, unit, note, items(name)), recipe_collections(collection_id, collections(name))",
+      "id, title, servings, is_example, steps, book_title, book_page, photo_path, thumb_path, recipe_ingredients(position, item_id, quantity, unit, note, items(name)), recipe_collections(collection_id, collections(name))",
     )
     .eq("id", id)
     .maybeSingle();
@@ -114,6 +130,7 @@ export async function getRecipeForEdit(id: string): Promise<RecipeForEdit | null
 
   return {
     id: recipe.id,
+    isExample: recipe.is_example,
     title: recipe.title,
     servings: recipe.servings,
     steps: recipe.steps,

@@ -121,6 +121,22 @@ export async function deleteRecipeFromList(recipeId: string): Promise<{ ok: bool
 }
 
 /**
+ * « Supprimer les exemples » : efface d'un coup mes recettes d'exemple.
+ * Les exemples n'ont pas de photo (un exemple modifié n'est plus un exemple),
+ * il n'y a donc rien à nettoyer dans l'espace de stockage.
+ */
+export async function deleteExamples(): Promise<{ ok: boolean }> {
+  const { supabase, userId } = await requireUser();
+  const { error } = await supabase
+    .from("recipes")
+    .delete()
+    .eq("owner_id", userId)
+    .eq("is_example", true);
+  revalidatePath("/recettes");
+  return { ok: !error };
+}
+
+/**
  * Supprime des photos envoyées pour rien (l'enregistrement de la recette a échoué).
  * Seuls des fichiers de mon propre dossier peuvent être supprimés.
  */

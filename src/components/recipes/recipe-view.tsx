@@ -55,6 +55,14 @@ export function RecipeView({
         <h1 className="text-2xl font-semibold tracking-tight text-balance md:text-3xl">
           {recipe.title}
         </h1>
+        {recipe.isExample && (
+          <p className="text-muted-foreground text-sm">
+            <span className="bg-muted text-foreground mr-2 rounded px-1.5 py-0.5 text-xs">
+              Exemple
+            </span>
+            Modifiez-la pour en faire votre recette.
+          </p>
+        )}
         {(recipe.bookTitle || recipe.bookPage) && (
           <p className="text-muted-foreground flex items-center gap-2 text-sm">
             <BookOpen className="size-4 shrink-0" />
