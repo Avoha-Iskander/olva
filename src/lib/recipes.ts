@@ -113,6 +113,7 @@ export type RecipeForEdit = {
   id: string;
   ownerId: string;
   sharedBy: string | null; // nom de la personne qui me la partage (null : c'est la mienne)
+  myCopyId: string | null; // recette partagée que j'ai déjà copiée : identifiant de ma copie
   isExample: boolean;
   title: string;
   servings: number;
@@ -150,6 +151,17 @@ export async function getRecipeForEdit(id: string): Promise<RecipeForEdit | null
     recipe.owner_id === userId
       ? null
       : ((await getDisplayNames(supabase, [recipe.owner_id])).get(recipe.owner_id) ?? "Quelqu'un");
+  // Recette partagée : l'ai-je déjà copiée ? (évite les doublons, décision 040)
+  const { data: myCopy } =
+    sharedBy && userId
+      ? await supabase
+          .from("recipes")
+          .select("id")
+          .eq("owner_id", userId)
+          .eq("copied_from", recipe.id)
+          .limit(1)
+          .maybeSingle()
+      : { data: null };
 
   const photoUrl = recipe.photo_path
     ? ((
@@ -163,6 +175,7 @@ export async function getRecipeForEdit(id: string): Promise<RecipeForEdit | null
     id: recipe.id,
     ownerId: recipe.owner_id,
     sharedBy,
+    myCopyId: myCopy?.id ?? null,
     isExample: recipe.is_example,
     title: recipe.title,
     servings: recipe.servings,
