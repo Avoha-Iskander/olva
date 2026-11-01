@@ -6,6 +6,7 @@ import { CollectionFilter } from "@/components/recipes/collection-filter";
 import { ExamplesBanner } from "@/components/recipes/examples-banner";
 import { RecipeCard } from "@/components/recipes/recipe-card";
 import { RecipeSearch } from "@/components/recipes/recipe-search";
+import { ShareLibraryButton } from "@/components/sharing/share-library-button";
 import { Button } from "@/components/ui/button";
 import { hasExamples, listMyCollections, listMyRecipes } from "@/lib/recipes";
 
@@ -16,12 +17,15 @@ export default function RecipesPage({ searchParams }: PageProps<"/recettes">) {
     <main className="grid gap-4 px-4 py-6">
       <div className="flex items-center justify-between gap-4">
         <h1 className="text-2xl font-semibold tracking-tight">Mes recettes</h1>
-        <Button asChild>
-          <Link href="/recettes/nouvelle">
-            <Plus />
-            <span>Ajouter</span>
-          </Link>
-        </Button>
+        <div className="flex gap-2">
+          <ShareLibraryButton />
+          <Button asChild>
+            <Link href="/recettes/nouvelle">
+              <Plus />
+              <span>Ajouter</span>
+            </Link>
+          </Button>
+        </div>
       </div>
       <Suspense fallback={<div className="h-11" />}>
         <RecipeSearch />

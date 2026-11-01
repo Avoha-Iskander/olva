@@ -3,6 +3,7 @@ import { createServerClient } from "@supabase/ssr";
 
 import type { Database } from "./database.types";
 import { getSupabaseEnv } from "./env";
+import { isShareLinkPath, PENDING_SHARE_COOKIE, PENDING_SHARE_MAX_AGE } from "@/lib/share-cookie";
 
 /** Pages accessibles sans être connecté. */
 const PUBLIC_PATHS = ["/connexion", "/inscription", "/mot-de-passe-oublie", "/auth/confirm"];
@@ -46,7 +47,18 @@ export async function updateSession(request: NextRequest) {
     loginUrl.pathname = "/connexion";
     // On mémorise la page demandée pour y revenir après la connexion
     loginUrl.search = `?suite=${encodeURIComponent(pathname + search)}`;
-    return NextResponse.redirect(loginUrl);
+    const redirectResponse = NextResponse.redirect(loginUrl);
+    // Lien de partage : mémorisé aussi pour une personne qui va d'abord créer son compte
+    if (isShareLinkPath(pathname)) {
+      redirectResponse.cookies.set(PENDING_SHARE_COOKIE, pathname, {
+        httpOnly: true,
+        sameSite: "lax",
+        secure: request.nextUrl.protocol === "https:",
+        maxAge: PENDING_SHARE_MAX_AGE,
+        path: "/",
+      });
+    }
+    return redirectResponse;
   }
 
   if (isLoggedIn && (pathname === "/connexion" || pathname === "/inscription")) {

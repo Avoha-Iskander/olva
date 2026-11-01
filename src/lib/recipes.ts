@@ -10,7 +10,27 @@ export type RecipeSummary = {
   thumbUrl: string | null;
   collections: { id: string; name: string }[];
   isExample: boolean;
+  sharedBy: string | null; // nom de la personne qui me la partage (null : c'est la mienne)
 };
+
+/**
+ * Nom affiché des personnes qui me partagent des recettes.
+ * Les règles d'accès ne laissent lire que le profil des personnes avec qui je partage.
+ */
+async function getDisplayNames(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  userIds: string[],
+): Promise<Map<string, string>> {
+  if (!userIds.length) return new Map();
+  const { data } = await supabase.from("profiles").select("id, display_name").in("id", userIds);
+  return new Map((data ?? []).map((p) => [p.id, p.display_name || "Quelqu'un"]));
+}
+
+/** Identifiant de l'utilisateur connecté. */
+async function currentUserId(supabase: Awaited<ReturnType<typeof createClient>>) {
+  const { data } = await supabase.auth.getClaims();
+  return data?.claims?.sub ?? null;
+}
 
 /**
  * Mes recettes, filtrées par recherche (titre + ingrédients) et par collection.
@@ -33,6 +53,9 @@ export async function listMyRecipes({
   if (!recipes?.length) return [];
 
   const ids = recipes.map((r) => r.id);
+  const userId = await currentUserId(supabase);
+  const sharerIds = [...new Set(recipes.map((r) => r.owner_id).filter((id) => id !== userId))];
+  const names = await getDisplayNames(supabase, sharerIds);
 
   // Collections de chaque recette (une seule requête pour toutes)
   const { data: links } = await supabase
@@ -56,6 +79,7 @@ export async function listMyRecipes({
     title: r.title,
     servings: r.servings,
     isExample: r.is_example,
+    sharedBy: r.owner_id === userId ? null : (names.get(r.owner_id) ?? "Quelqu'un"),
     thumbUrl: r.thumb_path ? (urlByPath.get(r.thumb_path) ?? null) : null,
     collections: (links ?? [])
       .filter((l) => l.recipe_id === r.id && l.collections)
@@ -68,8 +92,7 @@ export async function listMyRecipes({
 /** Ai-je encore des recettes d'exemple ? (affiche le bandeau « Supprimer les exemples ») */
 export async function hasExamples(): Promise<boolean> {
   const supabase = await createClient();
-  const { data: claims } = await supabase.auth.getClaims();
-  const userId = claims?.claims?.sub;
+  const userId = await currentUserId(supabase);
   if (!userId) return false;
   // Filtre sur owner_id : au lot 2.7, je verrai aussi les recettes qu'on me partage
   const { count } = await supabase
@@ -88,6 +111,8 @@ export async function listMyCollections() {
 
 export type RecipeForEdit = {
   id: string;
+  ownerId: string;
+  sharedBy: string | null; // nom de la personne qui me la partage (null : c'est la mienne)
   isExample: boolean;
   title: string;
   servings: number;
@@ -114,11 +139,17 @@ export async function getRecipeForEdit(id: string): Promise<RecipeForEdit | null
   const { data: recipe } = await supabase
     .from("recipes")
     .select(
-      "id, title, servings, is_example, steps, book_title, book_page, photo_path, thumb_path, recipe_ingredients(position, item_id, quantity, unit, note, items(name)), recipe_collections(collection_id, collections(name))",
+      "id, owner_id, title, servings, is_example, steps, book_title, book_page, photo_path, thumb_path, recipe_ingredients(position, item_id, quantity, unit, note, items(name)), recipe_collections(collection_id, collections(name))",
     )
     .eq("id", id)
     .maybeSingle();
   if (!recipe) return null;
+
+  const userId = await currentUserId(supabase);
+  const sharedBy =
+    recipe.owner_id === userId
+      ? null
+      : ((await getDisplayNames(supabase, [recipe.owner_id])).get(recipe.owner_id) ?? "Quelqu'un");
 
   const photoUrl = recipe.photo_path
     ? ((
@@ -130,6 +161,8 @@ export async function getRecipeForEdit(id: string): Promise<RecipeForEdit | null
 
   return {
     id: recipe.id,
+    ownerId: recipe.owner_id,
+    sharedBy,
     isExample: recipe.is_example,
     title: recipe.title,
     servings: recipe.servings,

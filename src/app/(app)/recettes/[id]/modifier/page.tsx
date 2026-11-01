@@ -32,7 +32,8 @@ async function EditRecipeForm({
     listMyCollections(),
   ]);
   if (!profile) redirect("/connexion");
-  if (!recipe) notFound();
+  // Une recette qu'on me partage se consulte mais ne se modifie pas
+  if (!recipe || recipe.sharedBy !== null) notFound();
 
   return (
     <RecipeForm
