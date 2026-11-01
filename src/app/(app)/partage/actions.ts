@@ -99,3 +99,46 @@ export async function acceptShareLink(token: string) {
   }
   revalidatePath(`/partage/${token}`);
 }
+
+const removeSchema = z.discriminatedUnion("type", [
+  z.object({ type: z.literal("library"), ownerId: z.uuid(), sharedWith: z.uuid() }),
+  z.object({ type: z.literal("recipe"), recipeId: z.uuid(), sharedWith: z.uuid() }),
+]);
+
+/**
+ * Retirer un partage (je partage) ou y renoncer (on me partage) : c'est la même
+ * suppression. Les règles d'accès n'autorisent que les deux personnes concernées.
+ */
+export async function removeShare(share: z.infer<typeof removeSchema>): Promise<{ ok: boolean }> {
+  const parsed = removeSchema.safeParse(share);
+  if (!parsed.success) return { ok: false };
+
+  const supabase = await createClient();
+  const { error } =
+    parsed.data.type === "library"
+      ? await supabase
+          .from("library_shares")
+          .delete()
+          .eq("owner_id", parsed.data.ownerId)
+          .eq("shared_with", parsed.data.sharedWith)
+      : await supabase
+          .from("recipe_shares")
+          .delete()
+          .eq("recipe_id", parsed.data.recipeId)
+          .eq("shared_with", parsed.data.sharedWith);
+
+  revalidatePath("/parametres");
+  revalidatePath("/recettes");
+  return { ok: !error };
+}
+
+/** Annuler un lien de partage pas encore utilisé : il ne fonctionnera plus. */
+export async function cancelShareLink(linkId: string): Promise<{ ok: boolean }> {
+  const id = z.uuid().safeParse(linkId);
+  if (!id.success) return { ok: false };
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("share_links").delete().eq("id", id.data);
+  revalidatePath("/parametres");
+  return { ok: !error };
+}
