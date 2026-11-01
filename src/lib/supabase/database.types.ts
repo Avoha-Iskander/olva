@@ -131,6 +131,24 @@ export type Database = {
           },
         ]
       }
+      library_shares: {
+        Row: {
+          created_at: string
+          owner_id: string
+          shared_with: string
+        }
+        Insert: {
+          created_at?: string
+          owner_id: string
+          shared_with: string
+        }
+        Update: {
+          created_at?: string
+          owner_id?: string
+          shared_with?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
@@ -240,6 +258,32 @@ export type Database = {
           },
         ]
       }
+      recipe_shares: {
+        Row: {
+          created_at: string
+          recipe_id: string
+          shared_with: string
+        }
+        Insert: {
+          created_at?: string
+          recipe_id: string
+          shared_with: string
+        }
+        Update: {
+          created_at?: string
+          recipe_id?: string
+          shared_with?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recipe_shares_recipe_id_fkey"
+            columns: ["recipe_id"]
+            isOneToOne: false
+            referencedRelation: "recipes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       recipes: {
         Row: {
           book_page: number | null
@@ -293,6 +337,50 @@ export type Database = {
           {
             foreignKeyName: "recipes_copied_from_fkey"
             columns: ["copied_from"]
+            isOneToOne: false
+            referencedRelation: "recipes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      share_links: {
+        Row: {
+          created_at: string
+          expires_at: string
+          id: string
+          kind: string
+          owner_id: string
+          recipe_id: string | null
+          token_hash: string
+          used_at: string | null
+          used_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          kind: string
+          owner_id?: string
+          recipe_id?: string | null
+          token_hash: string
+          used_at?: string | null
+          used_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          kind?: string
+          owner_id?: string
+          recipe_id?: string | null
+          token_hash?: string
+          used_at?: string | null
+          used_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "share_links_recipe_id_fkey"
+            columns: ["recipe_id"]
             isOneToOne: false
             referencedRelation: "recipes"
             referencedColumns: ["id"]
@@ -377,8 +465,18 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      accept_share_link: { Args: { token: string }; Returns: string }
       delete_own_account: { Args: never; Returns: undefined }
       ensure_my_profile: { Args: never; Returns: undefined }
+      preview_share_link: {
+        Args: { token: string }
+        Returns: {
+          kind: string
+          owner_name: string
+          recipe_title: string
+          status: string
+        }[]
+      }
       save_recipe: { Args: { recipe: Json }; Returns: string }
       search_my_recipes: {
         Args: { collection?: string; search?: string }
@@ -404,6 +502,10 @@ export type Database = {
           isOneToOne: false
           isSetofReturn: true
         }
+      }
+      share_by_email: {
+        Args: { kind: string; target_email: string; target_recipe: string }
+        Returns: string
       }
     }
     Enums: {
