@@ -5,6 +5,7 @@ import { Suspense } from "react";
 import { acceptShareLink } from "@/app/(app)/partage/actions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { listTitle } from "@/lib/list-title";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata = { title: "Partage — Olva" };
@@ -30,13 +31,20 @@ async function ShareCard({ params }: { params: PageProps<"/partage/[token]">["pa
   const { data } = await supabase.rpc("preview_share_link", { token });
   const link = data?.[0];
   const owner = link?.owner_name || "Quelqu'un";
+  const isList = link?.kind === "list" || link?.kind === "auto_lists";
   const what =
-    link?.kind === "recipe" ? `sa recette « ${link.recipe_title} »` : "toutes ses recettes";
+    link?.kind === "recipe"
+      ? `sa recette « ${link.recipe_title} »`
+      : link?.kind === "list"
+        ? `sa ${listTitle(link.list_created_at).replace("Liste", "liste de courses")}`
+        : link?.kind === "auto_lists"
+          ? "ses prochaines listes de courses"
+          : "toutes ses recettes";
 
   // Lien utilisable : on propose de l'accepter
   if (link?.status === "valid") {
     // bind : prépare l'action avec le jeton, pour l'utiliser directement dans le formulaire
-    const accept = acceptShareLink.bind(null, token);
+    const accept = acceptShareLink.bind(null, token, link.kind);
     return (
       <Card className="w-full max-w-md">
         <CardHeader>
@@ -47,14 +55,18 @@ async function ShareCard({ params }: { params: PageProps<"/partage/[token]">["pa
           <CardDescription>
             {link.kind === "recipe"
               ? "Elle apparaîtra dans Mes recettes, en lecture seule."
-              : "Elles apparaîtront dans Mes recettes, en lecture seule, y compris celles ajoutées plus tard."}
+              : link.kind === "library"
+                ? "Elles apparaîtront dans Mes recettes, en lecture seule, y compris celles ajoutées plus tard."
+                : link.kind === "list"
+                  ? "Elle apparaîtra dans Mes listes en cours : vous pourrez ajouter, retirer et modifier des articles."
+                  : "Chaque nouvelle liste terminée apparaîtra dans Mes listes en cours, modifiable par vous deux."}
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form action={accept}>
             <Button type="submit" className="w-full">
               <BookOpen />
-              Ajouter à mes recettes
+              {isList ? "Ajouter à mes listes" : "Ajouter à mes recettes"}
             </Button>
           </form>
         </CardContent>
@@ -65,11 +77,11 @@ async function ShareCard({ params }: { params: PageProps<"/partage/[token]">["pa
   const messages: Record<string, { title: string; text: string }> = {
     accepted: {
       title: "C'est déjà fait",
-      text: "Vous avez déjà accepté ce partage. Retrouvez-le dans Mes recettes.",
+      text: `Vous avez déjà accepté ce partage. Retrouvez-le dans ${isList ? "Mes listes en cours" : "Mes recettes"}.`,
     },
     own: {
       title: "C'est votre propre lien",
-      text: "Envoyez-le à la personne avec qui vous voulez partager vos recettes.",
+      text: "Envoyez-le à la personne avec qui vous voulez partager.",
     },
     used: {
       title: "Lien déjà utilisé",
@@ -94,7 +106,9 @@ async function ShareCard({ params }: { params: PageProps<"/partage/[token]">["pa
       </CardHeader>
       <CardContent>
         <Button asChild variant="outline" className="w-full">
-          <Link href="/recettes">Mes recettes</Link>
+          <Link href={isList ? "/listes" : "/recettes"}>
+            {isList ? "Mes listes en cours" : "Mes recettes"}
+          </Link>
         </Button>
       </CardContent>
     </Card>

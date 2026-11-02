@@ -59,8 +59,17 @@ export function RecipePicker({
   const latest = useRef(selected);
   const listIdRef = useRef(listId);
   const dirty = useRef(false);
+  // File d'attente des enregistrements : chacun attend la fin du précédent.
+  // Sans elle, deux enregistrements simultanés pourraient créer deux listes.
+  const queue = useRef<Promise<boolean>>(Promise.resolve(true));
 
-  async function save() {
+  /** Ajoute un enregistrement à la file ; il lira la sélection au moment de partir. */
+  function save() {
+    queue.current = queue.current.then(saveNow);
+    return queue.current;
+  }
+
+  async function saveNow() {
     dirty.current = false;
     const result = await saveListRecipes(listIdRef.current, latest.current);
     if (result.ok) {
@@ -83,14 +92,19 @@ export function RecipePicker({
     latest.current = next;
     dirty.current = true;
     if (timer.current) clearTimeout(timer.current);
-    timer.current = setTimeout(() => startTransition(() => save().then(() => undefined)), 600);
+    // Enregistrement en arrière-plan, HORS transition : le bouton « Revoir les ingrédients »
+    // reste cliquable pendant ce temps (il attendra la fin de la file si besoin)
+    timer.current = setTimeout(() => void save(), 600);
   }
 
   // Si on quitte la page avec une modification en attente, on l'enregistre quand même
   useEffect(() => {
     return () => {
       if (timer.current) clearTimeout(timer.current);
-      if (dirty.current) void saveListRecipes(listIdRef.current, latest.current);
+      // (dans la file, pour attendre un éventuel premier enregistrement qui crée la liste)
+      if (dirty.current) {
+        void queue.current.then(() => saveListRecipes(listIdRef.current, latest.current));
+      }
     };
   }, []);
 
@@ -109,11 +123,9 @@ export function RecipePicker({
   function goToReview() {
     if (timer.current) clearTimeout(timer.current);
     startTransition(async () => {
-      if (dirty.current || !listIdRef.current) {
-        const ok = await save();
-        if (!ok) return;
-      }
-      router.push(`/listes/${listIdRef.current}/revue`);
+      // Modification pas encore partie : on l'enregistre ; sinon on attend la file en cours
+      const ok = dirty.current || !listIdRef.current ? await save() : await queue.current;
+      if (ok) router.push(`/listes/${listIdRef.current}/revue`);
     });
   }
 

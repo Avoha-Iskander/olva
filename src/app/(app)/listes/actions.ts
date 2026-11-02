@@ -42,8 +42,9 @@ export async function saveListRecipes(
   });
   if (error) return { ok: false };
 
-  revalidatePath(`/listes/${id}/revue`);
-  revalidatePath("/listes");
+  // Pas de revalidatePath ici : appelé depuis la page en cours d'édition, il forcerait
+  // Next.js à recharger cette page (petit « clignotement » à chaque choix de recette).
+  // Les pages Revue et Mes listes relisent de toute façon la base à chaque visite.
   return { ok: true, listId: id };
 }
 

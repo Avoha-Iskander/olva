@@ -9,10 +9,12 @@ import {
   saveExtras,
   upsertPrelistItem,
 } from "@/app/(app)/listes/actions";
+import { AisleHeading } from "@/components/lists/aisle-heading";
 import { QuantityControl } from "@/components/lists/quantity-control";
 import { ItemCombobox } from "@/components/recipe-form/item-combobox";
 import { NewItemDialog } from "@/components/recipe-form/new-item-dialog";
 import { Button } from "@/components/ui/button";
+import { groupByAisle } from "@/lib/aisles";
 import type { Aisle, CatalogueItem } from "@/lib/catalogue";
 import type { ExtraItem } from "@/lib/lists";
 import { normalizeUnit } from "@/lib/review";
@@ -132,12 +134,18 @@ export function ExtrasEditor({
     void removePrelistItem(entry.itemId);
   }
 
+  /** Rayon d'un article du catalogue (les rayons arrivent dans l'ordre du magasin). */
+  function aisleOf(item: CatalogueItem) {
+    const index = aisles.findIndex((a) => a.id === item.aisleId);
+    return { aisleName: aisles[index]?.name, aislePosition: index === -1 ? 99 : index + 1 };
+  }
+
   function addToPrelist(item: CatalogueItem) {
     if (prelist.some((p) => p.itemId === item.id)) return;
     const entry: ExtraItem = {
       itemId: item.id,
       name: item.name,
-      aislePosition: 0,
+      ...aisleOf(item),
       quantity: 1,
       unit: item.purchaseUnit ?? item.defaultUnit,
     };
@@ -154,7 +162,7 @@ export function ExtrasEditor({
       {
         itemId: item.id,
         name: item.name,
-        aislePosition: 0,
+        ...aisleOf(item),
         quantity: 1,
         unit: item.purchaseUnit ?? item.defaultUnit,
       },
@@ -195,64 +203,77 @@ export function ExtrasEditor({
             Votre pré-liste est vide. « Modifier ma pré-liste » pour y ajouter vos achats habituels.
           </p>
         ) : (
-          <ul className="divide-border bg-card divide-y rounded-xl border">
-            {prelist.map((entry) => {
-              const amount = checked.get(entry.itemId);
-              return (
-                <li key={entry.itemId} className="flex flex-wrap items-center gap-x-3 gap-y-2 p-3">
-                  {editing ? (
-                    <>
-                      <span className="min-w-0 flex-1 basis-40">{entry.name}</span>
-                      <QuantityControl
-                        line={entry}
-                        onQuantity={(q) => changeUsual(entry, withQuantity(q, entry.unit))}
-                        onUnit={(u) => changeUsual(entry, withUnit(entry, u))}
-                      />
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => removeFromPrelist(entry)}
-                        aria-label={`Retirer ${entry.name} de ma pré-liste`}
+          <div className="grid gap-3">
+            {/* Un bloc par rayon, dans l'ordre du magasin */}
+            {groupByAisle(prelist).map((group) => (
+              <div key={group.aisle} className="grid gap-1.5">
+                <AisleHeading>{group.aisle}</AisleHeading>
+                <ul className="divide-border bg-card divide-y rounded-xl border">
+                  {group.lines.map((entry) => {
+                    const amount = checked.get(entry.itemId);
+                    return (
+                      <li
+                        key={entry.itemId}
+                        className="flex flex-wrap items-center gap-x-3 gap-y-2 p-3"
                       >
-                        <X />
-                      </Button>
-                    </>
-                  ) : (
-                    <>
-                      <label className="flex min-h-11 min-w-0 flex-1 basis-40 cursor-pointer items-center gap-3">
-                        <input
-                          type="checkbox"
-                          checked={Boolean(amount)}
-                          onChange={() => togglePrelist(entry)}
-                          className="accent-primary size-5 shrink-0"
-                        />
-                        <span className={cn(!amount && "text-muted-foreground")}>{entry.name}</span>
-                      </label>
-                      {amount ? (
-                        <QuantityControl
-                          line={{ name: entry.name, ...amount }}
-                          onQuantity={(q) =>
-                            updateChecked((map) =>
-                              map.set(entry.itemId, withQuantity(q, amount.unit)),
-                            )
-                          }
-                          onUnit={(u) =>
-                            updateChecked((map) => map.set(entry.itemId, withUnit(amount, u)))
-                          }
-                        />
-                      ) : (
-                        <span className="text-muted-foreground text-sm">
-                          {formatQuantity(entry.quantity, entry.unit)}
-                        </span>
-                      )}
-                    </>
-                  )}
-                </li>
-              );
-            })}
+                        {editing ? (
+                          <>
+                            <span className="min-w-0 flex-1 basis-40">{entry.name}</span>
+                            <QuantityControl
+                              line={entry}
+                              onQuantity={(q) => changeUsual(entry, withQuantity(q, entry.unit))}
+                              onUnit={(u) => changeUsual(entry, withUnit(entry, u))}
+                            />
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => removeFromPrelist(entry)}
+                              aria-label={`Retirer ${entry.name} de ma pré-liste`}
+                            >
+                              <X />
+                            </Button>
+                          </>
+                        ) : (
+                          <>
+                            <label className="flex min-h-11 min-w-0 flex-1 basis-40 cursor-pointer items-center gap-3">
+                              <input
+                                type="checkbox"
+                                checked={Boolean(amount)}
+                                onChange={() => togglePrelist(entry)}
+                                className="accent-primary size-5 shrink-0"
+                              />
+                              <span className={cn(!amount && "text-muted-foreground")}>
+                                {entry.name}
+                              </span>
+                            </label>
+                            {amount ? (
+                              <QuantityControl
+                                line={{ name: entry.name, ...amount }}
+                                onQuantity={(q) =>
+                                  updateChecked((map) =>
+                                    map.set(entry.itemId, withQuantity(q, amount.unit)),
+                                  )
+                                }
+                                onUnit={(u) =>
+                                  updateChecked((map) => map.set(entry.itemId, withUnit(amount, u)))
+                                }
+                              />
+                            ) : (
+                              <span className="text-muted-foreground text-sm">
+                                {formatQuantity(entry.quantity, entry.unit)}
+                              </span>
+                            )}
+                          </>
+                        )}
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            ))}
             {editing && (
-              <li className="p-3">
+              <div>
                 <ItemCombobox
                   items={items}
                   selectedId={null}
@@ -261,9 +282,9 @@ export function ExtrasEditor({
                   onSelect={addToPrelist}
                   onCreate={(name) => setNewItem({ name, target: "prelist" })}
                 />
-              </li>
+              </div>
             )}
-          </ul>
+          </div>
         )}
       </section>
 
@@ -285,37 +306,49 @@ export function ExtrasEditor({
           onCreate={(name) => setNewItem({ name, target: "free" })}
         />
         {free.length > 0 && (
-          <ul className="divide-border bg-card divide-y rounded-xl border">
-            {free.map((line) => (
-              <li key={line.itemId} className="flex flex-wrap items-center gap-x-3 gap-y-2 p-3">
-                <span className="min-w-0 flex-1 basis-40 font-medium">{line.name}</span>
-                <QuantityControl
-                  line={line}
-                  onQuantity={(q) =>
-                    updateFree(
-                      free.map((f) =>
-                        f.itemId === line.itemId ? { ...f, ...withQuantity(q, f.unit) } : f,
-                      ),
-                    )
-                  }
-                  onUnit={(u) =>
-                    updateFree(
-                      free.map((f) => (f.itemId === line.itemId ? { ...f, ...withUnit(f, u) } : f)),
-                    )
-                  }
-                />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => updateFree(free.filter((f) => f.itemId !== line.itemId))}
-                  aria-label={`Retirer ${line.name}`}
-                >
-                  <X />
-                </Button>
-              </li>
+          <div className="grid gap-3">
+            {groupByAisle(free).map((group) => (
+              <div key={group.aisle} className="grid gap-1.5">
+                <AisleHeading>{group.aisle}</AisleHeading>
+                <ul className="divide-border bg-card divide-y rounded-xl border">
+                  {group.lines.map((line) => (
+                    <li
+                      key={line.itemId}
+                      className="flex flex-wrap items-center gap-x-3 gap-y-2 p-3"
+                    >
+                      <span className="min-w-0 flex-1 basis-40 font-medium">{line.name}</span>
+                      <QuantityControl
+                        line={line}
+                        onQuantity={(q) =>
+                          updateFree(
+                            free.map((f) =>
+                              f.itemId === line.itemId ? { ...f, ...withQuantity(q, f.unit) } : f,
+                            ),
+                          )
+                        }
+                        onUnit={(u) =>
+                          updateFree(
+                            free.map((f) =>
+                              f.itemId === line.itemId ? { ...f, ...withUnit(f, u) } : f,
+                            ),
+                          )
+                        }
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => updateFree(free.filter((f) => f.itemId !== line.itemId))}
+                        aria-label={`Retirer ${line.name}`}
+                      >
+                        <X />
+                      </Button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             ))}
-          </ul>
+          </div>
         )}
       </section>
 

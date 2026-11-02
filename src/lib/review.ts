@@ -23,6 +23,7 @@ export type ReviewItem = {
   id: string;
   name: string;
   aislePosition: number; // ordre du rayon dans le magasin
+  aisleName?: string; // nom du rayon (pour regrouper l'affichage)
   defaultUnit: string;
   isStaple: boolean; // ingrédient de base (huile, sel…)
   purchaseUnit: string | null; // unité de conditionnement (bouteille, paquet…)
@@ -43,6 +44,7 @@ export type ComputedLine = {
   itemId: string;
   name: string;
   aislePosition: number;
+  aisleName?: string;
   section: "main" | "staple"; // « staple » : ingrédients de base, en bas
   quantity: number;
   unit: string;
@@ -114,6 +116,7 @@ export function computeReview(
       itemId: item.id,
       name: item.name,
       aislePosition: item.aislePosition,
+      aisleName: item.aisleName,
       section: "main",
       quantity: 0,
       unit: item.defaultUnit,
@@ -208,6 +211,7 @@ export function computeReview(
       itemId,
       name: item.name,
       aislePosition: item.aislePosition,
+      aisleName: item.aisleName,
       section: "main",
       quantity: 1,
       unit: item.defaultUnit,
