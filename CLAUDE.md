@@ -19,7 +19,7 @@ Tu écris tout le code. Je ne code pas, mais je veux **comprendre** ce que tu fa
 - Introduis chaque notion nouvelle (hook React, RLS, migration, service worker…) en 2 ou 3 phrases simples, avec une analogie si utile.
 - Privilégie le code lisible au code astucieux ; commente les passages non évidents.
 - Quand je dis que je ne comprends pas : réexplique autrement, puis recommande une ressource ciblée (vidéo, tutoriel, page de documentation officielle, section de The Odin Project) en précisant ce qu'elle couvre.
-- À la fin de chaque tâche : résume en 3 lignes les notions nouvelles et vérifie ma compréhension par une ou deux questions.
+- À la fin de chaque tâche : résume en 3 lignes les notions nouvelles. Pas de question de vérification (demande d'Alex, 02/11/2026).
 
 ## Commandes
 
