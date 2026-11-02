@@ -4,13 +4,10 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Settings } from "lucide-react";
 
-import { NAV_ITEMS } from "@/components/layout/nav-items";
+import { isNavActive, NAV_ITEMS } from "@/components/layout/nav-items";
 import { cn } from "@/lib/utils";
 
-/** L'entrée est-elle active ? (/recettes reste actif sur /recettes/123) */
-function isActive(pathname: string, href: string) {
-  return pathname === href || pathname.startsWith(`${href}/`);
-}
+const isActive = isNavActive;
 
 /**
  * Barre du haut : logo, menu (sur ordinateur) et Paramètres.
