@@ -387,6 +387,148 @@ export type Database = {
           },
         ]
       }
+      shopping_list_items: {
+        Row: {
+          adjusted: boolean
+          changed: boolean
+          checked: boolean
+          checked_at: string | null
+          checked_by: string | null
+          computed_quantity: number | null
+          created_at: string
+          id: string
+          included: boolean
+          item_id: string
+          line_key: string
+          list_id: string
+          origin: string
+          quantity: number
+          recipe_ids: string[]
+          unit: string
+        }
+        Insert: {
+          adjusted?: boolean
+          changed?: boolean
+          checked?: boolean
+          checked_at?: string | null
+          checked_by?: string | null
+          computed_quantity?: number | null
+          created_at?: string
+          id?: string
+          included?: boolean
+          item_id: string
+          line_key: string
+          list_id: string
+          origin: string
+          quantity: number
+          recipe_ids?: string[]
+          unit: string
+        }
+        Update: {
+          adjusted?: boolean
+          changed?: boolean
+          checked?: boolean
+          checked_at?: string | null
+          checked_by?: string | null
+          computed_quantity?: number | null
+          created_at?: string
+          id?: string
+          included?: boolean
+          item_id?: string
+          line_key?: string
+          list_id?: string
+          origin?: string
+          quantity?: number
+          recipe_ids?: string[]
+          unit?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shopping_list_items_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shopping_list_items_list_id_fkey"
+            columns: ["list_id"]
+            isOneToOne: false
+            referencedRelation: "shopping_lists"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shopping_list_items_unit_fkey"
+            columns: ["unit"]
+            isOneToOne: false
+            referencedRelation: "units"
+            referencedColumns: ["code"]
+          },
+        ]
+      }
+      shopping_list_recipes: {
+        Row: {
+          list_id: string
+          position: number
+          recipe_id: string
+          servings: number
+        }
+        Insert: {
+          list_id: string
+          position: number
+          recipe_id: string
+          servings: number
+        }
+        Update: {
+          list_id?: string
+          position?: number
+          recipe_id?: string
+          servings?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shopping_list_recipes_list_id_fkey"
+            columns: ["list_id"]
+            isOneToOne: false
+            referencedRelation: "shopping_lists"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shopping_list_recipes_recipe_id_fkey"
+            columns: ["recipe_id"]
+            isOneToOne: false
+            referencedRelation: "recipes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      shopping_lists: {
+        Row: {
+          created_at: string
+          finished_at: string | null
+          id: string
+          owner_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          finished_at?: string | null
+          id?: string
+          owner_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          finished_at?: string | null
+          id?: string
+          owner_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       unit_conversions: {
         Row: {
           factor: number
@@ -479,6 +621,10 @@ export type Database = {
         }[]
       }
       save_recipe: { Args: { recipe: Json }; Returns: string }
+      save_review: {
+        Args: { lines: Json; target_list: string }
+        Returns: undefined
+      }
       search_my_recipes: {
         Args: { collection?: string; search?: string }
         Returns: {
@@ -503,6 +649,10 @@ export type Database = {
           isOneToOne: false
           isSetofReturn: true
         }
+      }
+      set_list_recipes: {
+        Args: { recipes: Json; target_list: string }
+        Returns: undefined
       }
       share_by_email: {
         Args: { kind: string; target_email: string; target_recipe: string }
