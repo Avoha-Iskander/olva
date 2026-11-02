@@ -8,15 +8,17 @@ import { saveReviewLines } from "@/app/(app)/nouvelle-liste/actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { parseQuantity, quantityToInput } from "@/lib/quantity";
-import { adjustLine, type ReviewLine, stepQuantity } from "@/lib/review";
-import { formatQuantity, UNITS, isUnitCode } from "@/lib/units";
+import {
+  formatRequested,
+  type ReviewLine,
+  setLineQuantity,
+  setLineUnit,
+  stepQuantity,
+} from "@/lib/review";
+import { formatQuantity } from "@/lib/units";
+import { UNIT_OPTIONS } from "@/components/recipe-form/units";
+import { NativeSelect } from "@/components/ui/native-select";
 import { cn } from "@/lib/utils";
-
-/** Libellé court d'une unité à côté du champ quantité (« g », « botte »…). */
-function unitLabel(unit: string) {
-  if (unit === "piece") return "";
-  return isUnitCode(unit) ? UNITS[unit].label : unit;
-}
 
 /**
  * Étape 2 : revue des ingrédients (US-LST-02).
@@ -106,7 +108,8 @@ export function ReviewEditor({
                 <ReviewRow
                   line={line}
                   recipeTitles={recipeTitles}
-                  onQuantity={(q) => update(line.key, (l) => adjustLine(l, q))}
+                  onQuantity={(q) => update(line.key, (l) => setLineQuantity(l, q))}
+                  onUnit={(u) => update(line.key, (l) => setLineUnit(l, u))}
                   onToggle={() => update(line.key, (l) => ({ ...l, included: !l.included }))}
                 />
               </li>
@@ -132,7 +135,8 @@ export function ReviewEditor({
                   line={line}
                   recipeTitles={recipeTitles}
                   onToggle={() => update(line.key, (l) => ({ ...l, included: !l.included }))}
-                  onQuantity={(q) => update(line.key, (l) => adjustLine(l, q))}
+                  onQuantity={(q) => update(line.key, (l) => setLineQuantity(l, q))}
+                  onUnit={(u) => update(line.key, (l) => setLineUnit(l, u))}
                 />
               </li>
             ))}
@@ -185,11 +189,13 @@ function ReviewRow({
   line,
   recipeTitles,
   onQuantity,
+  onUnit,
   onToggle,
 }: {
   line: ReviewLine;
   recipeTitles: Record<string, string>;
   onQuantity: (quantity: number) => void;
+  onUnit: (unit: string) => void;
   onToggle: () => void;
 }) {
   if (!line.included) {
@@ -216,7 +222,7 @@ function ReviewRow({
         </p>
         <Origin line={line} recipeTitles={recipeTitles} />
       </div>
-      <QuantityControl line={line} onQuantity={onQuantity} />
+      <QuantityControl line={line} onQuantity={onQuantity} onUnit={onUnit} />
       <Button
         type="button"
         variant="ghost"
@@ -236,11 +242,13 @@ function StapleRow({
   recipeTitles,
   onToggle,
   onQuantity,
+  onUnit,
 }: {
   line: ReviewLine;
   recipeTitles: Record<string, string>;
   onToggle: () => void;
   onQuantity: (quantity: number) => void;
+  onUnit: (unit: string) => void;
 }) {
   return (
     <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
@@ -255,12 +263,16 @@ function StapleRow({
         <span className="min-w-0">
           <span className={cn("block", !line.included && "text-muted-foreground")}>
             {line.name}
+            {/* Quantité demandée par les recettes, pour aider à décider */}
+            {formatRequested(line) && (
+              <span className="text-muted-foreground"> ({formatRequested(line)})</span>
+            )}
           </span>
           <Origin line={line} recipeTitles={recipeTitles} />
         </span>
       </label>
       {line.included ? (
-        <QuantityControl line={line} onQuantity={onQuantity} />
+        <QuantityControl line={line} onQuantity={onQuantity} onUnit={onUnit} />
       ) : (
         <span className="text-muted-foreground text-sm">
           {formatQuantity(line.quantity, line.unit)}
@@ -270,13 +282,18 @@ function StapleRow({
   );
 }
 
-/** « − [quantité] + » : pas selon l'unité, saisie directe possible (« 1,5 », « 1/2 »). */
+/**
+ * « − [quantité] + [unité] » : pas selon l'unité, saisie directe possible (« 1,5 », « 1/2 »),
+ * passage automatique en kg / l au-delà de 1 000 (setLineQuantity).
+ */
 function QuantityControl({
   line,
   onQuantity,
+  onUnit,
 }: {
   line: ReviewLine;
   onQuantity: (quantity: number) => void;
+  onUnit: (unit: string) => void;
 }) {
   // Texte en cours de saisie ; null = on affiche la quantité de la ligne
   const [draft, setDraft] = useState<string | null>(null);
@@ -320,7 +337,19 @@ function QuantityControl({
       >
         <Plus />
       </Button>
-      <span className="text-muted-foreground w-20 truncate text-sm">{unitLabel(line.unit)}</span>
+      {/* Unité modifiable : la quantité est convertie quand c'est possible (kg → g) */}
+      <NativeSelect
+        value={line.unit}
+        onChange={(e) => onUnit(e.target.value)}
+        aria-label={`Unité de ${line.name}`}
+        className="w-28 text-sm"
+      >
+        {UNIT_OPTIONS.map((u) => (
+          <option key={u.code} value={u.code}>
+            {u.label}
+          </option>
+        ))}
+      </NativeSelect>
     </div>
   );
 }

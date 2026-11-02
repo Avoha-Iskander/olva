@@ -11,6 +11,7 @@ import { ServingsStepper } from "@/components/ui/servings-stepper";
 import type { DraftRecipe } from "@/lib/lists";
 import type { RecipeSummary } from "@/lib/recipes";
 import { normalizeText } from "@/lib/text";
+import { cn } from "@/lib/utils";
 
 /**
  * Étape 1 de « Nouvelle liste » : choisir des recettes et leurs portions.
@@ -19,11 +20,13 @@ import { normalizeText } from "@/lib/text";
  */
 export function RecipePicker({
   recipes,
+  collections,
   initialListId,
   initialSelected,
   defaultServings,
 }: {
   recipes: RecipeSummary[];
+  collections: { id: string; name: string }[]; // mes collections (catégories)
   initialListId: string | null;
   initialSelected: DraftRecipe[];
   defaultServings: number;
@@ -32,16 +35,22 @@ export function RecipePicker({
   const [selected, setSelected] = useState(initialSelected);
   const [listId, setListId] = useState(initialListId);
   const [query, setQuery] = useState("");
+  const [collectionId, setCollectionId] = useState<string | null>(null);
   const [saveFailed, setSaveFailed] = useState(false);
   const [pending, startTransition] = useTransition();
 
   // Recettes par identifiant, pour afficher le titre des recettes choisies
   const byId = useMemo(() => new Map(recipes.map((r) => [r.id, r])), [recipes]);
   const selectedIds = new Set(selected.map((s) => s.recipeId));
+  // Recettes affichées : filtrées par collection (catégorie) puis par la recherche
   const visible = useMemo(() => {
     const q = normalizeText(query);
-    return q ? recipes.filter((r) => normalizeText(r.title).includes(q)) : recipes;
-  }, [recipes, query]);
+    return recipes.filter(
+      (r) =>
+        (!collectionId || r.collections.some((c) => c.id === collectionId)) &&
+        (!q || normalizeText(r.title).includes(q)),
+    );
+  }, [recipes, query, collectionId]);
 
   // --- Enregistrement automatique -------------------------------------------
   // useRef garde une valeur entre deux affichages sans provoquer de nouvel affichage :
@@ -165,6 +174,30 @@ export function RecipePicker({
             className="pl-9"
           />
         </div>
+        {collections.length > 0 && (
+          <div
+            role="group"
+            aria-label="Filtrer par collection"
+            className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1"
+          >
+            {[{ id: null, name: "Toutes" }, ...collections].map((c) => (
+              <button
+                key={c.id ?? "toutes"}
+                type="button"
+                onClick={() => setCollectionId(c.id)}
+                aria-pressed={collectionId === c.id}
+                className={cn(
+                  "flex h-11 shrink-0 items-center rounded-full border px-4 text-sm whitespace-nowrap transition-colors",
+                  collectionId === c.id
+                    ? "border-primary bg-primary text-primary-foreground"
+                    : "hover:bg-accent",
+                )}
+              >
+                {c.name}
+              </button>
+            ))}
+          </div>
+        )}
         {visible.length === 0 ? (
           <p className="text-muted-foreground py-6 text-center text-sm">
             {recipes.length === 0

@@ -4,7 +4,7 @@ import { Suspense } from "react";
 import { RecipePicker } from "@/components/lists/recipe-picker";
 import { getCurrentDraft } from "@/lib/lists";
 import { getCurrentProfile } from "@/lib/profile";
-import { listMyRecipes } from "@/lib/recipes";
+import { listMyCollections, listMyRecipes } from "@/lib/recipes";
 
 export const metadata = { title: "Nouvelle liste — Olva" };
 
@@ -24,17 +24,19 @@ export default function NewListPage() {
 }
 
 async function Picker() {
-  // Trois lectures en parallèle : profil, brouillon en cours, recettes (miennes + partagées)
-  const [profile, draft, recipes] = await Promise.all([
+  // Lectures en parallèle : profil, brouillon en cours, recettes (miennes + partagées), collections
+  const [profile, draft, recipes, collections] = await Promise.all([
     getCurrentProfile(),
     getCurrentDraft(),
     listMyRecipes({}),
+    listMyCollections(),
   ]);
   if (!profile) redirect("/connexion");
 
   return (
     <RecipePicker
       recipes={[...recipes].sort((a, b) => a.title.localeCompare(b.title, "fr"))}
+      collections={collections}
       initialListId={draft?.id ?? null}
       initialSelected={draft?.recipes ?? []}
       defaultServings={profile.default_servings}

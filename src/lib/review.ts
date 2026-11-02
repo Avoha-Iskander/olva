@@ -9,7 +9,14 @@
  *   lignes calculées + revue précédente ──mergeReview──▶ revue affichée
  *   (mergeReview garde mes ajustements quand je reviens changer les recettes)
  */
-import { convertQuantity, type ItemConversion, isUnitCode, roundQuantity, UNITS } from "./units";
+import {
+  convertQuantity,
+  formatQuantity,
+  type ItemConversion,
+  isUnitCode,
+  roundQuantity,
+  UNITS,
+} from "./units";
 
 /** Article du catalogue, avec ce qu'il faut pour le calcul. */
 export type ReviewItem = {
@@ -41,11 +48,15 @@ export type ComputedLine = {
   unit: string;
   includedByDefault: boolean; // les ingrédients de base sont décochés par défaut
   recipeIds: string[]; // recettes d'où vient la ligne
+  // Ingrédients de base : quantité réellement demandée par les recettes (affichée
+  // entre parenthèses pour aider à décider : « Sucre (100 g) — 1 paquet »)
+  requested?: { quantity: number; unit: string }[];
+  requestedToTaste?: boolean; // au moins une recette l'indique « au goût »
 };
 
 /** Ligne de la revue, telle qu'affichée et enregistrée. */
 export type ReviewLine = ComputedLine & {
-  computedQuantity: number; // quantité calculée (sert à repérer les changements)
+  computedQuantity: number; // quantité calculée, dans l'unité de la clé (repère les changements)
   included: boolean; // ligne gardée (ou cochée, pour un ingrédient de base)
   adjusted: boolean; // j'ai changé la quantité à la main
   changed: boolean; // la quantité calculée a changé depuis la dernière revue
@@ -88,6 +99,8 @@ export function computeReview(
 ): ComputedLine[] {
   const lines = new Map<string, ComputedLine>();
   const toTaste = new Map<string, string[]>(); // article « au goût » → recettes
+  // Ingrédient de base → quantités demandées par unité (après conversion si possible)
+  const stapleNeeds = new Map<string, { byUnit: Map<string, number>; toTaste: boolean }>();
 
   const addTo = (key: string, item: ReviewItem, line: Partial<ComputedLine>, recipeId: string) => {
     const existing = lines.get(key);
@@ -131,6 +144,21 @@ export function computeReview(
           },
           recipe.recipeId,
         );
+        const needs = stapleNeeds.get(item.id) ?? { byUnit: new Map(), toTaste: false };
+        if (ingredient.quantity === null || ingredient.unit === null) {
+          needs.toTaste = true;
+        } else {
+          const scaled = ingredient.quantity * ratio;
+          const converted = convertQuantity(
+            scaled,
+            ingredient.unit,
+            item.defaultUnit,
+            item.conversions,
+          );
+          const unit = converted !== null ? item.defaultUnit : ingredient.unit;
+          needs.byUnit.set(unit, (needs.byUnit.get(unit) ?? 0) + (converted ?? scaled));
+        }
+        stapleNeeds.set(item.id, needs);
         continue;
       }
 
@@ -190,7 +218,18 @@ export function computeReview(
 
   return [...lines.values()]
     .map((line) => {
-      if (line.section === "staple") return { ...line, quantity: 1 };
+      if (line.section === "staple") {
+        const needs = stapleNeeds.get(line.itemId);
+        return {
+          ...line,
+          quantity: 1,
+          requested: [...(needs?.byUnit ?? [])].map(([unit, quantity]) => {
+            const display = toDisplayUnit(quantity, unit);
+            return { quantity: roundQuantity(display.quantity), unit: display.unit };
+          }),
+          requestedToTaste: needs?.toTaste ?? false,
+        };
+      }
       const display = toDisplayUnit(line.quantity, line.unit);
       return { ...line, ...display, quantity: roundForList(display.quantity, display.unit) };
     })
@@ -203,10 +242,15 @@ export function computeReview(
     );
 }
 
-/** Même quantité, même dans des unités différentes (1 kg = 1 000 g) ? */
-function sameQuantity(a: number, aUnit: string, b: number, bUnit: string): boolean {
-  const converted = convertQuantity(a, aUnit, bUnit);
-  return converted !== null && Math.abs(converted - b) < 1e-6;
+/**
+ * Quantité calculée exprimée dans l'unité de référence de la ligne, celle de sa clé
+ * (« farine:g » → en g), quelle que soit l'unité affichée (kg) ou choisie (paquet).
+ * C'est elle qu'on compare d'un calcul à l'autre pour savoir si la ligne a changé.
+ */
+function computedInKeyUnit(line: ComputedLine): number {
+  if (line.section === "staple") return line.quantity;
+  const keyUnit = line.key.split(":").pop()!;
+  return convertQuantity(line.quantity, line.unit, keyUnit) ?? line.quantity;
 }
 
 /**
@@ -226,14 +270,15 @@ export function mergeReview(previous: ReviewLine[], computed: ComputedLine[]): R
     if (!old) {
       return {
         ...line,
-        computedQuantity: line.quantity,
+        computedQuantity: computedInKeyUnit(line),
         included: line.includedByDefault,
         adjusted: false,
         changed: !isFirstReview,
       };
     }
 
-    const unchanged = sameQuantity(old.computedQuantity, old.unit, line.quantity, line.unit);
+    const computed = computedInKeyUnit(line);
+    const unchanged = Math.abs(old.computedQuantity - computed) < 1e-6;
     if (old.adjusted && unchanged) {
       // Mon ajustement tient toujours : on le garde tel quel (y compris son unité)
       return {
@@ -248,7 +293,7 @@ export function mergeReview(previous: ReviewLine[], computed: ComputedLine[]): R
     }
     return {
       ...line,
-      computedQuantity: line.quantity,
+      computedQuantity: computed,
       included: old.included,
       adjusted: false,
       changed: !unchanged,
@@ -271,6 +316,43 @@ export function stepQuantity(quantity: number, unit: string, direction: 1 | -1):
 }
 
 /** J'ajuste la quantité d'une ligne : elle est marquée « ajustée » et n'est plus signalée. */
-export function adjustLine(line: ReviewLine, quantity: number): ReviewLine {
-  return { ...line, quantity, adjusted: true, changed: false };
+export function adjustLine(line: ReviewLine, quantity: number, unit = line.unit): ReviewLine {
+  return { ...line, quantity, unit, adjusted: true, changed: false };
+}
+
+/**
+ * Après un ajustement de quantité : 900 g → 1 200 g devient 1,2 kg ; 1 kg → 0,5 kg
+ * devient 500 g (même chose entre ml et l).
+ */
+export function normalizeUnit(quantity: number, unit: string): { quantity: number; unit: string } {
+  if (unit === "g" && quantity >= 1000)
+    return { quantity: roundQuantity(quantity / 1000), unit: "kg" };
+  if (unit === "kg" && quantity < 1) return { quantity: roundQuantity(quantity * 1000), unit: "g" };
+  if (unit === "ml" && quantity >= 1000)
+    return { quantity: roundQuantity(quantity / 1000), unit: "l" };
+  if (unit === "l" && quantity < 1) return { quantity: roundQuantity(quantity * 1000), unit: "ml" };
+  return { quantity, unit };
+}
+
+/** Nouvelle quantité saisie ou « − + » : ajustée, puis passée en kg / g, l / ml si besoin. */
+export function setLineQuantity(line: ReviewLine, quantity: number): ReviewLine {
+  const normalized = normalizeUnit(quantity, line.unit);
+  return adjustLine(line, normalized.quantity, normalized.unit);
+}
+
+/**
+ * Nouvelle unité choisie dans la liste : la quantité est convertie quand c'est
+ * possible (1,2 kg → 1 200 g), sinon gardée telle quelle (1,2 kg → 1,2 paquet,
+ * à corriger ensuite).
+ */
+export function setLineUnit(line: ReviewLine, unit: string): ReviewLine {
+  const converted = convertQuantity(line.quantity, line.unit, unit);
+  return adjustLine(line, converted !== null ? roundQuantity(converted) : line.quantity, unit);
+}
+
+/** Texte entre parenthèses d'un ingrédient de base : « 100 g », « 2 c. à soupe + au goût ». */
+export function formatRequested(line: ComputedLine): string | null {
+  const parts = (line.requested ?? []).map((r) => formatQuantity(r.quantity, r.unit));
+  if (line.requestedToTaste) parts.push("au goût");
+  return parts.length ? parts.join(" + ") : null;
 }
