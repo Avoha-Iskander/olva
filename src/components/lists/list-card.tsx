@@ -15,6 +15,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import type { ListStatus } from "@/lib/lists";
+import { listTitle } from "@/lib/list-title";
 import { cn } from "@/lib/utils";
 
 const STATUS_LABEL: Record<ListStatus, string> = {
@@ -23,17 +24,6 @@ const STATUS_LABEL: Record<ListStatus, string> = {
   shopping: "Courses en cours",
   done: "Terminée",
 };
-
-/** « Liste du lundi 2 novembre » : une liste n'a pas de nom, on la date. */
-export function listTitle(createdAt: string) {
-  const date = new Date(createdAt).toLocaleDateString("fr-FR", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-    timeZone: "Europe/Paris", // même date côté serveur et navigateur
-  });
-  return `Liste du ${date}`;
-}
 
 /** Carte de « Mes listes en cours » : ouvrir la liste, ou la supprimer (avec confirmation). */
 export function ListCard({

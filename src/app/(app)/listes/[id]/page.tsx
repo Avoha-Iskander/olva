@@ -3,10 +3,10 @@ import { notFound, redirect } from "next/navigation";
 import { ArrowLeft, ShoppingCart } from "lucide-react";
 import { Suspense } from "react";
 
-import { listTitle } from "@/components/lists/list-card";
 import { ListEditor } from "@/components/lists/list-editor";
 import { Button } from "@/components/ui/button";
 import { getCatalogue } from "@/lib/catalogue";
+import { listTitle } from "@/lib/list-title";
 import { getListPage, listHref } from "@/lib/lists";
 
 export const metadata = { title: "Liste — Olva" };
