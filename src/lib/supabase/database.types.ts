@@ -94,6 +94,55 @@ export type Database = {
           },
         ]
       }
+      item_overrides: {
+        Row: {
+          aisle_id: number | null
+          is_staple: boolean | null
+          item_id: string
+          purchase_unit: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          aisle_id?: number | null
+          is_staple?: boolean | null
+          item_id: string
+          purchase_unit?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Update: {
+          aisle_id?: number | null
+          is_staple?: boolean | null
+          item_id?: string
+          purchase_unit?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "item_overrides_aisle_id_fkey"
+            columns: ["aisle_id"]
+            isOneToOne: false
+            referencedRelation: "aisles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "item_overrides_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "item_overrides_purchase_unit_fkey"
+            columns: ["purchase_unit"]
+            isOneToOne: false
+            referencedRelation: "units"
+            referencedColumns: ["code"]
+          },
+        ]
+      }
       items: {
         Row: {
           aisle_id: number
