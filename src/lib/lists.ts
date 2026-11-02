@@ -127,7 +127,7 @@ export async function getReview(draft: Draft): Promise<ReviewData> {
     ? await Promise.all([
         supabase
           .from("items")
-          .select("id, name, default_unit, is_staple, purchase_unit, aisles(position)")
+          .select("id, name, default_unit, is_staple, purchase_unit, aisles(name, position)")
           .in("id", itemIds),
         supabase
           .from("unit_conversions")
@@ -143,6 +143,7 @@ export async function getReview(draft: Draft): Promise<ReviewData> {
         id: i.id,
         name: i.name,
         aislePosition: i.aisles?.position ?? 99,
+        aisleName: i.aisles?.name,
         defaultUnit: i.default_unit,
         isStaple: i.is_staple,
         purchaseUnit: i.purchase_unit,
@@ -200,6 +201,7 @@ export type ExtraItem = {
   itemId: string;
   name: string;
   aislePosition: number;
+  aisleName?: string;
   quantity: number;
   unit: string;
 };
@@ -216,11 +218,11 @@ export async function getExtras(listId: string): Promise<{
   const [{ data: prelist }, { data: lines }] = await Promise.all([
     supabase
       .from("prelist_items")
-      .select("item_id, quantity, unit, position, items(name, aisles(position))")
+      .select("item_id, quantity, unit, position, items(name, aisles(name, position))")
       .order("position"),
     supabase
       .from("shopping_list_items")
-      .select("item_id, origin, quantity, unit, items(name, aisles(position))")
+      .select("item_id, origin, quantity, unit, items(name, aisles(name, position))")
       .eq("list_id", listId)
       .in("origin", ["prelist", "free"])
       .order("created_at"),
@@ -230,11 +232,12 @@ export async function getExtras(listId: string): Promise<{
     item_id: string;
     quantity: number;
     unit: string;
-    items: { name: string; aisles: { position: number } | null } | null;
+    items: { name: string; aisles: { name: string; position: number } | null } | null;
   }): ExtraItem => ({
     itemId: row.item_id,
     name: row.items?.name ?? "",
     aislePosition: row.items?.aisles?.position ?? 99,
+    aisleName: row.items?.aisles?.name,
     quantity: Number(row.quantity),
     unit: row.unit,
   });

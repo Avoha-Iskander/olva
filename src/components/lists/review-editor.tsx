@@ -6,7 +6,9 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import { ArrowLeft, ArrowRight, RotateCcw, X } from "lucide-react";
 
 import { saveReviewLines } from "@/app/(app)/listes/actions";
+import { AisleHeading } from "@/components/lists/aisle-heading";
 import { QuantityControl } from "@/components/lists/quantity-control";
+import { groupByAisle } from "@/lib/aisles";
 import { Button } from "@/components/ui/button";
 import { formatRequested, type ReviewLine, setLineQuantity, setLineUnit } from "@/lib/review";
 import { formatQuantity } from "@/lib/units";
@@ -99,26 +101,32 @@ export function ReviewEditor({
         </p>
       )}
 
-      <section className="grid gap-2" aria-labelledby="main-title">
+      <section className="grid gap-3" aria-labelledby="main-title">
         <h2 id="main-title" className="font-medium">
           Ingrédients des recettes
         </h2>
         {main.length === 0 ? (
           <p className="text-muted-foreground text-sm">Aucun ingrédient à acheter.</p>
         ) : (
-          <ul className="divide-border bg-card divide-y rounded-xl border">
-            {main.map((line) => (
-              <li key={line.key} className="p-3">
-                <ReviewRow
-                  line={line}
-                  recipeTitles={recipeTitles}
-                  onQuantity={(q) => update(line.key, (l) => setLineQuantity(l, q))}
-                  onUnit={(u) => update(line.key, (l) => setLineUnit(l, u))}
-                  onToggle={() => update(line.key, (l) => ({ ...l, included: !l.included }))}
-                />
-              </li>
-            ))}
-          </ul>
+          // Un bloc par rayon, dans l'ordre du magasin
+          groupByAisle(main).map((group) => (
+            <div key={group.aisle} className="grid gap-1.5">
+              <AisleHeading>{group.aisle}</AisleHeading>
+              <ul className="divide-border bg-card divide-y rounded-xl border">
+                {group.lines.map((line) => (
+                  <li key={line.key} className="p-3">
+                    <ReviewRow
+                      line={line}
+                      recipeTitles={recipeTitles}
+                      onQuantity={(q) => update(line.key, (l) => setLineQuantity(l, q))}
+                      onUnit={(u) => update(line.key, (l) => setLineUnit(l, u))}
+                      onToggle={() => update(line.key, (l) => ({ ...l, included: !l.included }))}
+                    />
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))
         )}
       </section>
 

@@ -5,10 +5,12 @@ import { useEffect, useState, useTransition } from "react";
 import { X } from "lucide-react";
 
 import { addListLine, removeListLine, updateListLine } from "@/app/(app)/listes/actions";
+import { AisleHeading } from "@/components/lists/aisle-heading";
 import { QuantityControl } from "@/components/lists/quantity-control";
 import { ItemCombobox } from "@/components/recipe-form/item-combobox";
 import { NewItemDialog } from "@/components/recipe-form/new-item-dialog";
 import { Button } from "@/components/ui/button";
+import { groupByAisle } from "@/lib/aisles";
 import type { Aisle, CatalogueItem } from "@/lib/catalogue";
 import type { ListLine } from "@/lib/lists";
 import { normalizeUnit } from "@/lib/review";
@@ -75,13 +77,8 @@ export function ListEditor({
     });
   }
 
-  // Regroupement par rayon pour l'affichage (les lignes arrivent déjà triées)
-  const byAisle: { aisle: string; lines: ListLine[] }[] = [];
-  for (const line of lines) {
-    const group = byAisle.at(-1);
-    if (group?.aisle === line.aisleName) group.lines.push(line);
-    else byAisle.push({ aisle: line.aisleName, lines: [line] });
-  }
+  // Regroupement par rayon pour l'affichage (même fonction que la revue et l'étape 3)
+  const byAisle = groupByAisle(lines);
 
   return (
     <div className="grid gap-6">
@@ -106,9 +103,7 @@ export function ListEditor({
       ) : (
         byAisle.map((group) => (
           <section key={group.aisle} className="grid gap-2" aria-label={group.aisle}>
-            <h2 className="text-muted-foreground text-sm font-medium tracking-wide uppercase">
-              {group.aisle}
-            </h2>
+            <AisleHeading>{group.aisle}</AisleHeading>
             <ul className="divide-border bg-card divide-y rounded-xl border">
               {group.lines.map((line) => (
                 <li key={line.id} className="flex flex-wrap items-center gap-x-3 gap-y-2 p-3">
