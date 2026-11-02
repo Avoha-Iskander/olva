@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { ArrowLeft, BookOpen, Pencil, Share2, Trash2 } from "lucide-react";
 
+import { CopyRecipeButton } from "@/components/recipes/copy-recipe-button";
 import { DeleteRecipeDialog } from "@/components/recipes/delete-recipe-dialog";
 import { ShareDialog } from "@/components/sharing/share-dialog";
 import { Button } from "@/components/ui/button";
@@ -165,6 +166,9 @@ export function RecipeView({
       </div>
 
       {/* Actions réservées à mes recettes ; une recette partagée se consulte seulement */}
+      {/* Recette qu'on me partage : je peux en faire ma propre copie */}
+      {!isMine && <CopyRecipeButton recipeId={recipe.id} myCopyId={recipe.myCopyId} />}
+
       {isMine && (
         <>
           <div className="flex flex-wrap gap-3 border-t pt-6">

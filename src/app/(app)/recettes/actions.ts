@@ -244,3 +244,47 @@ export async function createCollection(name: string): Promise<CreateCollectionRe
   }
   return { ok: false, message: "La collection n'a pas pu être créée." };
 }
+
+/**
+ * « Copier dans mes recettes » : copie indépendante d'une recette qu'on me partage
+ * (fonction SQL copy_recipe), puis copie de sa photo dans mon dossier.
+ * Renvoie l'identifiant de ma copie (la copie existante si je l'avais déjà copiée).
+ */
+export async function copyRecipe(
+  sourceId: string,
+): Promise<{ ok: true; id: string } | { ok: false; message: string }> {
+  const source = z.uuid().safeParse(sourceId);
+  if (!source.success) return { ok: false, message: "Recette introuvable." };
+  const { supabase, userId } = await requireUser();
+
+  const { data: copyId, error } = await supabase.rpc("copy_recipe", { source: source.data });
+  if (error || !copyId) return { ok: false, message: "La copie a échoué. Réessayez." };
+
+  // Photo : copiée dans MON dossier, pour que ma copie ne dépende pas de l'original
+  const [{ data: original }, { data: copy }] = await Promise.all([
+    supabase.from("recipes").select("photo_path, thumb_path").eq("id", source.data).maybeSingle(),
+    supabase.from("recipes").select("photo_path").eq("id", copyId).maybeSingle(),
+  ]);
+  if (original?.photo_path && !copy?.photo_path) {
+    const copyFile = async (path: string | null) => {
+      if (!path) return null;
+      const target = `${userId}/${copyId}/${path.split("/").pop()}`;
+      const { error: copyError } = await supabase.storage.from(BUCKET).copy(path, target);
+      return copyError ? null : target;
+    };
+    const [photoPath, thumbPath] = await Promise.all([
+      copyFile(original.photo_path),
+      copyFile(original.thumb_path),
+    ]);
+    // Si la copie de la photo échoue, la recette reste copiée, simplement sans photo
+    if (photoPath) {
+      await supabase
+        .from("recipes")
+        .update({ photo_path: photoPath, thumb_path: thumbPath })
+        .eq("id", copyId);
+    }
+  }
+
+  revalidatePath("/recettes");
+  return { ok: true, id: copyId };
+}

@@ -466,6 +466,7 @@ export type Database = {
     }
     Functions: {
       accept_share_link: { Args: { token: string }; Returns: string }
+      copy_recipe: { Args: { source: string }; Returns: string }
       delete_own_account: { Args: never; Returns: undefined }
       ensure_my_profile: { Args: never; Returns: undefined }
       preview_share_link: {
