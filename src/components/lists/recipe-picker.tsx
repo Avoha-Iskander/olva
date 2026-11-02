@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { Check, ChefHat, ListChecks, Plus, Search, Share2, X } from "lucide-react";
 
-import { saveListRecipes } from "@/app/(app)/nouvelle-liste/actions";
+import { saveListRecipes } from "@/app/(app)/listes/actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ServingsStepper } from "@/components/ui/servings-stepper";
@@ -64,6 +64,11 @@ export function RecipePicker({
     dirty.current = false;
     const result = await saveListRecipes(listIdRef.current, latest.current);
     if (result.ok) {
+      if (!listIdRef.current) {
+        // Liste tout juste créée : l'adresse devient la sienne, sans recharger la page
+        // (un rafraîchissement reprendra cette liste au lieu d'en créer une autre)
+        window.history.replaceState(null, "", `/listes/${result.listId}/recettes`);
+      }
       listIdRef.current = result.listId;
       setListId(result.listId);
       setSaveFailed(false);
@@ -108,7 +113,7 @@ export function RecipePicker({
         const ok = await save();
         if (!ok) return;
       }
-      router.push("/nouvelle-liste/revue");
+      router.push(`/listes/${listIdRef.current}/revue`);
     });
   }
 

@@ -8,29 +8,64 @@ import {
 import { createClient } from "@/lib/supabase/server";
 
 export type DraftRecipe = { recipeId: string; servings: number };
-export type Draft = { id: string; recipes: DraftRecipe[] };
+export type ListStatus = "draft" | "ready" | "shopping" | "done";
+export type Draft = { id: string; status: ListStatus; recipes: DraftRecipe[] };
 
-/**
- * Mon brouillon de liste en cours (le plus récent), ou null.
- * En attendant « Mes listes en cours » (lot 4), « Nouvelle liste » reprend ce brouillon.
- */
-export async function getCurrentDraft(): Promise<Draft | null> {
+/** Une liste (statut + recettes choisies), ou null si elle n'existe pas ou n'est pas à moi. */
+export async function getList(id: string): Promise<Draft | null> {
   const supabase = await createClient();
   const { data: list } = await supabase
     .from("shopping_lists")
-    .select("id, shopping_list_recipes(recipe_id, servings, position)")
-    .eq("status", "draft")
-    .order("updated_at", { ascending: false })
-    .limit(1)
+    .select("id, status, shopping_list_recipes(recipe_id, servings, position)")
+    .eq("id", id)
     .maybeSingle();
   if (!list) return null;
 
   return {
     id: list.id,
+    status: list.status as ListStatus,
     recipes: [...list.shopping_list_recipes]
       .sort((a, b) => a.position - b.position)
       .map((r) => ({ recipeId: r.recipe_id, servings: r.servings })),
   };
+}
+
+/** Une carte de « Mes listes en cours ». */
+export type ListSummary = {
+  id: string;
+  status: ListStatus;
+  createdAt: string;
+  recipeTitles: string[];
+  itemCount: number; // articles retenus
+};
+
+/** Mes listes pas encore terminées (brouillons, prêtes, en cours de courses), les plus récentes d'abord. */
+export async function listMyLists(): Promise<ListSummary[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("shopping_lists")
+    .select(
+      "id, status, created_at, shopping_list_recipes(position, recipes(title)), shopping_list_items(included)",
+    )
+    .neq("status", "done")
+    .order("updated_at", { ascending: false });
+
+  return (data ?? []).map((l) => ({
+    id: l.id,
+    status: l.status as ListStatus,
+    createdAt: l.created_at,
+    recipeTitles: [...l.shopping_list_recipes]
+      .sort((a, b) => a.position - b.position)
+      .map((r) => r.recipes?.title)
+      .filter((t): t is string => Boolean(t)),
+    itemCount: l.shopping_list_items.filter((i) => i.included).length,
+  }));
+}
+
+/** Adresse où reprendre une liste : son étape en cours (brouillon) ou sa page. */
+export function listHref(list: { id: string; status: ListStatus; hasRecipes: boolean }) {
+  if (list.status !== "draft") return `/listes/${list.id}`;
+  return list.hasRecipes ? `/listes/${list.id}/revue` : `/listes/${list.id}/recettes`;
 }
 
 /** Tout ce qu'il faut pour afficher la revue (étape 2) d'un brouillon. */
@@ -135,5 +170,110 @@ export async function getReview(draft: Draft): Promise<ReviewData> {
     listId: draft.id,
     recipeTitles: Object.fromEntries((recipes ?? []).map((r) => [r.id, r.title])),
     lines: mergeReview(previous, computeReview(selected, catalogue)),
+  };
+}
+
+/** Un article de ma pré-liste (ou une ligne « pré-liste » / « article libre » d'une liste). */
+export type ExtraItem = {
+  itemId: string;
+  name: string;
+  aislePosition: number;
+  quantity: number;
+  unit: string;
+};
+
+/** Étape 3 : ma pré-liste (créée par défaut la première fois) et les lignes déjà ajoutées. */
+export async function getExtras(listId: string): Promise<{
+  prelist: ExtraItem[];
+  checked: ExtraItem[]; // articles de la pré-liste cochés pour cette liste
+  free: ExtraItem[]; // articles libres ajoutés à cette liste
+}> {
+  const supabase = await createClient();
+  await supabase.rpc("ensure_my_prelist");
+
+  const [{ data: prelist }, { data: lines }] = await Promise.all([
+    supabase
+      .from("prelist_items")
+      .select("item_id, quantity, unit, position, items(name, aisles(position))")
+      .order("position"),
+    supabase
+      .from("shopping_list_items")
+      .select("item_id, origin, quantity, unit, items(name, aisles(position))")
+      .eq("list_id", listId)
+      .in("origin", ["prelist", "free"])
+      .order("created_at"),
+  ]);
+
+  const toExtra = (row: {
+    item_id: string;
+    quantity: number;
+    unit: string;
+    items: { name: string; aisles: { position: number } | null } | null;
+  }): ExtraItem => ({
+    itemId: row.item_id,
+    name: row.items?.name ?? "",
+    aislePosition: row.items?.aisles?.position ?? 99,
+    quantity: Number(row.quantity),
+    unit: row.unit,
+  });
+
+  return {
+    prelist: (prelist ?? []).map(toExtra),
+    checked: (lines ?? []).filter((l) => l.origin === "prelist").map(toExtra),
+    free: (lines ?? []).filter((l) => l.origin === "free").map(toExtra),
+  };
+}
+
+/** Une ligne de la page d'une liste. */
+export type ListLine = {
+  id: string;
+  itemId: string;
+  name: string;
+  aisleName: string;
+  aislePosition: number;
+  quantity: number;
+  unit: string;
+  recipeTitles: string[];
+};
+
+/** Page d'une liste prête : ses lignes, triées par rayon puis par nom. */
+export async function getListPage(id: string) {
+  const supabase = await createClient();
+  const { data: list } = await supabase
+    .from("shopping_lists")
+    .select(
+      "id, status, created_at, shopping_list_recipes(recipes(id, title)), shopping_list_items(id, item_id, quantity, unit, included, recipe_ids, items(name, aisles(name, position)))",
+    )
+    .eq("id", id)
+    .maybeSingle();
+  if (!list) return null;
+
+  const titles = new Map(
+    list.shopping_list_recipes
+      .map((r) => r.recipes)
+      .filter((r): r is { id: string; title: string } => Boolean(r))
+      .map((r) => [r.id, r.title]),
+  );
+
+  const lines: ListLine[] = list.shopping_list_items
+    .filter((l) => l.included)
+    .map((l) => ({
+      id: l.id,
+      itemId: l.item_id,
+      name: l.items?.name ?? "",
+      aisleName: l.items?.aisles?.name ?? "Divers",
+      aislePosition: l.items?.aisles?.position ?? 99,
+      quantity: Number(l.quantity),
+      unit: l.unit,
+      recipeTitles: l.recipe_ids.map((rid) => titles.get(rid)).filter((t): t is string => !!t),
+    }))
+    .sort((a, b) => a.aislePosition - b.aislePosition || a.name.localeCompare(b.name, "fr"));
+
+  return {
+    id: list.id,
+    status: list.status as ListStatus,
+    createdAt: list.created_at,
+    recipeTitles: [...titles.values()],
+    lines,
   };
 }
