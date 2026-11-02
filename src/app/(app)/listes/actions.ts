@@ -39,7 +39,8 @@ export async function saveListRecipes(
   });
   if (error) return { ok: false };
 
-  revalidatePath("/nouvelle-liste/revue");
+  revalidatePath(`/listes/${id}/revue`);
+  revalidatePath("/listes");
   return { ok: true, listId: id };
 }
 
@@ -82,4 +83,17 @@ export async function saveReviewLines(
     })),
   });
   return { ok: !error };
+}
+
+/** Supprimer une liste (seul son créateur le peut : règle d'accès « Supprimer mes listes »). */
+export async function deleteList(listId: string): Promise<{ ok: boolean }> {
+  const id = z.uuid().safeParse(listId);
+  if (!id.success) return { ok: false };
+  const supabase = await createClient();
+  const { error, count } = await supabase
+    .from("shopping_lists")
+    .delete({ count: "exact" })
+    .eq("id", id.data);
+  revalidatePath("/listes");
+  return { ok: !error && count === 1 };
 }

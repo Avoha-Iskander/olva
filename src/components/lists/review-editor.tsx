@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { ArrowLeft, ArrowRight, Minus, Plus, RotateCcw, X } from "lucide-react";
 
-import { saveReviewLines } from "@/app/(app)/nouvelle-liste/actions";
+import { saveReviewLines } from "@/app/(app)/listes/actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { parseQuantity, quantityToInput } from "@/lib/quantity";
@@ -77,7 +77,7 @@ export function ReviewEditor({
     <div className="grid gap-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <Link
-          href="/nouvelle-liste"
+          href={`/listes/${listId}/recettes`}
           className="text-muted-foreground hover:text-foreground -ml-1 flex min-h-11 items-center gap-2 text-sm"
         >
           <ArrowLeft className="size-4" />

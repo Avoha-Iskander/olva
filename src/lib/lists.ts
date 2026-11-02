@@ -8,29 +8,64 @@ import {
 import { createClient } from "@/lib/supabase/server";
 
 export type DraftRecipe = { recipeId: string; servings: number };
-export type Draft = { id: string; recipes: DraftRecipe[] };
+export type ListStatus = "draft" | "ready" | "shopping" | "done";
+export type Draft = { id: string; status: ListStatus; recipes: DraftRecipe[] };
 
-/**
- * Mon brouillon de liste en cours (le plus récent), ou null.
- * En attendant « Mes listes en cours » (lot 4), « Nouvelle liste » reprend ce brouillon.
- */
-export async function getCurrentDraft(): Promise<Draft | null> {
+/** Une liste (statut + recettes choisies), ou null si elle n'existe pas ou n'est pas à moi. */
+export async function getList(id: string): Promise<Draft | null> {
   const supabase = await createClient();
   const { data: list } = await supabase
     .from("shopping_lists")
-    .select("id, shopping_list_recipes(recipe_id, servings, position)")
-    .eq("status", "draft")
-    .order("updated_at", { ascending: false })
-    .limit(1)
+    .select("id, status, shopping_list_recipes(recipe_id, servings, position)")
+    .eq("id", id)
     .maybeSingle();
   if (!list) return null;
 
   return {
     id: list.id,
+    status: list.status as ListStatus,
     recipes: [...list.shopping_list_recipes]
       .sort((a, b) => a.position - b.position)
       .map((r) => ({ recipeId: r.recipe_id, servings: r.servings })),
   };
+}
+
+/** Une carte de « Mes listes en cours ». */
+export type ListSummary = {
+  id: string;
+  status: ListStatus;
+  createdAt: string;
+  recipeTitles: string[];
+  itemCount: number; // articles retenus
+};
+
+/** Mes listes pas encore terminées (brouillons, prêtes, en cours de courses), les plus récentes d'abord. */
+export async function listMyLists(): Promise<ListSummary[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("shopping_lists")
+    .select(
+      "id, status, created_at, shopping_list_recipes(position, recipes(title)), shopping_list_items(included)",
+    )
+    .neq("status", "done")
+    .order("updated_at", { ascending: false });
+
+  return (data ?? []).map((l) => ({
+    id: l.id,
+    status: l.status as ListStatus,
+    createdAt: l.created_at,
+    recipeTitles: [...l.shopping_list_recipes]
+      .sort((a, b) => a.position - b.position)
+      .map((r) => r.recipes?.title)
+      .filter((t): t is string => Boolean(t)),
+    itemCount: l.shopping_list_items.filter((i) => i.included).length,
+  }));
+}
+
+/** Adresse où reprendre une liste : son étape en cours (brouillon) ou sa page. */
+export function listHref(list: { id: string; status: ListStatus; hasRecipes: boolean }) {
+  if (list.status !== "draft") return `/listes/${list.id}`;
+  return list.hasRecipes ? `/listes/${list.id}/revue` : `/listes/${list.id}/recettes`;
 }
 
 /** Tout ce qu'il faut pour afficher la revue (étape 2) d'un brouillon. */
