@@ -9,10 +9,15 @@ import { createShareToken } from "@/lib/share-token";
 import { PENDING_SHARE_COOKIE } from "@/lib/share-cookie";
 import { createClient } from "@/lib/supabase/server";
 
-/** Ce que l'on partage : une recette, ou toute ma bibliothèque. */
+/**
+ * Ce que l'on partage : une recette, toute ma bibliothèque (en lecture),
+ * une liste, ou mes futures listes (en co-édition).
+ */
 const targetSchema = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("recipe"), recipeId: z.uuid() }),
   z.object({ kind: z.literal("library") }),
+  z.object({ kind: z.literal("list"), listId: z.uuid() }),
+  z.object({ kind: z.literal("auto_lists") }),
 ]);
 export type ShareTarget = z.infer<typeof targetSchema>;
 
@@ -38,6 +43,7 @@ export async function createShareLink(
   const { error } = await supabase.from("share_links").insert({
     kind: parsed.data.kind,
     recipe_id: parsed.data.kind === "recipe" ? parsed.data.recipeId : null,
+    list_id: parsed.data.kind === "list" ? parsed.data.listId : null,
     token_hash: hash,
   });
   if (error) return { ok: false, message: "La création du lien a échoué. Réessayez." };
@@ -54,15 +60,22 @@ export async function shareByEmail(target: ShareTarget, email: string): Promise<
   if (!parsedEmail.success) return { ok: false, message: "Saisissez une adresse email valide." };
 
   const supabase = await createClient();
-  const { data: status, error } = await supabase.rpc("share_by_email", {
-    kind: parsedTarget.data.kind,
-    // Vide pour un partage de bibliothèque : les types générés ne savent pas
-    // qu'un paramètre SQL peut recevoir null, d'où la conversion explicite
-    target_recipe: (parsedTarget.data.kind === "recipe"
-      ? parsedTarget.data.recipeId
-      : null) as unknown as string,
-    target_email: parsedEmail.data,
-  });
+  const what = parsedTarget.data;
+  // Les types générés ne savent pas qu'un paramètre SQL peut recevoir null
+  // (partage de bibliothèque ou de mes futures listes), d'où la conversion explicite
+  const none = null as unknown as string;
+  const { data: status, error } =
+    what.kind === "recipe" || what.kind === "library"
+      ? await supabase.rpc("share_by_email", {
+          kind: what.kind,
+          target_recipe: what.kind === "recipe" ? what.recipeId : none,
+          target_email: parsedEmail.data,
+        })
+      : await supabase.rpc("share_list_by_email", {
+          kind: what.kind,
+          target_list: what.kind === "list" ? what.listId : none,
+          target_email: parsedEmail.data,
+        });
   if (error) return { ok: false, message: "Le partage a échoué. Réessayez." };
 
   revalidatePath("/parametres");
@@ -86,7 +99,7 @@ export async function shareByEmail(target: ShareTarget, email: string): Promise<
  * En cas de succès, on va dans Mes recettes ; sinon la page du lien se réaffiche
  * avec le bon message (lien expiré, déjà utilisé…).
  */
-export async function acceptShareLink(token: string) {
+export async function acceptShareLink(token: string, kind: string) {
   const supabase = await createClient();
   const { data: status } = await supabase.rpc("accept_share_link", { token });
 
@@ -94,8 +107,10 @@ export async function acceptShareLink(token: string) {
   (await cookies()).delete(PENDING_SHARE_COOKIE);
 
   if (status === "accepted") {
-    revalidatePath("/recettes");
-    redirect("/recettes");
+    // Recettes partagées → Mes recettes ; listes partagées → Mes listes en cours
+    const destination = kind === "list" || kind === "auto_lists" ? "/listes" : "/recettes";
+    revalidatePath(destination);
+    redirect(destination);
   }
   revalidatePath(`/partage/${token}`);
 }
@@ -103,32 +118,49 @@ export async function acceptShareLink(token: string) {
 const removeSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("library"), ownerId: z.uuid(), sharedWith: z.uuid() }),
   z.object({ type: z.literal("recipe"), recipeId: z.uuid(), sharedWith: z.uuid() }),
+  z.object({ type: z.literal("list"), listId: z.uuid(), sharedWith: z.uuid() }),
+  z.object({ type: z.literal("auto_lists"), ownerId: z.uuid(), sharedWith: z.uuid() }),
 ]);
 
 /**
  * Retirer un partage (je partage) ou y renoncer (on me partage) : c'est la même
- * suppression. Les règles d'accès n'autorisent que les deux personnes concernées.
+ * suppression, pour les recettes comme pour les listes. Les règles d'accès
+ * n'autorisent que les deux personnes concernées.
  */
 export async function removeShare(share: z.infer<typeof removeSchema>): Promise<{ ok: boolean }> {
   const parsed = removeSchema.safeParse(share);
   if (!parsed.success) return { ok: false };
 
   const supabase = await createClient();
+  const row = parsed.data;
   const { error } =
-    parsed.data.type === "library"
+    row.type === "library"
       ? await supabase
           .from("library_shares")
           .delete()
-          .eq("owner_id", parsed.data.ownerId)
-          .eq("shared_with", parsed.data.sharedWith)
-      : await supabase
-          .from("recipe_shares")
-          .delete()
-          .eq("recipe_id", parsed.data.recipeId)
-          .eq("shared_with", parsed.data.sharedWith);
+          .eq("owner_id", row.ownerId)
+          .eq("shared_with", row.sharedWith)
+      : row.type === "recipe"
+        ? await supabase
+            .from("recipe_shares")
+            .delete()
+            .eq("recipe_id", row.recipeId)
+            .eq("shared_with", row.sharedWith)
+        : row.type === "list"
+          ? await supabase
+              .from("list_shares")
+              .delete()
+              .eq("list_id", row.listId)
+              .eq("shared_with", row.sharedWith)
+          : await supabase
+              .from("auto_list_shares")
+              .delete()
+              .eq("owner_id", row.ownerId)
+              .eq("shared_with", row.sharedWith);
 
   revalidatePath("/parametres");
   revalidatePath("/recettes");
+  revalidatePath("/listes");
   return { ok: !error };
 }
 

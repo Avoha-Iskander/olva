@@ -37,7 +37,24 @@ export type ListSummary = {
   createdAt: string;
   recipeTitles: string[];
   itemCount: number; // articles retenus
+  sharedBy: string | null; // nom de la personne qui me partage la liste (null : la mienne)
 };
+
+/** Nom affiché des créateurs des listes qu'on me partage. */
+async function ownerNames(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  ownerIds: string[],
+): Promise<{ userId: string | null; names: Map<string, string> }> {
+  const { data: claims } = await supabase.auth.getClaims();
+  const userId = claims?.claims?.sub ?? null;
+  const others = [...new Set(ownerIds.filter((id) => id !== userId))];
+  if (!others.length) return { userId, names: new Map() };
+  const { data } = await supabase.from("profiles").select("id, display_name").in("id", others);
+  return {
+    userId,
+    names: new Map((data ?? []).map((p) => [p.id, p.display_name || "Quelqu'un"])),
+  };
+}
 
 /** Mes listes pas encore terminées (brouillons, prêtes, en cours de courses), les plus récentes d'abord. */
 export async function listMyLists(): Promise<ListSummary[]> {
@@ -45,10 +62,14 @@ export async function listMyLists(): Promise<ListSummary[]> {
   const { data } = await supabase
     .from("shopping_lists")
     .select(
-      "id, status, created_at, shopping_list_recipes(position, recipes(title)), shopping_list_items(included)",
+      "id, owner_id, status, created_at, shopping_list_recipes(position, recipes(title)), shopping_list_items(included)",
     )
     .neq("status", "done")
     .order("updated_at", { ascending: false });
+  const { userId, names } = await ownerNames(
+    supabase,
+    (data ?? []).map((l) => l.owner_id),
+  );
 
   return (data ?? []).map((l) => ({
     id: l.id,
@@ -59,6 +80,7 @@ export async function listMyLists(): Promise<ListSummary[]> {
       .map((r) => r.recipes?.title)
       .filter((t): t is string => Boolean(t)),
     itemCount: l.shopping_list_items.filter((i) => i.included).length,
+    sharedBy: l.owner_id === userId ? null : (names.get(l.owner_id) ?? "Quelqu'un"),
   }));
 }
 
@@ -242,7 +264,7 @@ export async function getListPage(id: string) {
   const { data: list } = await supabase
     .from("shopping_lists")
     .select(
-      "id, status, created_at, shopping_list_recipes(recipes(id, title)), shopping_list_items(id, item_id, quantity, unit, included, recipe_ids, items(name, aisles(name, position)))",
+      "id, owner_id, status, created_at, shopping_list_recipes(recipes(id, title)), shopping_list_items(id, item_id, quantity, unit, included, recipe_ids, items(name, aisles(name, position)))",
     )
     .eq("id", id)
     .maybeSingle();
@@ -269,11 +291,13 @@ export async function getListPage(id: string) {
     }))
     .sort((a, b) => a.aislePosition - b.aislePosition || a.name.localeCompare(b.name, "fr"));
 
+  const { userId, names } = await ownerNames(supabase, [list.owner_id]);
   return {
     id: list.id,
     status: list.status as ListStatus,
     createdAt: list.created_at,
     recipeTitles: [...titles.values()],
     lines,
+    sharedBy: list.owner_id === userId ? null : (names.get(list.owner_id) ?? "Quelqu'un"),
   };
 }

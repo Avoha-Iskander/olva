@@ -32,6 +32,24 @@ export type Database = {
         }
         Relationships: []
       }
+      auto_list_shares: {
+        Row: {
+          created_at: string
+          owner_id: string
+          shared_with: string
+        }
+        Insert: {
+          created_at?: string
+          owner_id: string
+          shared_with: string
+        }
+        Update: {
+          created_at?: string
+          owner_id?: string
+          shared_with?: string
+        }
+        Relationships: []
+      }
       collections: {
         Row: {
           created_at: string
@@ -148,6 +166,32 @@ export type Database = {
           shared_with?: string
         }
         Relationships: []
+      }
+      list_shares: {
+        Row: {
+          created_at: string
+          list_id: string
+          shared_with: string
+        }
+        Insert: {
+          created_at?: string
+          list_id: string
+          shared_with: string
+        }
+        Update: {
+          created_at?: string
+          list_id?: string
+          shared_with?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "list_shares_list_id_fkey"
+            columns: ["list_id"]
+            isOneToOne: false
+            referencedRelation: "shopping_lists"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       prelist_items: {
         Row: {
@@ -394,6 +438,7 @@ export type Database = {
           expires_at: string
           id: string
           kind: string
+          list_id: string | null
           owner_id: string
           recipe_id: string | null
           token_hash: string
@@ -405,6 +450,7 @@ export type Database = {
           expires_at?: string
           id?: string
           kind: string
+          list_id?: string | null
           owner_id?: string
           recipe_id?: string | null
           token_hash: string
@@ -416,6 +462,7 @@ export type Database = {
           expires_at?: string
           id?: string
           kind?: string
+          list_id?: string | null
           owner_id?: string
           recipe_id?: string | null
           token_hash?: string
@@ -423,6 +470,13 @@ export type Database = {
           used_by?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "share_links_list_id_fkey"
+            columns: ["list_id"]
+            isOneToOne: false
+            referencedRelation: "shopping_lists"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "share_links_recipe_id_fkey"
             columns: ["recipe_id"]
@@ -666,6 +720,7 @@ export type Database = {
         Returns: {
           kind: string
           owner_name: string
+          list_created_at: string
           recipe_title: string
           status: string
         }[]
@@ -707,6 +762,10 @@ export type Database = {
       set_list_recipes: {
         Args: { recipes: Json; target_list: string }
         Returns: undefined
+      }
+      share_list_by_email: {
+        Args: { kind: string; target_email: string; target_list: string }
+        Returns: string
       }
       share_by_email: {
         Args: { kind: string; target_email: string; target_recipe: string }

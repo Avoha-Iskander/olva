@@ -1,9 +1,10 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { ArrowLeft, ShoppingCart } from "lucide-react";
+import { ArrowLeft, Share2, ShoppingCart } from "lucide-react";
 import { Suspense } from "react";
 
 import { ListEditor } from "@/components/lists/list-editor";
+import { ShareListButton } from "@/components/sharing/share-list-button";
 import { Button } from "@/components/ui/button";
 import { getCatalogue } from "@/lib/catalogue";
 import { listTitle } from "@/lib/list-title";
@@ -47,13 +48,23 @@ async function ListContent({ params }: { params: PageProps<"/listes/[id]">["para
           {list.lines.length} article{list.lines.length > 1 ? "s" : ""}
           {list.recipeTitles.length > 0 && ` · ${list.recipeTitles.join(", ")}`}
         </p>
+        {list.sharedBy && (
+          <p className="text-muted-foreground flex items-center gap-2 text-sm">
+            <Share2 className="size-4" aria-hidden="true" />
+            Partagée par {list.sharedBy} : vous pouvez la modifier
+          </p>
+        )}
       </header>
 
-      {/* Mode courses : lot 6 */}
-      <Button disabled className="w-full sm:w-fit">
-        <ShoppingCart />
-        Faire les courses (bientôt)
-      </Button>
+      <div className="flex flex-wrap gap-3">
+        {/* Mode courses : lot 6 */}
+        <Button disabled>
+          <ShoppingCart />
+          Faire les courses (bientôt)
+        </Button>
+        {/* Seul le créateur partage sa liste */}
+        {!list.sharedBy && <ShareListButton listId={list.id} />}
+      </div>
 
       {/* key : la liste relue après un ajout remplace l'affichage */}
       <ListEditor

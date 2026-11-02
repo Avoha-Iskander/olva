@@ -63,6 +63,7 @@ async function Lists() {
             createdAt={list.createdAt}
             recipeTitles={list.recipeTitles}
             itemCount={list.itemCount}
+            sharedBy={list.sharedBy}
           />
         </li>
       ))}

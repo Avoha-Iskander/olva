@@ -1,12 +1,48 @@
-import { BookOpen, Link2, UtensilsCrossed } from "lucide-react";
+import { BookOpen, Link2, ListChecks, Repeat, UtensilsCrossed } from "lucide-react";
 
 import { cancelShareLink, removeShare } from "@/app/(app)/partage/actions";
 import { ShareActionButton } from "@/components/sharing/share-action-button";
+import { ShareAutoListsButton } from "@/components/sharing/share-list-button";
 import type { MyShares, ShareRow } from "@/lib/sharing";
 
 /** Date courte en français : « 8 nov. ». */
 function shortDate(iso: string) {
-  return new Date(iso).toLocaleDateString("fr-FR", { day: "numeric", month: "short" });
+  return new Date(iso).toLocaleDateString("fr-FR", {
+    day: "numeric",
+    month: "short",
+    timeZone: "Europe/Paris",
+  });
+}
+
+//   : espace insécable, pour que les guillemets ne se retrouvent jamais seuls en début de ligne
+const quoted = (title: string) => `« ${title} »`;
+
+/** Texte d'une ligne « Je partage ». */
+function sentText(share: ShareRow) {
+  switch (share.type) {
+    case "library":
+      return `Toutes mes recettes, avec ${share.personName}`;
+    case "recipe":
+      return `${quoted(share.recipeTitle)}, avec ${share.personName}`;
+    case "list":
+      return `${share.listName}, avec ${share.personName}`;
+    case "auto_lists":
+      return `Mes nouvelles listes, automatiquement avec ${share.personName}`;
+  }
+}
+
+/** Texte d'une ligne « On me partage ». */
+function receivedText(share: ShareRow) {
+  switch (share.type) {
+    case "library":
+      return `Toutes les recettes de ${share.personName}`;
+    case "recipe":
+      return `${quoted(share.recipeTitle)}, de ${share.personName}`;
+    case "list":
+      return `${share.listName}, de ${share.personName}`;
+    case "auto_lists":
+      return `Les nouvelles listes de ${share.personName}`;
+  }
 }
 
 /**
@@ -23,29 +59,19 @@ export function MyShares({ shares }: { shares: MyShares }) {
         </h3>
         {shares.sent.length === 0 && shares.pendingLinks.length === 0 ? (
           <p className="text-muted-foreground text-sm">
-            Rien pour l&apos;instant. Partagez une recette depuis sa fiche, ou toutes vos recettes
-            depuis Mes recettes.
+            Rien pour l&apos;instant. Partagez une recette depuis sa fiche, toutes vos recettes
+            depuis Mes recettes, ou une liste prête depuis sa page.
           </p>
         ) : (
           <ul className="divide-border divide-y">
             {shares.sent.map((share) => (
-              <ShareLine
-                key={rowKey(share)}
-                share={share}
-                text={
-                  share.type === "library"
-                    ? `Toutes mes recettes, avec ${share.personName}`
-                    : `«\u00a0${share.recipeTitle}\u00a0», avec ${share.personName}`
-                }
-                label="Retirer"
-              />
+              <ShareLine key={rowKey(share)} share={share} text={sentText(share)} label="Retirer" />
             ))}
             {shares.pendingLinks.map((link) => (
               <li key={link.id} className="flex items-center gap-3 py-3">
                 <Link2 className="text-muted-foreground size-5 shrink-0" aria-hidden="true" />
                 <p className="min-w-0 flex-1 text-sm">
-                  Lien en attente :{" "}
-                  {link.recipeTitle ? `«\u00a0${link.recipeTitle}\u00a0»` : "toutes mes recettes"}
+                  Lien en attente : {link.label}
                   <span className="text-muted-foreground block">
                     Expire le {shortDate(link.expiresAt)}
                   </span>
@@ -59,6 +85,9 @@ export function MyShares({ shares }: { shares: MyShares }) {
             ))}
           </ul>
         )}
+        <div className="pt-2">
+          <ShareAutoListsButton />
+        </div>
       </section>
 
       <section className="grid gap-2 border-t pt-6" aria-labelledby="received-title">
@@ -66,18 +95,14 @@ export function MyShares({ shares }: { shares: MyShares }) {
           On me partage
         </h3>
         {shares.received.length === 0 ? (
-          <p className="text-muted-foreground text-sm">Personne ne vous partage de recette.</p>
+          <p className="text-muted-foreground text-sm">Personne ne vous partage rien.</p>
         ) : (
           <ul className="divide-border divide-y">
             {shares.received.map((share) => (
               <ShareLine
                 key={rowKey(share)}
                 share={share}
-                text={
-                  share.type === "library"
-                    ? `Toutes les recettes de ${share.personName}`
-                    : `«\u00a0${share.recipeTitle}\u00a0», de ${share.personName}`
-                }
+                text={receivedText(share)}
                 label="Renoncer"
               />
             ))}
@@ -88,20 +113,40 @@ export function MyShares({ shares }: { shares: MyShares }) {
   );
 }
 
-// \u00a0 : espace insécable, pour que « et » ne se retrouvent jamais seuls en début de ligne
 function rowKey(share: ShareRow) {
-  return share.type === "library"
-    ? `library-${share.ownerId}-${share.sharedWith}`
-    : `recipe-${share.recipeId}-${share.sharedWith}`;
+  switch (share.type) {
+    case "library":
+    case "auto_lists":
+      return `${share.type}-${share.ownerId}-${share.sharedWith}`;
+    case "recipe":
+      return `recipe-${share.recipeId}-${share.sharedWith}`;
+    case "list":
+      return `list-${share.listId}-${share.sharedWith}`;
+  }
 }
 
-function ShareLine({ share, text, label }: { share: ShareRow; text: string; label: string }) {
-  const Icon = share.type === "library" ? BookOpen : UtensilsCrossed;
-  const target =
-    share.type === "library"
-      ? { type: "library" as const, ownerId: share.ownerId, sharedWith: share.sharedWith }
-      : { type: "recipe" as const, recipeId: share.recipeId, sharedWith: share.sharedWith };
+/** Ce qu'il faut à removeShare pour supprimer ce partage. */
+function removeTarget(share: ShareRow) {
+  switch (share.type) {
+    case "library":
+    case "auto_lists":
+      return { type: share.type, ownerId: share.ownerId, sharedWith: share.sharedWith };
+    case "recipe":
+      return { type: share.type, recipeId: share.recipeId, sharedWith: share.sharedWith };
+    case "list":
+      return { type: share.type, listId: share.listId, sharedWith: share.sharedWith };
+  }
+}
 
+const ICONS = {
+  library: BookOpen,
+  recipe: UtensilsCrossed,
+  list: ListChecks,
+  auto_lists: Repeat,
+} as const;
+
+function ShareLine({ share, text, label }: { share: ShareRow; text: string; label: string }) {
+  const Icon = ICONS[share.type];
   return (
     <li className="flex items-center gap-3 py-3">
       <Icon className="text-muted-foreground size-5 shrink-0" aria-hidden="true" />
@@ -109,7 +154,7 @@ function ShareLine({ share, text, label }: { share: ShareRow; text: string; labe
       <ShareActionButton
         label={label}
         pendingLabel="…"
-        onConfirm={removeShare.bind(null, target)}
+        onConfirm={removeShare.bind(null, removeTarget(share))}
       />
     </li>
   );

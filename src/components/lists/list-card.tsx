@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState, useTransition } from "react";
-import { ChevronRight, ShoppingBasket, Trash2 } from "lucide-react";
+import { ChevronRight, Share2, ShoppingBasket, Trash2 } from "lucide-react";
 
 import { deleteList } from "@/app/(app)/listes/actions";
 import { Button } from "@/components/ui/button";
@@ -33,6 +33,7 @@ export function ListCard({
   recipeTitles,
   itemCount,
   listId,
+  sharedBy,
 }: {
   href: string;
   status: ListStatus;
@@ -40,6 +41,7 @@ export function ListCard({
   recipeTitles: string[];
   itemCount: number;
   listId: string;
+  sharedBy: string | null; // liste qu'on me partage : pas de suppression (seul le créateur)
 }) {
   const [confirm, setConfirm] = useState(false);
   const [failed, setFailed] = useState(false);
@@ -66,6 +68,12 @@ export function ListCard({
               {STATUS_LABEL[status]}
             </span>
           </span>
+          {sharedBy && (
+            <span className="text-muted-foreground flex items-center gap-1 text-xs">
+              <Share2 className="size-3" aria-hidden="true" />
+              Partagée par {sharedBy}
+            </span>
+          )}
           <span className="text-muted-foreground truncate text-sm">
             {recipeTitles.length ? recipeTitles.join(", ") : "Aucune recette"}
             {itemCount > 0 && ` · ${itemCount} article${itemCount > 1 ? "s" : ""}`}
@@ -73,15 +81,17 @@ export function ListCard({
         </span>
         <ChevronRight className="text-muted-foreground size-5 shrink-0" aria-hidden="true" />
       </Link>
-      <Button
-        type="button"
-        variant="ghost"
-        size="icon"
-        onClick={() => setConfirm(true)}
-        aria-label={`Supprimer la ${title.charAt(0).toLowerCase()}${title.slice(1)}`}
-      >
-        <Trash2 />
-      </Button>
+      {!sharedBy && (
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          onClick={() => setConfirm(true)}
+          aria-label={`Supprimer la ${title.charAt(0).toLowerCase()}${title.slice(1)}`}
+        >
+          <Trash2 />
+        </Button>
+      )}
 
       <Dialog open={confirm} onOpenChange={setConfirm}>
         <DialogContent>
