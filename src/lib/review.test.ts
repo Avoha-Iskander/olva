@@ -3,6 +3,10 @@ import { describe, expect, it } from "vitest";
 import {
   adjustLine,
   computeReview,
+  formatRequested,
+  normalizeUnit,
+  setLineQuantity,
+  setLineUnit,
   mergeReview,
   quantityStep,
   type ReviewItem,
@@ -378,5 +382,81 @@ describe("arrondis, unités d'affichage et boutons « − + »", () => {
       adjusted: true,
       changed: false,
     });
+  });
+});
+
+describe("améliorations demandées par Alex (02/11)", () => {
+  it("ingrédient de base : garde la quantité réellement demandée (Huile : 3 + 4 = 7 c. à soupe)", () => {
+    const lines = computeReview(
+      [
+        recipe("a", 4, [{ itemId: "huile", quantity: 3, unit: "cas" }]),
+        recipe("b", 8, [{ itemId: "huile", quantity: 2, unit: "cas" }]),
+      ],
+      items,
+    );
+    const huile = line(lines, "huile:staple")!;
+    expect(huile.requested).toEqual([{ quantity: 7, unit: "cas" }]); // 3 (pour 4) + 2 × 8/4
+    expect(huile.quantity).toBe(1); // toujours 1 bouteille proposée
+    expect(formatRequested(huile)).toBe("7 c. à soupe");
+  });
+
+  it("ingrédient de base : quantité + « au goût » quand les recettes diffèrent", () => {
+    const lines = computeReview(
+      [
+        recipe("a", 4, [{ itemId: "sel", quantity: 2, unit: "pincee" }]),
+        recipe("b", 4, [{ itemId: "sel", quantity: null, unit: null }]),
+      ],
+      items,
+    );
+    expect(formatRequested(line(lines, "sel:staple")!)).toBe("2 pincée + au goût");
+  });
+
+  it("ingrédient de base seulement « au goût »", () => {
+    const lines = computeReview(
+      [recipe("a", 4, [{ itemId: "sel", quantity: null, unit: null }])],
+      items,
+    );
+    expect(formatRequested(line(lines, "sel:staple")!)).toBe("au goût");
+  });
+
+  it("passe en kg quand on ajuste 900 g à 1 200 g, et revient en g sous 1 kg", () => {
+    expect(normalizeUnit(1200, "g")).toEqual({ quantity: 1.2, unit: "kg" });
+    expect(normalizeUnit(0.5, "kg")).toEqual({ quantity: 500, unit: "g" });
+    expect(normalizeUnit(1500, "ml")).toEqual({ quantity: 1.5, unit: "l" });
+    expect(normalizeUnit(900, "g")).toEqual({ quantity: 900, unit: "g" });
+  });
+
+  it("setLineQuantity ajuste et change d'unité si besoin", () => {
+    const [farine] = mergeReview(
+      [],
+      computeReview([recipe("a", 4, [{ itemId: "farine", quantity: 900, unit: "g" }])], items),
+    );
+    expect(setLineQuantity(farine, 1200)).toMatchObject({
+      quantity: 1.2,
+      unit: "kg",
+      adjusted: true,
+    });
+  });
+
+  it("setLineUnit convertit quand c'est possible, sinon garde le nombre", () => {
+    const [farine] = mergeReview(
+      [],
+      computeReview([recipe("a", 8, [{ itemId: "farine", quantity: 600, unit: "g" }])], items),
+    );
+    expect(farine).toMatchObject({ quantity: 1.2, unit: "kg" });
+    expect(setLineUnit(farine, "g")).toMatchObject({ quantity: 1200, unit: "g", adjusted: true });
+    expect(setLineUnit(farine, "paquet")).toMatchObject({ quantity: 1.2, unit: "paquet" });
+  });
+
+  it("garde l'unité choisie après un recalcul si l'ingrédient n'a pas changé", () => {
+    const selection = [recipe("a", 4, [{ itemId: "farine", quantity: 500, unit: "g" }])];
+    const review = mergeReview([], computeReview(selection, items)).map((l) =>
+      setLineUnit(l, "paquet"),
+    );
+    const merged = mergeReview(
+      review.map((l) => ({ ...l, quantity: 1 })),
+      computeReview(selection, items),
+    );
+    expect(merged[0]).toMatchObject({ quantity: 1, unit: "paquet", adjusted: true });
   });
 });
