@@ -149,6 +149,48 @@ export type Database = {
         }
         Relationships: []
       }
+      prelist_items: {
+        Row: {
+          created_at: string
+          item_id: string
+          position: number
+          quantity: number
+          unit: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          item_id: string
+          position?: number
+          quantity: number
+          unit: string
+          user_id?: string
+        }
+        Update: {
+          created_at?: string
+          item_id?: string
+          position?: number
+          quantity?: number
+          unit?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prelist_items_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prelist_items_unit_fkey"
+            columns: ["unit"]
+            isOneToOne: false
+            referencedRelation: "units"
+            referencedColumns: ["code"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string
@@ -156,6 +198,7 @@ export type Database = {
           display_name: string
           id: string
           onboarded: boolean
+          prelist_initialized: boolean
           updated_at: string
         }
         Insert: {
@@ -164,6 +207,7 @@ export type Database = {
           display_name?: string
           id: string
           onboarded?: boolean
+          prelist_initialized?: boolean
           updated_at?: string
         }
         Update: {
@@ -172,6 +216,7 @@ export type Database = {
           display_name?: string
           id?: string
           onboarded?: boolean
+          prelist_initialized?: boolean
           updated_at?: string
         }
         Relationships: []
@@ -610,6 +655,11 @@ export type Database = {
       accept_share_link: { Args: { token: string }; Returns: string }
       copy_recipe: { Args: { source: string }; Returns: string }
       delete_own_account: { Args: never; Returns: undefined }
+      ensure_my_prelist: { Args: never; Returns: undefined }
+      finalize_list: {
+        Args: { lines: Json; target_list: string }
+        Returns: undefined
+      }
       ensure_my_profile: { Args: never; Returns: undefined }
       preview_share_link: {
         Args: { token: string }
@@ -619,6 +669,10 @@ export type Database = {
           recipe_title: string
           status: string
         }[]
+      }
+      save_extras: {
+        Args: { lines: Json; target_list: string }
+        Returns: undefined
       }
       save_recipe: { Args: { recipe: Json }; Returns: string }
       save_review: {

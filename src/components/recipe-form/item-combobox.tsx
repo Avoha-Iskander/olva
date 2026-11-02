@@ -26,6 +26,7 @@ type ItemComboboxProps = {
   onCreate: (name: string) => void;
   invalid?: boolean;
   id?: string;
+  placeholder?: string; // texte du bouton tant qu'aucun article n'est choisi
 };
 
 /**
@@ -40,6 +41,7 @@ export function ItemCombobox({
   onCreate,
   invalid,
   id,
+  placeholder = "Choisir un article…",
 }: ItemComboboxProps) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -62,7 +64,7 @@ export function ItemCombobox({
             invalid && "border-destructive",
           )}
         >
-          <span className="truncate">{selectedId ? selectedName : "Choisir un article…"}</span>
+          <span className="truncate">{selectedId ? selectedName : placeholder}</span>
           <ChevronsUpDown className="opacity-50" />
         </Button>
       </PopoverTrigger>

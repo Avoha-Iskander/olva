@@ -172,3 +172,108 @@ export async function getReview(draft: Draft): Promise<ReviewData> {
     lines: mergeReview(previous, computeReview(selected, catalogue)),
   };
 }
+
+/** Un article de ma pré-liste (ou une ligne « pré-liste » / « article libre » d'une liste). */
+export type ExtraItem = {
+  itemId: string;
+  name: string;
+  aislePosition: number;
+  quantity: number;
+  unit: string;
+};
+
+/** Étape 3 : ma pré-liste (créée par défaut la première fois) et les lignes déjà ajoutées. */
+export async function getExtras(listId: string): Promise<{
+  prelist: ExtraItem[];
+  checked: ExtraItem[]; // articles de la pré-liste cochés pour cette liste
+  free: ExtraItem[]; // articles libres ajoutés à cette liste
+}> {
+  const supabase = await createClient();
+  await supabase.rpc("ensure_my_prelist");
+
+  const [{ data: prelist }, { data: lines }] = await Promise.all([
+    supabase
+      .from("prelist_items")
+      .select("item_id, quantity, unit, position, items(name, aisles(position))")
+      .order("position"),
+    supabase
+      .from("shopping_list_items")
+      .select("item_id, origin, quantity, unit, items(name, aisles(position))")
+      .eq("list_id", listId)
+      .in("origin", ["prelist", "free"])
+      .order("created_at"),
+  ]);
+
+  const toExtra = (row: {
+    item_id: string;
+    quantity: number;
+    unit: string;
+    items: { name: string; aisles: { position: number } | null } | null;
+  }): ExtraItem => ({
+    itemId: row.item_id,
+    name: row.items?.name ?? "",
+    aislePosition: row.items?.aisles?.position ?? 99,
+    quantity: Number(row.quantity),
+    unit: row.unit,
+  });
+
+  return {
+    prelist: (prelist ?? []).map(toExtra),
+    checked: (lines ?? []).filter((l) => l.origin === "prelist").map(toExtra),
+    free: (lines ?? []).filter((l) => l.origin === "free").map(toExtra),
+  };
+}
+
+/** Une ligne de la page d'une liste. */
+export type ListLine = {
+  id: string;
+  itemId: string;
+  name: string;
+  aisleName: string;
+  aislePosition: number;
+  quantity: number;
+  unit: string;
+  recipeTitles: string[];
+};
+
+/** Page d'une liste prête : ses lignes, triées par rayon puis par nom. */
+export async function getListPage(id: string) {
+  const supabase = await createClient();
+  const { data: list } = await supabase
+    .from("shopping_lists")
+    .select(
+      "id, status, created_at, shopping_list_recipes(recipes(id, title)), shopping_list_items(id, item_id, quantity, unit, included, recipe_ids, items(name, aisles(name, position)))",
+    )
+    .eq("id", id)
+    .maybeSingle();
+  if (!list) return null;
+
+  const titles = new Map(
+    list.shopping_list_recipes
+      .map((r) => r.recipes)
+      .filter((r): r is { id: string; title: string } => Boolean(r))
+      .map((r) => [r.id, r.title]),
+  );
+
+  const lines: ListLine[] = list.shopping_list_items
+    .filter((l) => l.included)
+    .map((l) => ({
+      id: l.id,
+      itemId: l.item_id,
+      name: l.items?.name ?? "",
+      aisleName: l.items?.aisles?.name ?? "Divers",
+      aislePosition: l.items?.aisles?.position ?? 99,
+      quantity: Number(l.quantity),
+      unit: l.unit,
+      recipeTitles: l.recipe_ids.map((rid) => titles.get(rid)).filter((t): t is string => !!t),
+    }))
+    .sort((a, b) => a.aislePosition - b.aislePosition || a.name.localeCompare(b.name, "fr"));
+
+  return {
+    id: list.id,
+    status: list.status as ListStatus,
+    createdAt: list.created_at,
+    recipeTitles: [...titles.values()],
+    lines,
+  };
+}
