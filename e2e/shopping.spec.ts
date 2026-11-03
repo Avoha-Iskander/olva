@@ -49,7 +49,7 @@ test("cocher un article en temps réel entre deux téléphones", async ({ page, 
 
     // Le premier article à prendre : son nom sert à le retrouver sur l'autre téléphone
     const first = page.getByRole("checkbox").first();
-    const name = (await first.locator("xpath=..").locator("span.font-medium").innerText()).trim();
+    const name = (await first.locator("xpath=..").locator("[data-item-name]").innerText()).trim();
 
     await test.step(`cocher « ${name} » sur le 1er téléphone`, async () => {
       await checkbox(page, name).click();

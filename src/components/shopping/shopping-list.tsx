@@ -212,6 +212,7 @@ export function ShoppingList(props: Props) {
                     </span>
                     <span className="grid min-w-0 flex-1">
                       <span
+                        data-item-name
                         className={cn(
                           "font-medium",
                           line.checked && "text-muted-foreground line-through",
