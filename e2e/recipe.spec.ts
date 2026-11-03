@@ -31,7 +31,9 @@ test("créer, afficher puis supprimer une recette", async ({ page }) => {
   await test.step("quantité, unité et étape", async () => {
     await page.getByLabel("Ingrédient 1 : quantité (vide = au goût)").fill("250");
     await page.getByLabel("Ingrédient 1 : unité").selectOption("g");
-    await page.getByLabel("Étape 1").fill("Mélanger la farine et le lait.");
+    await page
+      .getByRole("textbox", { name: "Étape 1", exact: true })
+      .fill("Mélanger la farine et le lait.");
   });
 
   await test.step("enregistrer et voir la fiche", async () => {
@@ -51,7 +53,7 @@ test("créer, afficher puis supprimer une recette", async ({ page }) => {
 
   await test.step("la supprimer", async () => {
     await card.click();
-    await page.getByRole("link", { name: "Modifier" }).click();
+    await page.getByRole("link", { name: "Modifier", exact: true }).click();
     await page.getByRole("button", { name: "Supprimer la recette…" }).click();
     await page.getByRole("button", { name: "Oui, supprimer" }).click();
     await expect(page).toHaveURL(/\/recettes$/);
