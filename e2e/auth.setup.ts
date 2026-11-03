@@ -20,5 +20,13 @@ setup("connexion du compte de test", async ({ page }) => {
 
   // Connecté : on quitte la page de connexion (accueil, ou parcours d'accueil au 1er passage)
   await expect(page).not.toHaveURL(/\/connexion/);
+
+  // Compte tout neuf : le test remplit lui-même le parcours d'accueil (nom, portions)
+  if (page.url().includes("/bienvenue")) {
+    await page.getByLabel("Comment vous appelez-vous ?").fill("Robot Playwright");
+    await page.getByRole("button", { name: "C'est parti" }).click();
+    await expect(page).not.toHaveURL(/\/bienvenue/);
+  }
+
   await page.context().storageState({ path: SESSION });
 });
