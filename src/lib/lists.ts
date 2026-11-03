@@ -5,7 +5,55 @@ import {
   type ReviewLine,
   type SelectedRecipe,
 } from "@/lib/review";
+import {
+  type AisleInfo,
+  applyOverride,
+  type ItemOverride,
+  preferMine,
+} from "@/lib/catalogue-overrides";
 import { createClient } from "@/lib/supabase/server";
+
+type Supabase = Awaited<ReturnType<typeof createClient>>;
+
+/** Identifiant de l'utilisateur connecté. */
+async function currentUserId(supabase: Supabase) {
+  const { data } = await supabase.auth.getClaims();
+  return data?.claims?.sub ?? null;
+}
+
+/**
+ * Personnalisations du catalogue (US-CAT-03) d'une personne pour ces articles,
+ * et tous les rayons (nom + ordre). Pour une liste partagée, on lit celles du
+ * créateur de la liste : elle est triée selon ses rayons (SPEC §3.1).
+ */
+async function loadOverrides(supabase: Supabase, userId: string | null, itemIds: string[]) {
+  const [{ data: overrides }, { data: aisles }] = await Promise.all([
+    userId && itemIds.length
+      ? supabase
+          .from("item_overrides")
+          .select("item_id, aisle_id, is_staple, purchase_unit")
+          .eq("user_id", userId)
+          .in("item_id", itemIds)
+      : Promise.resolve({ data: [] }),
+    supabase.from("aisles").select("id, name, position"),
+  ]);
+  return {
+    overrides: new Map<string, ItemOverride>(
+      (overrides ?? []).map((o) => [
+        o.item_id,
+        {
+          itemId: o.item_id,
+          aisleId: o.aisle_id,
+          isStaple: o.is_staple,
+          purchaseUnit: o.purchase_unit,
+        },
+      ]),
+    ),
+    aisles: new Map<number, AisleInfo>(
+      (aisles ?? []).map((a) => [a.id, { name: a.name, position: a.position }]),
+    ),
+  };
+}
 
 export type DraftRecipe = { recipeId: string; servings: number };
 export type ListStatus = "draft" | "ready" | "shopping" | "done";
@@ -127,31 +175,48 @@ export async function getReview(draft: Draft): Promise<ReviewData> {
     ? await Promise.all([
         supabase
           .from("items")
-          .select("id, name, default_unit, is_staple, purchase_unit, aisles(name, position)")
+          .select(
+            "id, name, aisle_id, default_unit, is_staple, purchase_unit, aisles(name, position)",
+          )
           .in("id", itemIds),
         supabase
           .from("unit_conversions")
-          .select("item_id, from_unit, to_unit, factor")
+          .select("item_id, owner_id, from_unit, to_unit, factor")
           .in("item_id", itemIds),
       ])
     : [{ data: [] }, { data: [] }];
 
+  // Mes personnalisations (rayon, ingrédient de base) et mes conversions d'abord
+  const userId = await currentUserId(supabase);
+  const { overrides, aisles } = await loadOverrides(supabase, userId, itemIds);
   const catalogue = new Map<string, ReviewItem>(
-    (items ?? []).map((i) => [
-      i.id,
-      {
-        id: i.id,
-        name: i.name,
-        aislePosition: i.aisles?.position ?? 99,
-        aisleName: i.aisles?.name,
-        defaultUnit: i.default_unit,
-        isStaple: i.is_staple,
-        purchaseUnit: i.purchase_unit,
-        conversions: (conversions ?? [])
-          .filter((c) => c.item_id === i.id)
-          .map((c) => ({ fromUnit: c.from_unit, toUnit: c.to_unit, factor: Number(c.factor) })),
-      },
-    ]),
+    (items ?? []).map((i) => {
+      const item = applyOverride(
+        {
+          id: i.id,
+          name: i.name,
+          aisleId: i.aisle_id,
+          aislePosition: i.aisles?.position ?? 99,
+          aisleName: i.aisles?.name,
+          defaultUnit: i.default_unit,
+          isStaple: i.is_staple,
+          purchaseUnit: i.purchase_unit,
+          conversions: preferMine(
+            (conversions ?? [])
+              .filter((c) => c.item_id === i.id)
+              .map((c) => ({ ownerId: c.owner_id, from: c })),
+            userId,
+          ).map(({ from: c }) => ({
+            fromUnit: c.from_unit,
+            toUnit: c.to_unit,
+            factor: Number(c.factor),
+          })),
+        },
+        overrides.get(i.id),
+        aisles,
+      );
+      return [i.id, item];
+    }),
   );
 
   const recipeById = new Map((recipes ?? []).map((r) => [r.id, r]));
@@ -218,29 +283,55 @@ export async function getExtras(listId: string): Promise<{
   const [{ data: prelist }, { data: lines }] = await Promise.all([
     supabase
       .from("prelist_items")
-      .select("item_id, quantity, unit, position, items(name, aisles(name, position))")
+      .select("item_id, quantity, unit, position, items(name, aisle_id, aisles(name, position))")
       .order("position"),
     supabase
       .from("shopping_list_items")
-      .select("item_id, origin, quantity, unit, items(name, aisles(name, position))")
+      .select("item_id, origin, quantity, unit, items(name, aisle_id, aisles(name, position))")
       .eq("list_id", listId)
       .in("origin", ["prelist", "free"])
       .order("created_at"),
   ]);
 
+  // Mes rayons personnalisés s'appliquent aussi au regroupement de l'étape 3
+  const itemIds = [...new Set([...(prelist ?? []), ...(lines ?? [])].map((row) => row.item_id))];
+  const { overrides, aisles } = await loadOverrides(
+    supabase,
+    await currentUserId(supabase),
+    itemIds,
+  );
+
   const toExtra = (row: {
     item_id: string;
     quantity: number;
     unit: string;
-    items: { name: string; aisles: { name: string; position: number } | null } | null;
-  }): ExtraItem => ({
-    itemId: row.item_id,
-    name: row.items?.name ?? "",
-    aislePosition: row.items?.aisles?.position ?? 99,
-    aisleName: row.items?.aisles?.name,
-    quantity: Number(row.quantity),
-    unit: row.unit,
-  });
+    items: {
+      name: string;
+      aisle_id: number;
+      aisles: { name: string; position: number } | null;
+    } | null;
+  }): ExtraItem => {
+    const placed = applyOverride(
+      {
+        id: row.item_id,
+        aisleId: row.items?.aisle_id ?? 0,
+        aisleName: row.items?.aisles?.name,
+        aislePosition: row.items?.aisles?.position ?? 99,
+        isStaple: false,
+        purchaseUnit: null,
+      },
+      overrides.get(row.item_id),
+      aisles,
+    );
+    return {
+      itemId: row.item_id,
+      name: row.items?.name ?? "",
+      aislePosition: placed.aislePosition,
+      aisleName: placed.aisleName,
+      quantity: Number(row.quantity),
+      unit: row.unit,
+    };
+  };
 
   return {
     prelist: (prelist ?? []).map(toExtra),
@@ -267,7 +358,7 @@ export async function getListPage(id: string) {
   const { data: list } = await supabase
     .from("shopping_lists")
     .select(
-      "id, owner_id, status, created_at, shopping_list_recipes(recipes(id, title)), shopping_list_items(id, item_id, quantity, unit, included, recipe_ids, items(name, aisles(name, position)))",
+      "id, owner_id, status, created_at, shopping_list_recipes(recipes(id, title)), shopping_list_items(id, item_id, quantity, unit, included, recipe_ids, items(name, aisle_id, aisles(name, position)))",
     )
     .eq("id", id)
     .maybeSingle();
@@ -280,18 +371,39 @@ export async function getListPage(id: string) {
       .map((r) => [r.id, r.title]),
   );
 
+  // Rayons du CRÉATEUR de la liste (même quand elle m'est partagée)
+  const { overrides, aisles } = await loadOverrides(
+    supabase,
+    list.owner_id,
+    list.shopping_list_items.map((l) => l.item_id),
+  );
+
   const lines: ListLine[] = list.shopping_list_items
     .filter((l) => l.included)
-    .map((l) => ({
-      id: l.id,
-      itemId: l.item_id,
-      name: l.items?.name ?? "",
-      aisleName: l.items?.aisles?.name ?? "Divers",
-      aislePosition: l.items?.aisles?.position ?? 99,
-      quantity: Number(l.quantity),
-      unit: l.unit,
-      recipeTitles: l.recipe_ids.map((rid) => titles.get(rid)).filter((t): t is string => !!t),
-    }))
+    .map((l) => {
+      const placed = applyOverride(
+        {
+          id: l.item_id,
+          aisleId: l.items?.aisle_id ?? 0,
+          aisleName: l.items?.aisles?.name,
+          aislePosition: l.items?.aisles?.position ?? 99,
+          isStaple: false,
+          purchaseUnit: null,
+        },
+        overrides.get(l.item_id),
+        aisles,
+      );
+      return {
+        id: l.id,
+        itemId: l.item_id,
+        name: l.items?.name ?? "",
+        aisleName: placed.aisleName ?? "Divers",
+        aislePosition: placed.aislePosition,
+        quantity: Number(l.quantity),
+        unit: l.unit,
+        recipeTitles: l.recipe_ids.map((rid) => titles.get(rid)).filter((t): t is string => !!t),
+      };
+    })
     .sort((a, b) => a.aislePosition - b.aislePosition || a.name.localeCompare(b.name, "fr"));
 
   const { userId, names } = await ownerNames(supabase, [list.owner_id]);

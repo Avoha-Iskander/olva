@@ -1,3 +1,5 @@
+import Link from "next/link";
+import { Store } from "lucide-react";
 import { Suspense } from "react";
 
 import { signOut } from "@/app/(auth)/actions";
@@ -27,6 +29,23 @@ export default function SettingsPage() {
           <Suspense fallback={<p className="text-muted-foreground h-40 text-sm">Chargement…</p>}>
             <ProfileSection />
           </Suspense>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Mon catalogue</CardTitle>
+          <CardDescription>
+            Rayons, ingrédients de base et conversions des articles, à votre façon.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Button asChild variant="outline">
+            <Link href="/parametres/catalogue">
+              <Store />
+              Personnaliser mon catalogue
+            </Link>
+          </Button>
         </CardContent>
       </Card>
 
