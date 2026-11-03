@@ -35,3 +35,15 @@ export const MODEL_SETTINGS: Record<AiModel, { forcedTool: boolean; maxTokens: n
   "claude-haiku-5-5": { forcedTool: true, maxTokens: 4096 },
   "claude-sonnet-5-5": { forcedTool: false, maxTokens: 16000 },
 };
+
+/**
+ * Modèles proposés à l'écran pour comparer : aperçus seulement (liste vide en production),
+ * le modèle par défaut en premier. À appeler côté serveur (lit les variables d'environnement).
+ */
+export function selectableModels(): { id: AiModel; label: string }[] {
+  if (!canChooseAiModel()) return [];
+  const current = defaultAiModel();
+  return (Object.keys(AI_MODELS) as AiModel[])
+    .map((id) => ({ id, label: AI_MODELS[id] }))
+    .sort((a, b) => Number(b.id === current) - Number(a.id === current));
+}

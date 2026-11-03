@@ -1,6 +1,6 @@
 "use client";
 
-import { Camera, Plus, Trash2 } from "lucide-react";
+import { Camera, Link2, Plus, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
@@ -43,8 +43,10 @@ type RecipeFormProps = {
     mode: "import" | "manual"; // lue par l'IA, ou saisie à la main après un échec
     state: RecipeFormState;
     highlights: DraftHighlights;
-    importId: string | null; // ses pages seront attachées à la recette
+    importId: string | null; // sa source (pages ou lien) sera attachée à la recette
     pageUrls: string[]; // aperçus des pages, affichés à côté du formulaire
+    sourceUrl?: string | null; // import par lien : page d'origine
+    photoFile?: File | null; // import par lien : photo du plat proposée par le site
   };
 };
 
@@ -117,7 +119,7 @@ export function RecipeForm(props: RecipeFormProps) {
   const [collections, setCollections] = useState(props.collections);
   const [errors, setErrors] = useState<FormErrors>({});
   const [message, setMessage] = useState<string>();
-  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [photoFile, setPhotoFile] = useState<File | null>(props.draft?.photoFile ?? null);
   const [photoRemoved, setPhotoRemoved] = useState(false);
   const [newItem, setNewItem] = useState<{ lineKey: string; name: string } | null>(null);
   const [pending, startTransition] = useTransition();
@@ -193,7 +195,11 @@ export function RecipeForm(props: RecipeFormProps) {
           role="status"
           className="flex items-start gap-3 rounded-xl border border-amber-400 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-500 dark:bg-amber-950/40 dark:text-amber-200"
         >
-          <Camera className="mt-0.5 size-5 shrink-0" aria-hidden />
+          {props.draft.sourceUrl ? (
+            <Link2 className="mt-0.5 size-5 shrink-0" aria-hidden />
+          ) : (
+            <Camera className="mt-0.5 size-5 shrink-0" aria-hidden />
+          )}
           {props.draft.mode === "manual" ? (
             <p>
               Saisie à la main : la photo est affichée{" "}
@@ -202,7 +208,10 @@ export function RecipeForm(props: RecipeFormProps) {
             </p>
           ) : (
             <p>
-              Recette lue sur la photo : rien n&apos;est encore enregistré.{" "}
+              {props.draft.sourceUrl
+                ? `Recette lue sur ${new URL(props.draft.sourceUrl).hostname.replace(/^www\./, "")}`
+                : "Recette lue sur la photo"}{" "}
+              : rien n&apos;est encore enregistré.{" "}
               {toReview > 0
                 ? `Vérifiez les champs surlignés (${toReview}), puis enregistrez.`
                 : "Relisez-la, puis enregistrez."}

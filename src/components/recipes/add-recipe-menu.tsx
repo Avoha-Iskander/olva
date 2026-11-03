@@ -1,13 +1,16 @@
 "use client";
 
-import { Camera, PenLine, Plus } from "lucide-react";
+import { Camera, Link2, PenLine, Plus } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
-/** Bouton « Ajouter » de Mes recettes : saisie à la main, ou depuis une photo (US-REC-02). */
+/**
+ * Bouton « Ajouter » de Mes recettes : saisie à la main, depuis une photo (US-REC-02)
+ * ou depuis un lien (US-REC-07).
+ */
 export function AddRecipeMenu() {
   const [open, setOpen] = useState(false);
   return (
@@ -29,6 +32,12 @@ export function AddRecipeMenu() {
           <Link href="/recettes/import" onClick={() => setOpen(false)}>
             <Camera />
             Depuis une photo
+          </Link>
+        </Button>
+        <Button asChild variant="ghost" className="justify-start">
+          <Link href="/recettes/lien" onClick={() => setOpen(false)}>
+            <Link2 />
+            Depuis un lien
           </Link>
         </Button>
       </PopoverContent>

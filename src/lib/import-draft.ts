@@ -1,3 +1,4 @@
+import type { ImageMediaType } from "@/lib/image-type";
 import { quantityToInput } from "@/lib/quantity";
 import type { RecipeFormState } from "@/lib/recipe-form";
 
@@ -9,7 +10,10 @@ import type { RecipeFormState } from "@/lib/recipe-form";
 /** Brouillon renvoyé par le serveur : rien n'est encore enregistré. */
 export type ImportDraft = {
   importId: string;
-  photoPaths: string[]; // les pages photographiées, dans l'ordre
+  photoPaths: string[]; // les pages photographiées, dans l'ordre (vide : import par lien)
+  sourceUrl: string | null; // import par lien : adresse de la page
+  // Import par lien : photo du plat fournie par le site, proposée comme photo de présentation
+  photo: { data: string; mediaType: ImageMediaType } | null;
   title: string;
   titleUncertain: boolean;
   servings: number | null;

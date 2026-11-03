@@ -5,10 +5,9 @@ import { useEffect, useRef, useState, useTransition } from "react";
 
 import { importRecipeFromPhoto } from "@/app/(app)/recettes/import/actions";
 import { RecipeForm } from "@/components/recipe-form/recipe-form";
+import { ModelPicker } from "@/components/recipe-import/model-picker";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
-import { NativeSelect } from "@/components/ui/native-select";
 import type { Aisle, CatalogueItem } from "@/lib/catalogue";
 import { draftToForm, NO_HIGHLIGHTS } from "@/lib/import-draft";
 import { compressAndUploadImportPages } from "@/lib/photo-upload";
@@ -121,6 +120,8 @@ export function PhotoImport(props: Props) {
       {
         importId: "",
         photoPaths: [],
+        sourceUrl: null,
+        photo: null,
         title: "",
         titleUncertain: false,
         servings: null,
@@ -264,22 +265,8 @@ export function PhotoImport(props: Props) {
         </Card>
       )}
 
-      {pages.length > 0 && props.models.length > 0 && (
-        <div className="grid gap-2">
-          <Label htmlFor="ai-model">Modèle d&apos;IA (aperçus seulement, pour comparer)</Label>
-          <NativeSelect
-            id="ai-model"
-            value={model}
-            disabled={busy}
-            onChange={(e) => setModel(e.target.value)}
-          >
-            {props.models.map((m) => (
-              <option key={m.id} value={m.id}>
-                {m.label}
-              </option>
-            ))}
-          </NativeSelect>
-        </div>
+      {pages.length > 0 && (
+        <ModelPicker models={props.models} value={model} disabled={busy} onChange={setModel} />
       )}
 
       {pages.length > 0 && (

@@ -10,6 +10,8 @@ import {
 const draft = (patch: Partial<ImportDraft> = {}): ImportDraft => ({
   importId: "imp-1",
   photoPaths: ["u/r/import-1.webp"],
+  sourceUrl: null,
+  photo: null,
   title: "Tarte aux pommes",
   titleUncertain: false,
   servings: 6,
