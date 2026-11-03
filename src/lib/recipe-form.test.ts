@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formToRecipeInput, type RecipeFormState } from "@/lib/recipe-form";
+import { formToRecipeInput, type RecipeFormState, unitForChosenItem } from "@/lib/recipe-form";
 
 const ITEM = "3f1b8c2e-1d4a-4b6e-9c3a-2b7d5e8f9a10";
 const base: RecipeFormState = {
@@ -9,6 +9,7 @@ const base: RecipeFormState = {
   steps: [],
   bookTitle: "",
   bookPageText: "",
+  sourceUrl: "",
   collectionIds: [],
 };
 const line = (overrides: Partial<RecipeFormState["ingredients"][number]>) => ({
@@ -74,5 +75,39 @@ describe("formToRecipeInput", () => {
       ok: false,
       errors: { title: "Le titre est obligatoire", bookPage: "Numéro de page invalide" },
     });
+  });
+});
+
+describe("unitForChosenItem", () => {
+  it("garde l'unité déjà présente sur la ligne (ex. lue sur la recette)", () => {
+    expect(unitForChosenItem("cas", "g")).toBe("cas");
+  });
+
+  it("propose l'unité habituelle de l'article si la ligne n'en a pas", () => {
+    expect(unitForChosenItem("", "g")).toBe("g");
+  });
+});
+
+describe("formToRecipeInput — lien de la page", () => {
+  const withLink = (sourceUrl: string) => formToRecipeInput({ ...base, sourceUrl });
+
+  it("accepte un lien https, et aucun lien", () => {
+    expect(withLink("https://www.marmiton.org/recettes/tarte")).toMatchObject({
+      ok: true,
+      data: { sourceUrl: "https://www.marmiton.org/recettes/tarte" },
+    });
+    expect(withLink("  ")).toMatchObject({ ok: true, data: { sourceUrl: null } });
+  });
+
+  it("complète un lien collé sans https://", () => {
+    expect(withLink("marmiton.org/recettes/tarte")).toMatchObject({
+      ok: true,
+      data: { sourceUrl: "https://marmiton.org/recettes/tarte" },
+    });
+  });
+
+  it("refuse un lien qui n'est pas une page web", () => {
+    expect(withLink("javascript:alert(1)")).toMatchObject({ ok: false });
+    expect(withLink("ftp://exemple.fr/x")).toMatchObject({ ok: false });
   });
 });

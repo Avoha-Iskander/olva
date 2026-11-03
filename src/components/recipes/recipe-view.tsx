@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { ArrowLeft, BookOpen, Camera, Pencil, Share2, Trash2 } from "lucide-react";
+import { ArrowLeft, BookOpen, Camera, Link2, Pencil, Share2, Trash2 } from "lucide-react";
 
 import { CopyRecipeButton } from "@/components/recipes/copy-recipe-button";
 import { DeleteRecipeDialog } from "@/components/recipes/delete-recipe-dialog";
@@ -79,6 +79,21 @@ export function RecipeView({
             {[recipe.bookTitle, recipe.bookPage && `p. ${recipe.bookPage}`]
               .filter(Boolean)
               .join(", ")}
+          </p>
+        )}
+        {recipe.sourceUrl && (
+          // Import par lien (US-REC-07) : la page d'origine, ouverte dans un nouvel onglet
+          <p className="text-muted-foreground flex items-center gap-2 text-sm">
+            <Link2 className="size-4 shrink-0" aria-hidden />
+            Source :
+            <a
+              href={recipe.sourceUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="text-foreground flex min-h-11 items-center truncate underline underline-offset-4"
+            >
+              {new URL(recipe.sourceUrl).hostname.replace(/^www\./, "")}
+            </a>
           </p>
         )}
         {recipe.importPageUrls.length > 0 && (

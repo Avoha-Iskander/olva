@@ -124,6 +124,7 @@ export type RecipeForEdit = {
   thumbPath: string | null;
   photoUrl: string | null;
   importPageUrls: string[]; // pages du livre photographiées à l'import (liens temporaires)
+  sourceUrl: string | null; // import par lien : page d'origine
   collectionIds: string[];
   collections: { id: string; name: string }[]; // pour l'affichage sur la fiche
   ingredients: {
@@ -141,7 +142,7 @@ export async function getRecipeForEdit(id: string): Promise<RecipeForEdit | null
   const { data: recipe } = await supabase
     .from("recipes")
     .select(
-      "id, owner_id, title, servings, is_example, steps, book_title, book_page, photo_path, thumb_path, import_photo_paths, recipe_ingredients(position, item_id, quantity, unit, note, items(name)), recipe_collections(collection_id, collections(name))",
+      "id, owner_id, title, servings, is_example, steps, book_title, book_page, photo_path, thumb_path, import_photo_paths, source_url, recipe_ingredients(position, item_id, quantity, unit, note, items(name)), recipe_collections(collection_id, collections(name))",
     )
     .eq("id", id)
     .maybeSingle();
@@ -201,6 +202,7 @@ export async function getRecipeForEdit(id: string): Promise<RecipeForEdit | null
     thumbPath: recipe.thumb_path,
     photoUrl,
     importPageUrls,
+    sourceUrl: recipe.source_url,
     collectionIds: recipe.recipe_collections.map((c) => c.collection_id),
     collections: recipe.recipe_collections
       .map((c) => ({ id: c.collection_id, name: c.collections?.name ?? "" }))

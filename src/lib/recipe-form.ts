@@ -22,6 +22,7 @@ export type RecipeFormState = {
   steps: string[];
   bookTitle: string;
   bookPageText: string;
+  sourceUrl: string; // lien de la page d'origine ("" = aucun)
   collectionIds: string[];
 };
 
@@ -69,6 +70,15 @@ export function formToRecipeInput(
     else bookPage = page;
   }
 
+  // Lien : facultatif ; « marmiton.org/… » sans https:// est complété
+  let sourceUrl: string | null = null;
+  const link = state.sourceUrl.trim();
+  if (link) {
+    const full = /^[a-z][a-z0-9+.-]*:/i.test(link) ? link : `https://${link}`;
+    if (/^https?:\/\//i.test(full) && URL.canParse(full) && full.length <= 2000) sourceUrl = full;
+    else errors.sourceUrl = "Lien invalide (https://…)";
+  }
+
   if (!state.title.trim()) errors.title = "Le titre est obligatoire";
 
   if (Object.keys(errors).length > 0) return { ok: false, errors };
@@ -82,7 +92,17 @@ export function formToRecipeInput(
       steps: state.steps,
       bookTitle: state.bookTitle.trim() || undefined,
       bookPage,
+      sourceUrl,
       collectionIds: state.collectionIds,
     },
   };
+}
+
+/**
+ * Unité d'une ligne quand on lui choisit (ou crée) un article : l'unité déjà présente
+ * — celle de la recette lue, ou choisie à la main — est gardée ; l'unité habituelle de
+ * l'article n'est proposée que si la ligne n'en a pas encore.
+ */
+export function unitForChosenItem(currentUnit: string, itemDefaultUnit: string): string {
+  return currentUnit || itemDefaultUnit;
 }

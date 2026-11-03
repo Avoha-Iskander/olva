@@ -2,13 +2,21 @@
 
 import { z } from "zod";
 
-import { extractRecipeFromImages, MAX_PAGES, PROMPT_VERSION } from "@/lib/ai/extract-recipe";
+import {
+  type ExtractionResult,
+  extractRecipeFromImages,
+  extractRecipeFromText,
+  MAX_PAGES,
+  PROMPT_VERSION,
+} from "@/lib/ai/extract-recipe";
 import { buildMatcher } from "@/lib/ai/match-ingredients";
-import { canChooseAiModel, defaultAiModel, isAiModel } from "@/lib/ai/models";
+import { type AiModel, canChooseAiModel, defaultAiModel, isAiModel } from "@/lib/ai/models";
 import { getCatalogue } from "@/lib/catalogue";
 import { detectImageType } from "@/lib/image-type";
 import type { ImportDraft } from "@/lib/import-draft";
 import { createClient } from "@/lib/supabase/server";
+import { hasReadableContent, pageToPromptText, readRecipePage } from "@/lib/url-import/recipe-page";
+import { parsePublicUrl, safeFetch } from "@/lib/url-import/safe-fetch";
 
 const BUCKET = "recipe-photos";
 
@@ -17,121 +25,72 @@ export type ImportResult =
   | { status: "not_recipe"; importId: string; message: string }
   | { status: "failed"; importId: string | null; message: string; retryable: boolean };
 
-const inputSchema = z.object({
-  photoPaths: z.array(z.string().min(1).max(300)).min(1).max(MAX_PAGES),
-  importId: z.uuid().optional(), // « Réessayer » : on reprend le même import
-  model: z.string().optional(), // choix du modèle : aperçus seulement
+type Supabase = Awaited<ReturnType<typeof createClient>>;
+type Failure = Extract<ImportResult, { status: "failed" }>;
+
+const failed = (importId: string | null, message: string, retryable: boolean): Failure => ({
+  status: "failed",
+  importId,
+  message,
+  retryable,
 });
 
-/**
- * Import d'une recette par photo (US-REC-02) :
- * 1. les photos (1 à 3 pages, déjà compressées et envoyées par le navigateur) sont lues
- *    dans mon dossier ;
- * 2. elles partent chez Claude en une seule demande, côté serveur ; la réponse est vérifiée ;
- * 3. les ingrédients sont rattachés à mon catalogue ;
- * 4. on renvoie un brouillon : RIEN n'est enregistré comme recette à ce stade.
- * Chaque tentative est tracée dans recipe_imports.
- */
-export async function importRecipeFromPhoto(
-  input: z.infer<typeof inputSchema>,
-): Promise<ImportResult> {
-  const parsed = inputSchema.safeParse(input);
-  if (!parsed.success)
-    return { status: "failed", importId: null, message: "Photo invalide.", retryable: false };
-
+/** Utilisateur connecté et modèle à utiliser (choix possible hors production). */
+async function prepare(requestedModel: string | undefined) {
   const supabase = await createClient();
   const { data: claims } = await supabase.auth.getClaims();
-  const userId = claims?.claims?.sub;
-  if (!userId)
-    return { status: "failed", importId: null, message: "Connexion requise.", retryable: false };
-
-  const { photoPaths } = parsed.data;
-  if (!photoPaths.every((path) => path.startsWith(`${userId}/`))) {
-    return { status: "failed", importId: null, message: "Photo invalide.", retryable: false };
-  }
-
+  const userId = claims?.claims?.sub ?? null;
   // Modèle : celui de l'administrateur, ou celui choisi pour comparer (hors production)
-  const model =
-    canChooseAiModel() && isAiModel(parsed.data.model) ? parsed.data.model : defaultAiModel();
+  const model: AiModel =
+    canChooseAiModel() && isAiModel(requestedModel) ? requestedModel : defaultAiModel();
+  return { supabase, userId, model };
+}
 
-  // Trace de l'import (nouvelle, ou reprise pour « Réessayer »)
-  let importId = parsed.data.importId ?? null;
-  if (importId) {
+/** Trace de l'import dans recipe_imports : nouvelle, ou reprise pour « Réessayer ». */
+async function startImport(
+  supabase: Supabase,
+  existingId: string | undefined,
+  source: { photo_paths: string[] } | { source_url: string },
+  model: AiModel,
+): Promise<string | null> {
+  if (existingId) {
     await supabase
       .from("recipe_imports")
       .update({ status: "pending", model, error: null })
-      .eq("id", importId);
-  } else {
-    const { data: created, error } = await supabase
-      .from("recipe_imports")
-      .insert({ photo_paths: photoPaths, model })
-      .select("id")
-      .single();
-    if (error || !created) {
-      return {
-        status: "failed",
-        importId: null,
-        message: "L'import n'a pas pu démarrer.",
-        retryable: true,
-      };
-    }
-    importId = created.id;
+      .eq("id", existingId);
+    return existingId;
   }
+  const { data } = await supabase
+    .from("recipe_imports")
+    .insert({ ...source, model })
+    .select("id")
+    .single();
+  return data?.id ?? null;
+}
 
-  // Les pages sont téléchargées en parallèle depuis mon dossier
-  const downloads = await Promise.all(
-    photoPaths.map((path) => supabase.storage.from(BUCKET).download(path)),
-  );
-  if (downloads.some((d) => d.error || !d.data)) {
-    await supabase
-      .from("recipe_imports")
-      .update({ status: "failed", error: "Photo introuvable" })
-      .eq("id", importId);
-    return {
-      status: "failed",
-      importId,
-      message: "La photo est introuvable. Reprenez-la.",
-      retryable: false,
-    };
-  }
-  // Le format est lu dans les octets de chaque photo, pas dans son nom (cf. image-type.ts)
-  const pages = await Promise.all(
-    downloads.map(async (d) => {
-      const bytes = Buffer.from(await d.data!.arrayBuffer());
-      return { data: bytes.toString("base64"), mediaType: detectImageType(bytes) };
-    }),
-  );
-  if (pages.some((p) => p.mediaType === null)) {
-    await supabase
-      .from("recipe_imports")
-      .update({ status: "failed", error: "Format d'image non reconnu" })
-      .eq("id", importId);
-    return {
-      status: "failed",
-      importId,
-      message: "Format de photo non reconnu. Reprenez la photo.",
-      retryable: false,
-    };
-  }
+async function markFailed(supabase: Supabase, importId: string, error: string) {
+  await supabase.from("recipe_imports").update({ status: "failed", error }).eq("id", importId);
+}
 
-  const result = await extractRecipeFromImages(
-    pages.map((p) => ({ data: p.data, mediaType: p.mediaType! })),
-    model,
-  );
-
+/**
+ * Fin commune aux deux imports : on trace le résultat, on rattache les ingrédients à mon
+ * catalogue (noms et synonymes, mes articles d'abord) et on renvoie le brouillon.
+ * RIEN n'est enregistré comme recette à ce stade.
+ */
+async function finishImport(
+  supabase: Supabase,
+  importId: string,
+  result: ExtractionResult,
+  source: Pick<ImportDraft, "photoPaths" | "sourceUrl" | "photo">,
+  messages: { failed: string; unavailable: string; notRecipe: string },
+): Promise<ImportResult> {
   if (result.status === "failed") {
-    await supabase
-      .from("recipe_imports")
-      .update({ status: "failed", error: result.error })
-      .eq("id", importId);
-    return {
-      status: "failed",
+    await markFailed(supabase, importId, result.error);
+    return failed(
       importId,
-      message: result.retryable
-        ? "La lecture de la photo n'a pas abouti. Réessayez, ou saisissez la recette à la main."
-        : "L'import par photo n'est pas disponible pour le moment. Saisissez la recette à la main.",
-      retryable: result.retryable,
-    };
+      result.retryable ? messages.failed : messages.unavailable,
+      result.retryable,
+    );
   }
 
   if (result.status === "not_recipe") {
@@ -139,11 +98,7 @@ export async function importRecipeFromPhoto(
       .from("recipe_imports")
       .update({ status: "not_recipe", result: { reason: result.reason, prompt: PROMPT_VERSION } })
       .eq("id", importId);
-    return {
-      status: "not_recipe",
-      importId,
-      message: `Cette photo ne semble pas contenir de recette : ${result.reason}`,
-    };
+    return { status: "not_recipe", importId, message: `${messages.notRecipe} : ${result.reason}` };
   }
 
   const recipe = result.recipe;
@@ -152,7 +107,6 @@ export async function importRecipeFromPhoto(
     .update({ status: "done", result: { ...recipe, prompt: PROMPT_VERSION } })
     .eq("id", importId);
 
-  // Rattachement au catalogue : noms et synonymes (mes articles d'abord)
   const [catalogue, { data: aliases }] = await Promise.all([
     getCatalogue(),
     supabase.from("item_aliases").select("alias, item_id"),
@@ -166,7 +120,7 @@ export async function importRecipeFromPhoto(
     status: "done",
     draft: {
       importId,
-      photoPaths,
+      ...source,
       title: recipe.title ?? "",
       titleUncertain: recipe.title_uncertain || !recipe.title,
       servings: recipe.servings ?? null,
@@ -183,4 +137,201 @@ export async function importRecipeFromPhoto(
       })),
     },
   };
+}
+
+// ---------------------------------------------------------------------------
+// Import par photo (US-REC-02)
+// ---------------------------------------------------------------------------
+
+const photoInputSchema = z.object({
+  photoPaths: z.array(z.string().min(1).max(300)).min(1).max(MAX_PAGES),
+  importId: z.uuid().optional(), // « Réessayer » : on reprend le même import
+  model: z.string().optional(), // choix du modèle : aperçus seulement
+});
+
+/**
+ * Import d'une recette par photo (US-REC-02) :
+ * 1. les photos (1 à 3 pages, déjà compressées et envoyées par le navigateur) sont lues
+ *    dans mon dossier ;
+ * 2. elles partent chez Claude en une seule demande, côté serveur ; la réponse est vérifiée ;
+ * 3. fin commune : suivi, catalogue, brouillon (finishImport).
+ */
+export async function importRecipeFromPhoto(
+  input: z.infer<typeof photoInputSchema>,
+): Promise<ImportResult> {
+  const parsed = photoInputSchema.safeParse(input);
+  if (!parsed.success) return failed(null, "Photo invalide.", false);
+
+  const { supabase, userId, model } = await prepare(parsed.data.model);
+  if (!userId) return failed(null, "Connexion requise.", false);
+
+  const { photoPaths } = parsed.data;
+  if (!photoPaths.every((path) => path.startsWith(`${userId}/`))) {
+    return failed(null, "Photo invalide.", false);
+  }
+
+  const importId = await startImport(
+    supabase,
+    parsed.data.importId,
+    { photo_paths: photoPaths },
+    model,
+  );
+  if (!importId) return failed(null, "L'import n'a pas pu démarrer.", true);
+
+  // Les pages sont téléchargées en parallèle depuis mon dossier
+  const downloads = await Promise.all(
+    photoPaths.map((path) => supabase.storage.from(BUCKET).download(path)),
+  );
+  if (downloads.some((d) => d.error || !d.data)) {
+    await markFailed(supabase, importId, "Photo introuvable");
+    return failed(importId, "La photo est introuvable. Reprenez-la.", false);
+  }
+  // Le format est lu dans les octets de chaque photo, pas dans son nom (cf. image-type.ts)
+  const pages = await Promise.all(
+    downloads.map(async (d) => {
+      const bytes = Buffer.from(await d.data!.arrayBuffer());
+      return { data: bytes.toString("base64"), mediaType: detectImageType(bytes) };
+    }),
+  );
+  if (pages.some((p) => p.mediaType === null)) {
+    await markFailed(supabase, importId, "Format d'image non reconnu");
+    return failed(importId, "Format de photo non reconnu. Reprenez la photo.", false);
+  }
+
+  const result = await extractRecipeFromImages(
+    pages.map((p) => ({ data: p.data, mediaType: p.mediaType! })),
+    model,
+  );
+  return finishImport(
+    supabase,
+    importId,
+    result,
+    { photoPaths, sourceUrl: null, photo: null },
+    {
+      failed:
+        "La lecture de la photo n'a pas abouti. Réessayez, ou saisissez la recette à la main.",
+      unavailable:
+        "L'import par photo n'est pas disponible pour le moment. Saisissez la recette à la main.",
+      notRecipe: "Cette photo ne semble pas contenir de recette",
+    },
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Import par lien (US-REC-07)
+// ---------------------------------------------------------------------------
+
+const urlInputSchema = z.object({
+  url: z.string().trim().min(1).max(2000),
+  importId: z.uuid().optional(),
+  model: z.string().optional(),
+});
+
+/** Message affiché selon la raison pour laquelle la page n'a pas pu être lue. */
+const FETCH_MESSAGES = {
+  invalid: "Cette adresse n'est pas valide. Collez le lien complet (https://…).",
+  blocked: "Cette adresse ne peut pas être lue.",
+  timeout: "Le site met trop de temps à répondre.",
+  too_large: "Cette page est trop lourde pour être lue.",
+  http: "Ce site ne se laisse pas lire automatiquement.",
+  type: "Ce lien ne mène pas à une page web.",
+  network: "Le site est injoignable.",
+} as const;
+
+/**
+ * Import d'une recette depuis un lien (US-REC-07) :
+ * 1. le serveur lit la page, avec garde-fous (safe-fetch) ;
+ * 2. on en tire la fiche schema.org, sinon le texte visible (recipe-page) ;
+ * 3. Claude, en mode texte, remplit le même outil que pour une photo ;
+ * 4. la photo du plat fournie par le site est récupérée, pour la proposer ;
+ * 5. fin commune : suivi, catalogue, brouillon (finishImport).
+ */
+export async function importRecipeFromUrl(
+  input: z.infer<typeof urlInputSchema>,
+): Promise<ImportResult> {
+  const parsed = urlInputSchema.safeParse(input);
+  const url = parsed.success ? parsePublicUrl(parsed.data.url) : null;
+  if (!parsed.success || !url) return failed(null, FETCH_MESSAGES.invalid, false);
+
+  const { supabase, userId, model } = await prepare(parsed.data.model);
+  if (!userId) return failed(null, "Connexion requise.", false);
+
+  const sourceUrl = url.toString();
+  const importId = await startImport(
+    supabase,
+    parsed.data.importId,
+    { source_url: sourceUrl },
+    model,
+  );
+  if (!importId) return failed(null, "L'import n'a pas pu démarrer.", true);
+
+  const fetched = await safeFetch(sourceUrl, {
+    accept: (type) => /text\/html|application\/xhtml/i.test(type),
+    maxBytes: 2_000_000,
+    timeoutMs: 10_000,
+  });
+  if (!fetched.ok) {
+    await markFailed(supabase, importId, `Lecture de la page : ${fetched.reason}`);
+    // Délai dépassé ou site injoignable : ça peut passer en réessayant
+    const retryable = fetched.reason === "timeout" || fetched.reason === "network";
+    return failed(
+      importId,
+      `${FETCH_MESSAGES[fetched.reason]} ${retryable ? "Réessayez, ou essayez" : "Essayez"} l'import par photo.`,
+      retryable,
+    );
+  }
+
+  // Jeu de caractères annoncé par le site (utf-8 le plus souvent)
+  const charset = fetched.contentType.match(/charset=([\w-]+)/i)?.[1] ?? "utf-8";
+  let html: string;
+  try {
+    html = new TextDecoder(charset).decode(fetched.body);
+  } catch {
+    html = new TextDecoder("utf-8").decode(fetched.body);
+  }
+
+  const page = readRecipePage(html, fetched.finalUrl);
+  if (!hasReadableContent(page)) {
+    await markFailed(supabase, importId, "Page sans contenu lisible");
+    return failed(
+      importId,
+      "Cette page ne contient pas de texte lisible (site qui demande une vérification, page vide…). Essayez l'import par photo.",
+      false,
+    );
+  }
+
+  // La lecture par Claude et le téléchargement de la photo se font en même temps
+  const [result, photo] = await Promise.all([
+    extractRecipeFromText(pageToPromptText(page), sourceUrl, model),
+    page.imageUrl ? fetchDishPhoto(page.imageUrl) : Promise.resolve(null),
+  ]);
+
+  return finishImport(
+    supabase,
+    importId,
+    result,
+    { photoPaths: [], sourceUrl, photo },
+    {
+      failed: "La lecture de la page n'a pas abouti. Réessayez, ou essayez l'import par photo.",
+      unavailable: "L'import n'est pas disponible pour le moment. Essayez plus tard.",
+      notRecipe: "Cette page ne semble pas contenir de recette",
+    },
+  );
+}
+
+/**
+ * Photo du plat fournie par le site : téléchargée avec les mêmes garde-fous, vérifiée
+ * (vraie image JPEG / PNG / WebP), puis renvoyée au navigateur qui la compressera à
+ * l'enregistrement, comme une photo prise soi-même. Facultative : null en cas d'échec.
+ */
+async function fetchDishPhoto(imageUrl: string): Promise<ImportDraft["photo"]> {
+  const fetched = await safeFetch(imageUrl, {
+    accept: (type) => type.startsWith("image/"),
+    maxBytes: 5_000_000,
+    timeoutMs: 8_000,
+  });
+  if (!fetched.ok) return null;
+  const mediaType = detectImageType(fetched.body);
+  if (!mediaType) return null;
+  return { data: Buffer.from(fetched.body).toString("base64"), mediaType };
 }

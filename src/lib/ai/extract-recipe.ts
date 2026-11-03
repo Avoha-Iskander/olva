@@ -25,10 +25,11 @@ export type PageImage = { data: string; mediaType: ImageMediaType };
 /** Nombre maximal de pages pour une recette (SPEC décision 049). */
 export const MAX_PAGES = 3;
 
+/** Contenu d'une demande : des blocs de texte et d'image, dans l'ordre. */
+type Content = Anthropic.Messages.ContentBlockParam[];
+
 /**
  * Envoie les pages à Claude, en une seule demande, et renvoie LA recette lue, vérifiée.
- * « Outil forcé » (tool_choice) : Claude doit répondre en remplissant extract_recipe,
- * ce qui garantit une réponse structurée plutôt qu'un texte libre.
  */
 export async function extractRecipeFromImages(
   pages: PageImage[],
@@ -37,6 +38,53 @@ export async function extractRecipeFromImages(
   if (pages.length < 1 || pages.length > MAX_PAGES) {
     return { status: "failed", error: "Nombre de pages invalide", retryable: false };
   }
+  // Les pages dans l'ordre, chacune précédée de son numéro, puis la consigne
+  return callExtraction(
+    [
+      ...pages.flatMap((page, index): Content => [
+        { type: "text", text: `Page ${index + 1} :` },
+        { type: "image", source: { type: "base64", media_type: page.mediaType, data: page.data } },
+      ]),
+      {
+        type: "text",
+        text:
+          pages.length === 1
+            ? "Lis la recette de cette photo et réponds en appelant l'outil extract_recipe."
+            : `Ces ${pages.length} photos sont les pages successives d'une même recette. Lis-la en une seule recette et réponds en appelant l'outil extract_recipe.`,
+      },
+    ],
+    model,
+  );
+}
+
+/**
+ * Import par lien (US-REC-07) : envoie le contenu d'une page web (fiche schema.org ou
+ * texte visible) à Claude, qui en tire la recette. Le contenu est encadré par des balises :
+ * c'est une DONNÉE à lire, jamais des consignes à suivre (protection contre une page piégée).
+ */
+export async function extractRecipeFromText(
+  pageText: string,
+  pageUrl: string,
+  model: AiModel,
+): Promise<ExtractionResult> {
+  // Une page piégée ne doit pas pouvoir « fermer » l'encadré elle-même
+  const safeText = pageText.replace(/<\/?page>/gi, "");
+  return callExtraction(
+    [
+      {
+        type: "text",
+        text: `Contenu de la page web ${pageUrl} :\n<page>\n${safeText}\n</page>\n\nLis la recette de cette page et réponds en appelant l'outil extract_recipe.`,
+      },
+    ],
+    model,
+  );
+}
+
+/**
+ * L'appel commun : réponse par l'outil extract_recipe, puis vérification par zod.
+ * « Outil forcé » (tool_choice) quand le modèle l'accepte, sinon « auto » (cf. models.ts).
+ */
+async function callExtraction(content: Content, model: AiModel): Promise<ExtractionResult> {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) return { status: "failed", error: "Clé API absente", retryable: false };
 
@@ -50,32 +98,10 @@ export async function extractRecipeFromImages(
       max_tokens: settings.maxTokens,
       system: RECIPE_EXTRACTION_PROMPT,
       tools: [extractRecipeTool],
-      // Réponse forcée par l'outil quand le modèle l'accepte ; sinon « auto » (cf. models.ts)
       tool_choice: settings.forcedTool
         ? { type: "tool", name: extractRecipeTool.name }
         : { type: "auto" },
-      messages: [
-        {
-          role: "user",
-          // Les pages dans l'ordre, chacune précédée de son numéro, puis la consigne
-          content: [
-            ...pages.flatMap((page, index) => [
-              { type: "text" as const, text: `Page ${index + 1} :` },
-              {
-                type: "image" as const,
-                source: { type: "base64" as const, media_type: page.mediaType, data: page.data },
-              },
-            ]),
-            {
-              type: "text",
-              text:
-                pages.length === 1
-                  ? "Lis la recette de cette photo et réponds en appelant l'outil extract_recipe."
-                  : `Ces ${pages.length} photos sont les pages successives d'une même recette. Lis-la en une seule recette et réponds en appelant l'outil extract_recipe.`,
-            },
-          ],
-        },
-      ],
+      messages: [{ role: "user", content }],
     });
 
     const call = response.content.find((block) => block.type === "tool_use");

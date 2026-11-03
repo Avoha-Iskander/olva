@@ -351,8 +351,9 @@ export type Database = {
           id: string
           model: string | null
           owner_id: string
-          photo_paths: string[]
+          photo_paths: string[] | null
           result: Json | null
+          source_url: string | null
           status: string
           updated_at: string
         }
@@ -362,8 +363,9 @@ export type Database = {
           id?: string
           model?: string | null
           owner_id?: string
-          photo_paths: string[]
+          photo_paths?: string[] | null
           result?: Json | null
+          source_url?: string | null
           status?: string
           updated_at?: string
         }
@@ -373,8 +375,9 @@ export type Database = {
           id?: string
           model?: string | null
           owner_id?: string
-          photo_paths?: string[]
+          photo_paths?: string[] | null
           result?: Json | null
+          source_url?: string | null
           status?: string
           updated_at?: string
         }
@@ -470,6 +473,7 @@ export type Database = {
           owner_id: string
           photo_path: string | null
           servings: number
+          source_url: string | null
           steps: string[]
           thumb_path: string | null
           title: string
@@ -486,6 +490,7 @@ export type Database = {
           owner_id?: string
           photo_path?: string | null
           servings: number
+          source_url?: string | null
           steps?: string[]
           thumb_path?: string | null
           title: string
@@ -502,6 +507,7 @@ export type Database = {
           owner_id?: string
           photo_path?: string | null
           servings?: number
+          source_url?: string | null
           steps?: string[]
           thumb_path?: string | null
           title?: string
@@ -832,6 +838,7 @@ export type Database = {
           owner_id: string
           photo_path: string | null
           servings: number
+          source_url: string | null
           steps: string[]
           thumb_path: string | null
           title: string

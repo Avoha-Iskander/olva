@@ -10,6 +10,8 @@ import {
 const draft = (patch: Partial<ImportDraft> = {}): ImportDraft => ({
   importId: "imp-1",
   photoPaths: ["u/r/import-1.webp"],
+  sourceUrl: null,
+  photo: null,
   title: "Tarte aux pommes",
   titleUncertain: false,
   servings: 6,
@@ -106,6 +108,12 @@ describe("draftToForm", () => {
       ],
     });
     expect(draftToForm(d, 4).state.ingredients[0]).toMatchObject({ quantityText: "", unit: "" });
+  });
+
+  it("import par lien : pré-remplit le lien de la page", () => {
+    const { state } = draftToForm(draft({ sourceUrl: "https://exemple.fr/tarte" }), 4);
+    expect(state.sourceUrl).toBe("https://exemple.fr/tarte");
+    expect(draftToForm(draft(), 4).state.sourceUrl).toBe("");
   });
 
   it("garde au moins une ligne d'ingrédient et une étape", () => {
