@@ -18,7 +18,14 @@ test("créer, afficher puis supprimer une recette", async ({ page }) => {
     // On cherche « farine » et on prend le premier article proposé (pas la ligne « Créer … »)
     await page.getByRole("combobox").first().click();
     await page.getByPlaceholder("Rechercher (ex. tomate)").fill("farine");
-    await page.getByRole("option").filter({ hasNotText: /Créer/ }).first().click();
+    // Dans la liste de recherche du catalogue (et non dans le menu des unités, qui a aussi
+    // des « options »)
+    await page
+      .getByRole("listbox")
+      .getByRole("option")
+      .filter({ hasNotText: /Créer/ })
+      .first()
+      .click();
   });
 
   await test.step("quantité, unité et étape", async () => {
