@@ -21,3 +21,8 @@ coverage/
 .vercel
 *.tsbuildinfo
 next-env.d.ts
+
+# Playwright : session du compte de test, rapports et traces
+e2e/.auth/
+playwright-report/
+test-results/

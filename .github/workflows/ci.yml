@@ -33,3 +33,54 @@ jobs:
         run: npm run typecheck
       - name: Tests
         run: npm test
+
+  # Tests de bout en bout (Playwright) : l'app est construite et pilotée dans un vrai
+  # navigateur, avec le compte de test, sur le projet Supabase de DEV (jamais la prod).
+  e2e:
+    name: Parcours dans le navigateur (Playwright)
+    runs-on: ubuntu-latest
+    env:
+      CI: true
+      # Projet dev : ces deux valeurs sont publiques (elles sont déjà envoyées au navigateur
+      # sur les aperçus) ; la sécurité des données repose sur la Row Level Security.
+      NEXT_PUBLIC_SUPABASE_URL: https://pchopmvcwbablzuozqgn.supabase.co
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_BRvz9_THYC0O0sofqgRh0w_gTYJ_6dJ
+      # Compte de test : secrets GitHub (Settings → Secrets and variables → Actions)
+      E2E_EMAIL: ${{ secrets.E2E_EMAIL }}
+      E2E_PASSWORD: ${{ secrets.E2E_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+
+      # Sans compte de test configuré, on le signale au lieu d'échouer
+      - name: Compte de test configuré ?
+        id: account
+        run: |
+          if [ -z "$E2E_EMAIL" ] || [ -z "$E2E_PASSWORD" ]; then
+            echo "::warning::Secrets E2E_EMAIL / E2E_PASSWORD absents : tests Playwright ignorés."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      # Navigateur Chromium seulement (le moteur de Chrome et d'Android)
+      - name: Installer le navigateur
+        if: steps.account.outputs.ready == 'true'
+        run: npx playwright install --with-deps chromium
+
+      - name: Parcours
+        if: steps.account.outputs.ready == 'true'
+        run: npm run e2e
+
+      # En cas d'échec : rapport avec captures et traces, téléchargeable depuis GitHub
+      - name: Rapport Playwright
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rapport-playwright
+          path: playwright-report/
+          retention-days: 7
