@@ -23,3 +23,15 @@ export function defaultAiModel(): AiModel {
 export function canChooseAiModel(): boolean {
   return process.env.VERCEL_ENV !== "production";
 }
+
+/**
+ * Réglages d'appel propres à chaque modèle.
+ * - forcedTool : le modèle accepte-t-il qu'on l'OBLIGE à répondre par l'outil
+ *   (tool_choice « tool ») ? Sonnet 5.5 le refuse (erreur 400) : on passe alors en
+ *   « auto », la consigne lui demande d'appeler l'outil, et zod revérifie la réponse.
+ * - maxTokens : Sonnet 5.5 réfléchit avant de répondre, ce qui consomme des jetons.
+ */
+export const MODEL_SETTINGS: Record<AiModel, { forcedTool: boolean; maxTokens: number }> = {
+  "claude-haiku-5-5": { forcedTool: true, maxTokens: 4096 },
+  "claude-sonnet-5-5": { forcedTool: false, maxTokens: 16000 },
+};

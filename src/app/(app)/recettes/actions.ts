@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 
 import type { CatalogueItem } from "@/lib/catalogue";
+import { importPagesForRecipe } from "@/lib/import-draft";
 import { createClient } from "@/lib/supabase/server";
 import { isUnitCode } from "@/lib/units";
 import { recipeSchema, type RecipeInput } from "@/lib/validation/recipe";
@@ -42,6 +43,7 @@ export async function saveRecipe(input: {
   recipe: RecipeInput;
   photoPath: string | null;
   thumbPath: string | null;
+  importId?: string; // recette issue d'un import photo : ses pages y sont rattachées
 }): Promise<SaveRecipeResult> {
   const id = z.uuid().safeParse(input.id);
   const parsed = recipeSchema.safeParse(input.recipe);
@@ -85,6 +87,20 @@ export async function saveRecipe(input: {
     },
   });
   if (error) return { ok: false, message: "L'enregistrement a échoué. Réessayez." };
+
+  // Import photo : les pages photographiées restent attachées à la recette (US-REC-02).
+  // Échec sans gravité : la recette est enregistrée, seules les pages manqueront.
+  if (input.importId && z.uuid().safeParse(input.importId).success) {
+    const { data: imported } = await supabase
+      .from("recipe_imports")
+      .select("photo_paths")
+      .eq("id", input.importId)
+      .maybeSingle();
+    const pages = imported && importPagesForRecipe(imported.photo_paths, userId, id.data);
+    if (pages) {
+      await supabase.from("recipes").update({ import_photo_paths: pages }).eq("id", id.data);
+    }
+  }
 
   const obsolete = [previous?.photo_path, previous?.thumb_path].filter(
     (p): p is string => Boolean(p) && p !== input.photoPath && p !== input.thumbPath,

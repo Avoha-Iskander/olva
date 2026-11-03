@@ -50,11 +50,11 @@ describe("extractRecipeFromImages", () => {
     expect(result).toMatchObject({ status: "done", recipe: { title: "Crêpes", servings: 4 } });
   });
 
-  it("force la réponse structurée et envoie la photo", async () => {
+  it("Haiku : force la réponse structurée et envoie la photo", async () => {
     create.mockResolvedValue(toolAnswer({ is_recipe: true, title: "Crêpes" }));
-    await extractRecipeFromImages([page("aGVsbG8=", "image/webp")], "claude-sonnet-5-5");
+    await extractRecipeFromImages([page("aGVsbG8=", "image/webp")], "claude-haiku-5-5");
     const request = create.mock.calls[0][0];
-    expect(request.model).toBe("claude-sonnet-5-5");
+    expect(request.model).toBe("claude-haiku-5-5");
     expect(request.tool_choice).toEqual({ type: "tool", name: "extract_recipe" });
     expect(request.messages[0].content[1]).toMatchObject({
       type: "image",
@@ -108,5 +108,20 @@ describe("extractRecipeFromImages", () => {
     const result = await extractRecipeFromImages(pages, "claude-haiku-5-5");
     expect(result).toMatchObject({ status: "failed", retryable: false });
     expect(create).not.toHaveBeenCalled();
+  });
+
+  it("Sonnet : pas de réponse forcée (refusée par le modèle), consigne explicite", async () => {
+    create.mockResolvedValue(toolAnswer({ is_recipe: true, title: "Crêpes" }));
+    const result = await extractRecipeFromImages([page("x")], "claude-sonnet-5-5");
+    const request = create.mock.calls[0][0];
+    expect(request.tool_choice).toEqual({ type: "auto" });
+    expect(request.messages[0].content.at(-1).text).toContain("extract_recipe");
+    expect(result).toMatchObject({ status: "done" });
+  });
+
+  it("réponse sans appel de l'outil : échec, on pourra réessayer", async () => {
+    create.mockResolvedValue({ content: [{ type: "text", text: "Voici la recette…" }] });
+    const result = await extractRecipeFromImages([page("x")], "claude-sonnet-5-5");
+    expect(result).toMatchObject({ status: "failed", retryable: true });
   });
 });

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { ArrowLeft, BookOpen, Pencil, Share2, Trash2 } from "lucide-react";
+import { ArrowLeft, BookOpen, Camera, Pencil, Share2, Trash2 } from "lucide-react";
 
 import { CopyRecipeButton } from "@/components/recipes/copy-recipe-button";
 import { DeleteRecipeDialog } from "@/components/recipes/delete-recipe-dialog";
@@ -79,6 +79,24 @@ export function RecipeView({
             {[recipe.bookTitle, recipe.bookPage && `p. ${recipe.bookPage}`]
               .filter(Boolean)
               .join(", ")}
+          </p>
+        )}
+        {recipe.importPageUrls.length > 0 && (
+          // Pages photographiées lors de l'import (US-REC-02), ouvertes dans un nouvel onglet
+          <p className="text-muted-foreground flex flex-wrap items-center gap-x-3 text-sm">
+            <Camera className="size-4 shrink-0" aria-hidden />
+            {recipe.importPageUrls.length > 1 ? "Pages du livre :" : "Page du livre :"}
+            {recipe.importPageUrls.map((url, index) => (
+              <a
+                key={url}
+                href={url}
+                target="_blank"
+                rel="noreferrer"
+                className="text-foreground flex min-h-11 items-center underline underline-offset-4"
+              >
+                {recipe.importPageUrls.length > 1 ? `voir la page ${index + 1}` : "voir la photo"}
+              </a>
+            ))}
           </p>
         )}
         {recipe.collections.length > 0 && (

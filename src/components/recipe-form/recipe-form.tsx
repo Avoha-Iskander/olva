@@ -12,6 +12,7 @@ import { IngredientRow } from "@/components/recipe-form/ingredient-row";
 import { NewItemDialog } from "@/components/recipe-form/new-item-dialog";
 import { PhotoPicker } from "@/components/recipe-form/photo-picker";
 import { ReviewHighlight } from "@/components/recipe-form/review-highlight";
+import { ImportPagesPanel } from "@/components/recipe-import/import-pages-panel";
 import { StepsEditor } from "@/components/recipe-form/steps-editor";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -38,7 +39,13 @@ type RecipeFormProps = {
   collections: { id: string; name: string }[];
   initial: RecipeForEdit | null; // null = création
   /** Brouillon importé par photo : formulaire pré-rempli et champs à vérifier. */
-  draft?: { state: RecipeFormState; highlights: DraftHighlights };
+  draft?: {
+    mode: "import" | "manual"; // lue par l'IA, ou saisie à la main après un échec
+    state: RecipeFormState;
+    highlights: DraftHighlights;
+    importId: string | null; // ses pages seront attachées à la recette
+    pageUrls: string[]; // aperçus des pages, affichés à côté du formulaire
+  };
 };
 
 /**
@@ -152,7 +159,13 @@ export function RecipeForm(props: RecipeFormProps) {
           uploaded = [photoPath, thumbPath];
         }
         // 2. Recette, ingrédients et collections, en un seul bloc
-        const saved = await saveRecipe({ id: recipeId, recipe: result.data, photoPath, thumbPath });
+        const saved = await saveRecipe({
+          id: recipeId,
+          recipe: result.data,
+          photoPath,
+          thumbPath,
+          importId: props.draft?.importId ?? undefined,
+        });
         if (!saved.ok) {
           // Échec : la photo qu'on vient d'envoyer ne servira pas, on la supprime
           if (uploaded.length) await discardPhotos(uploaded);
@@ -165,9 +178,10 @@ export function RecipeForm(props: RecipeFormProps) {
     });
   }
 
-  return (
+  const pageUrls = props.draft?.pageUrls ?? [];
+  const form = (
     <form
-      className="grid gap-4"
+      className="grid min-w-0 gap-4"
       noValidate
       onSubmit={(e) => {
         e.preventDefault();
@@ -180,12 +194,20 @@ export function RecipeForm(props: RecipeFormProps) {
           className="flex items-start gap-3 rounded-xl border border-amber-400 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-500 dark:bg-amber-950/40 dark:text-amber-200"
         >
           <Camera className="mt-0.5 size-5 shrink-0" aria-hidden />
-          <p>
-            Recette lue sur la photo : rien n&apos;est encore enregistré.{" "}
-            {toReview > 0
-              ? `Vérifiez les champs surlignés (${toReview}), puis enregistrez.`
-              : "Relisez-la, puis enregistrez."}
-          </p>
+          {props.draft.mode === "manual" ? (
+            <p>
+              Saisie à la main : la photo est affichée{" "}
+              <span className="lg:hidden">ci-dessous (à déplier)</span>
+              <span className="hidden lg:inline">à droite</span>.
+            </p>
+          ) : (
+            <p>
+              Recette lue sur la photo : rien n&apos;est encore enregistré.{" "}
+              {toReview > 0
+                ? `Vérifiez les champs surlignés (${toReview}), puis enregistrez.`
+                : "Relisez-la, puis enregistrez."}
+            </p>
+          )}
         </div>
       )}
 
@@ -407,5 +429,16 @@ export function RecipeForm(props: RecipeFormProps) {
         }}
       />
     </form>
+  );
+
+  // Recette issue d'un import : les pages photographiées à côté du formulaire
+  if (pageUrls.length === 0) return form;
+  return (
+    <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_22rem]">
+      <div className="lg:sticky lg:top-4 lg:order-2">
+        <ImportPagesPanel pageUrls={pageUrls} />
+      </div>
+      <div className="min-w-0 lg:order-1">{form}</div>
+    </div>
   );
 }

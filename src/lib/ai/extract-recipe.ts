@@ -5,7 +5,7 @@
  */
 import Anthropic from "@anthropic-ai/sdk";
 
-import { type AiModel } from "@/lib/ai/models";
+import { type AiModel, MODEL_SETTINGS } from "@/lib/ai/models";
 import { PROMPT_VERSION, RECIPE_EXTRACTION_PROMPT } from "@/lib/ai/recipe-extraction-prompt";
 import { extractRecipeTool, type ExtractedRecipe, parseExtraction } from "@/lib/ai/recipe-schema";
 
@@ -41,15 +41,19 @@ export async function extractRecipeFromImages(
   if (!apiKey) return { status: "failed", error: "Clé API absente", retryable: false };
 
   // maxRetries : la bibliothèque réessaie seule en cas de surcharge passagère
-  const client = new Anthropic({ apiKey, maxRetries: 2, timeout: 90_000 });
+  const client = new Anthropic({ apiKey, maxRetries: 2, timeout: 120_000 });
+  const settings = MODEL_SETTINGS[model];
 
   try {
     const response = await client.messages.create({
       model,
-      max_tokens: 4096,
+      max_tokens: settings.maxTokens,
       system: RECIPE_EXTRACTION_PROMPT,
       tools: [extractRecipeTool],
-      tool_choice: { type: "tool", name: extractRecipeTool.name },
+      // Réponse forcée par l'outil quand le modèle l'accepte ; sinon « auto » (cf. models.ts)
+      tool_choice: settings.forcedTool
+        ? { type: "tool", name: extractRecipeTool.name }
+        : { type: "auto" },
       messages: [
         {
           role: "user",
@@ -66,8 +70,8 @@ export async function extractRecipeFromImages(
               type: "text",
               text:
                 pages.length === 1
-                  ? "Lis la recette de cette photo."
-                  : `Ces ${pages.length} photos sont les pages successives d'une même recette. Lis-la en une seule recette.`,
+                  ? "Lis la recette de cette photo et réponds en appelant l'outil extract_recipe."
+                  : `Ces ${pages.length} photos sont les pages successives d'une même recette. Lis-la en une seule recette et réponds en appelant l'outil extract_recipe.`,
             },
           ],
         },
