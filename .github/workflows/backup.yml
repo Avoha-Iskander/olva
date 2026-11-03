@@ -20,7 +20,9 @@ jobs:
     steps:
       - uses: supabase/setup-cli@v1
         with:
-          version: latest
+          # Version fixée : « latest » échoue parfois (limite de requêtes GitHub) et
+          # prendrait sans prévenir une nouvelle version majeure (3.0 sortie le 02/11/2026)
+          version: 2.122.0
 
       - name: Export de la base
         env:
