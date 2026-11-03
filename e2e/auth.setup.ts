@@ -18,15 +18,21 @@ setup("connexion du compte de test", async ({ page }) => {
   await page.getByLabel("Mot de passe").fill(password);
   await page.getByRole("button", { name: "Se connecter" }).click();
 
-  // Connecté : on quitte la page de connexion (accueil, ou parcours d'accueil au 1er passage)
-  await expect(page).not.toHaveURL(/\/connexion/);
+  // Connecté : on quitte la page de connexion
+  await page.waitForURL((url) => !url.pathname.startsWith("/connexion"));
 
-  // Compte tout neuf : le test remplit lui-même le parcours d'accueil (nom, portions)
-  if (page.url().includes("/bienvenue")) {
+  // On ouvre l'accueil et on attend la fin des redirections : un compte neuf est
+  // renvoyé vers le parcours d'accueil (/bienvenue), que le test remplit alors lui-même
+  await page.goto("/");
+  await page.waitForLoadState("networkidle");
+  if (new URL(page.url()).pathname.startsWith("/bienvenue")) {
     await page.getByLabel("Comment vous appelez-vous ?").fill("Robot Playwright");
     await page.getByRole("button", { name: "C'est parti" }).click();
-    await expect(page).not.toHaveURL(/\/bienvenue/);
+    await page.waitForURL((url) => !url.pathname.startsWith("/bienvenue"));
   }
+  // Vérification : l'accueil s'affiche bien (plus de redirection)
+  await page.goto("/");
+  await expect(page).toHaveURL(/\/$/);
 
   await page.context().storageState({ path: SESSION });
 });
