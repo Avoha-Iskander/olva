@@ -40,7 +40,10 @@ test("créer, afficher puis supprimer une recette", async ({ page }) => {
     await page.getByRole("button", { name: "Enregistrer" }).click();
     await expect(page).toHaveURL(/\/recettes\/[0-9a-f-]{36}$/);
     await expect(page.getByRole("heading", { level: 1, name: title })).toBeVisible();
-    await expect(page.getByText("Mélanger la farine et le lait.")).toBeVisible();
+    // L'étape, dans le texte de la fiche (pas dans le champ du formulaire qu'on vient de quitter)
+    await expect(
+      page.getByRole("paragraph").filter({ hasText: "Mélanger la farine et le lait." }),
+    ).toBeVisible();
   });
 
   // La carte existe en deux versions (mobile et ordinateur) : on prend celle qui est visible
