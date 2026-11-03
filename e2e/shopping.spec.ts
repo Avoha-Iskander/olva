@@ -20,6 +20,13 @@ const checkbox = (page: Page, name: string) =>
     name: new RegExp(`^${name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}`),
   });
 
+/** Toucher la ligne d'un article (toute la ligne est cliquable, comme pour une personne). */
+const tap = (page: Page, name: string) =>
+  page
+    .locator("label")
+    .filter({ has: checkbox(page, name) })
+    .click();
+
 test("cocher un article en temps réel entre deux téléphones", async ({ page, browser }) => {
   let listId = "";
 
@@ -52,7 +59,7 @@ test("cocher un article en temps réel entre deux téléphones", async ({ page, 
     const name = (await first.locator("xpath=..").locator("[data-item-name]").innerText()).trim();
 
     await test.step(`cocher « ${name} » sur le 1er téléphone`, async () => {
-      await checkbox(page, name).click();
+      await tap(page, name);
       await expect(checkbox(page, name)).toBeChecked();
       await expect(page.getByText(/^1 \/ \d+ articles? dans le panier$/)).toBeVisible();
     });
@@ -62,12 +69,12 @@ test("cocher un article en temps réel entre deux téléphones", async ({ page, 
     });
 
     await test.step("décocher sur le 2e téléphone : le 1er suit", async () => {
-      await checkbox(other, name).click();
+      await tap(other, name);
       await expect(checkbox(page, name)).not.toBeChecked({ timeout: 15_000 });
     });
 
     await test.step("la coche est bien enregistrée (rechargement de la page)", async () => {
-      await checkbox(page, name).click();
+      await tap(page, name);
       await expect(checkbox(page, name)).toBeChecked();
       await page.waitForTimeout(1_000); // le temps que l'enregistrement parte
       await page.reload();
