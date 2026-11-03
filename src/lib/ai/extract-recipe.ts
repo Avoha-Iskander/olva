@@ -18,16 +18,24 @@ export type ImageMediaType = "image/jpeg" | "image/png" | "image/webp";
 
 export { PROMPT_VERSION };
 
+/** Une page photographiée, encodée en base64 pour l'API. */
+export type PageImage = { data: string; mediaType: ImageMediaType };
+
+/** Nombre maximal de pages pour une recette (SPEC décision 049). */
+export const MAX_PAGES = 3;
+
 /**
- * Envoie la photo à Claude et renvoie la recette lue, vérifiée.
+ * Envoie les pages à Claude, en une seule demande, et renvoie LA recette lue, vérifiée.
  * « Outil forcé » (tool_choice) : Claude doit répondre en remplissant extract_recipe,
  * ce qui garantit une réponse structurée plutôt qu'un texte libre.
  */
-export async function extractRecipeFromImage(
-  imageBase64: string,
-  mediaType: ImageMediaType,
+export async function extractRecipeFromImages(
+  pages: PageImage[],
   model: AiModel,
 ): Promise<ExtractionResult> {
+  if (pages.length < 1 || pages.length > MAX_PAGES) {
+    return { status: "failed", error: "Nombre de pages invalide", retryable: false };
+  }
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) return { status: "failed", error: "Clé API absente", retryable: false };
 
@@ -44,9 +52,22 @@ export async function extractRecipeFromImage(
       messages: [
         {
           role: "user",
+          // Les pages dans l'ordre, chacune précédée de son numéro, puis la consigne
           content: [
-            { type: "image", source: { type: "base64", media_type: mediaType, data: imageBase64 } },
-            { type: "text", text: "Lis la recette de cette photo." },
+            ...pages.flatMap((page, index) => [
+              { type: "text" as const, text: `Page ${index + 1} :` },
+              {
+                type: "image" as const,
+                source: { type: "base64" as const, media_type: page.mediaType, data: page.data },
+              },
+            ]),
+            {
+              type: "text",
+              text:
+                pages.length === 1
+                  ? "Lis la recette de cette photo."
+                  : `Ces ${pages.length} photos sont les pages successives d'une même recette. Lis-la en une seule recette.`,
+            },
           ],
         },
       ],

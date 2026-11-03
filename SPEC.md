@@ -147,7 +147,7 @@ Champs : titre (obligatoire), nombre de personnes (obligatoire), ingrédients (q
 
 **US-REC-02 — Importer une recette par photo** · M
 
-- [ ] L'utilisateur photographie une page ; la photo est compressée puis envoyée à l'IA côté serveur
+- [ ] L'utilisateur photographie une page, ou jusqu'à 3 pages si la recette en occupe plusieurs ; les photos sont compressées puis envoyées ensemble à l'IA côté serveur, qui en tire une seule recette
 - [ ] La recette extraite s'affiche **en brouillon modifiable** ; rien n'est enregistré sans validation
 - [ ] Les champs incertains et les ingrédients non reconnus dans le catalogue sont **surlignés**
 - [ ] Si l'image n'est pas une recette, l'app le dit au lieu d'inventer
@@ -516,6 +516,7 @@ Toutes les tables sont protégées par Row Level Security : je vois mes données
 | 046 | 2026-11-02 | « Mon catalogue » dans Paramètres : rayon, ingrédient de base (+ conditionnement) et conversions personnalisés ; personnalisation d'un article commun stockée à part (`item_overrides`), le catalogue commun ne change pas ; une liste partagée suit les rayons de son créateur (ses co-éditeurs lisent ses personnalisations)                                      | Copie personnelle de l'article commun                                               |
 | 047 | 2026-11-03 | Date cible MVP avancée au **15/01/2027** (lots 3 et 4 finis le 3 nov., ~3 semaines d'avance) ; **Playwright introduit au début du lot 6** (hors ligne, temps réel entre deux téléphones), avec un compte de test dont le mot de passe est un secret GitHub                                                                                                          | Garder le 31/01 ; 31/12 ; Playwright tout de suite ; pas de Playwright              |
 | 048 | 2026-11-03 | Lot 5 : bibliothèque officielle `@anthropic-ai/sdk` (version exacte, au moins une semaine d'ancienneté) ; réponse forcée par un « outil » au format JSON Schema, revérifiée par zod ; prompt en fichier TypeScript versionné ; choix du modèle à chaque import sur les aperçus seulement, modèle de prod par variable `OLVA_AI_MODEL`                               | `fetch` sans dépendance ; prompt en Markdown lu à l'exécution                       |
+| 049 | 2026-11-03 | Import photo : **jusqu'à 3 pages** par recette, envoyées ensemble à l'IA en une seule demande (prompt v2) ; `recipe_imports.photo_paths` (tableau) remplace `photo_path` ; la photo de présentation reste ajoutée à part, dans la section « Photo » du brouillon                                                                                                    | Une seule page ; page photographiée utilisée comme photo de présentation            |
 
 ---
 

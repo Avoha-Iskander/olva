@@ -3,9 +3,9 @@
  * Versionné dans le dépôt : toute modification passe par une PR, et le numéro de
  * version est enregistré avec chaque import (pour comparer les lectures).
  */
-export const PROMPT_VERSION = "2026-11-03.1";
+export const PROMPT_VERSION = "2026-11-03.2"; // .2 : plusieurs pages
 
-export const RECIPE_EXTRACTION_PROMPT = `Tu lis la photo d'une page de livre de cuisine (ou d'une fiche recette) pour une application française de recettes et de listes de courses.
+export const RECIPE_EXTRACTION_PROMPT = `Tu lis la photo d'une page de livre de cuisine (ou d'une fiche recette) pour une application française de recettes et de listes de courses. Une recette peut s'étendre sur plusieurs pages : tu reçois alors plusieurs photos numérotées, dans l'ordre.
 
 Appelle l'outil extract_recipe avec ce que tu lis. Règles :
 
@@ -20,4 +20,5 @@ Appelle l'outil extract_recipe avec ce que tu lis. Règles :
 4. steps : une étape par élément, dans l'ordre, sans numéro au début.
 5. Incertitude : mets title_uncertain, servings_uncertain ou uncertain (ingrédient) à true dès qu'un mot ou un nombre est difficile à lire, coupé, flou ou deviné.
 6. servings : seulement s'il est écrit (« pour 4 personnes », « 6 parts »). Sinon, ne le mets pas.
-7. book_page : le numéro de page imprimé s'il est visible.`;
+7. book_page : le numéro de page imprimé s'il est visible (celui de la première page si la recette en occupe plusieurs).
+8. Plusieurs pages : assemble une seule recette, sans doublon ; une phrase ou une liste coupée en bas de page continue sur la page suivante. Si une page appartient visiblement à une autre recette, ignore-la et mets title_uncertain à true.`;
