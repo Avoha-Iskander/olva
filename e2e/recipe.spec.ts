@@ -60,6 +60,8 @@ test("créer, afficher puis supprimer une recette", async ({ page }) => {
     await page.getByRole("button", { name: "Supprimer la recette…" }).click();
     await page.getByRole("button", { name: "Oui, supprimer" }).click();
     await expect(page).toHaveURL(/\/recettes$/);
-    await expect(page.getByText(title)).toHaveCount(0);
+    // Les écrans quittés restent en mémoire, cachés (Next.js) : on ne compte que les liens
+    // visibles de la liste, pas tout le texte de la page
+    await expect(page.getByRole("link").filter({ hasText: title })).toHaveCount(0);
   });
 });
