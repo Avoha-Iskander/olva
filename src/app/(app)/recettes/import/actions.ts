@@ -2,15 +2,11 @@
 
 import { z } from "zod";
 
-import {
-  extractRecipeFromImages,
-  type ImageMediaType,
-  MAX_PAGES,
-  PROMPT_VERSION,
-} from "@/lib/ai/extract-recipe";
+import { extractRecipeFromImages, MAX_PAGES, PROMPT_VERSION } from "@/lib/ai/extract-recipe";
 import { buildMatcher } from "@/lib/ai/match-ingredients";
 import { canChooseAiModel, defaultAiModel, isAiModel } from "@/lib/ai/models";
 import { getCatalogue } from "@/lib/catalogue";
+import { detectImageType } from "@/lib/image-type";
 import type { ImportDraft } from "@/lib/import-draft";
 import { createClient } from "@/lib/supabase/server";
 
@@ -26,12 +22,6 @@ const inputSchema = z.object({
   importId: z.uuid().optional(), // « Réessayer » : on reprend le même import
   model: z.string().optional(), // choix du modèle : aperçus seulement
 });
-
-function mediaTypeOf(path: string): ImageMediaType {
-  if (path.endsWith(".png")) return "image/png";
-  if (path.endsWith(".jpg") || path.endsWith(".jpeg")) return "image/jpeg";
-  return "image/webp";
-}
 
 /**
  * Import d'une recette par photo (US-REC-02) :
@@ -104,14 +94,30 @@ export async function importRecipeFromPhoto(
       retryable: false,
     };
   }
+  // Le format est lu dans les octets de chaque photo, pas dans son nom (cf. image-type.ts)
   const pages = await Promise.all(
-    downloads.map(async (d, index) => ({
-      data: Buffer.from(await d.data!.arrayBuffer()).toString("base64"),
-      mediaType: mediaTypeOf(photoPaths[index]),
-    })),
+    downloads.map(async (d) => {
+      const bytes = Buffer.from(await d.data!.arrayBuffer());
+      return { data: bytes.toString("base64"), mediaType: detectImageType(bytes) };
+    }),
   );
+  if (pages.some((p) => p.mediaType === null)) {
+    await supabase
+      .from("recipe_imports")
+      .update({ status: "failed", error: "Format d'image non reconnu" })
+      .eq("id", importId);
+    return {
+      status: "failed",
+      importId,
+      message: "Format de photo non reconnu. Reprenez la photo.",
+      retryable: false,
+    };
+  }
 
-  const result = await extractRecipeFromImages(pages, model);
+  const result = await extractRecipeFromImages(
+    pages.map((p) => ({ data: p.data, mediaType: p.mediaType! })),
+    model,
+  );
 
   if (result.status === "failed") {
     await supabase

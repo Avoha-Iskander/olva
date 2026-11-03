@@ -14,7 +14,8 @@ export type ExtractionResult =
   | { status: "not_recipe"; reason: string }
   | { status: "failed"; error: string; retryable: boolean };
 
-export type ImageMediaType = "image/jpeg" | "image/png" | "image/webp";
+import type { ImageMediaType } from "@/lib/image-type";
+export type { ImageMediaType };
 
 export { PROMPT_VERSION };
 
