@@ -2,37 +2,15 @@
 
 import { z } from "zod";
 
-import {
-  extractRecipeFromImage,
-  type ImageMediaType,
-  PROMPT_VERSION,
-} from "@/lib/ai/extract-recipe";
+import { extractRecipeFromImages, MAX_PAGES, PROMPT_VERSION } from "@/lib/ai/extract-recipe";
 import { buildMatcher } from "@/lib/ai/match-ingredients";
 import { canChooseAiModel, defaultAiModel, isAiModel } from "@/lib/ai/models";
 import { getCatalogue } from "@/lib/catalogue";
+import { detectImageType } from "@/lib/image-type";
+import type { ImportDraft } from "@/lib/import-draft";
 import { createClient } from "@/lib/supabase/server";
 
 const BUCKET = "recipe-photos";
-
-/** Brouillon de recette issu d'une photo : pré-remplit le formulaire, rien n'est enregistré. */
-export type ImportDraft = {
-  importId: string;
-  photoPath: string;
-  title: string;
-  titleUncertain: boolean;
-  servings: number | null;
-  servingsUncertain: boolean;
-  steps: string[];
-  bookPage: number | null;
-  ingredients: {
-    name: string; // tel que lu par l'IA
-    itemId: string | null; // article du catalogue ; null : non reconnu (surligné)
-    quantity: number | null;
-    unit: string | null;
-    note: string | null;
-    uncertain: boolean;
-  }[];
-};
 
 export type ImportResult =
   | { status: "done"; draft: ImportDraft }
@@ -40,21 +18,16 @@ export type ImportResult =
   | { status: "failed"; importId: string | null; message: string; retryable: boolean };
 
 const inputSchema = z.object({
-  photoPath: z.string().min(1).max(300),
+  photoPaths: z.array(z.string().min(1).max(300)).min(1).max(MAX_PAGES),
   importId: z.uuid().optional(), // « Réessayer » : on reprend le même import
   model: z.string().optional(), // choix du modèle : aperçus seulement
 });
 
-function mediaTypeOf(path: string): ImageMediaType {
-  if (path.endsWith(".png")) return "image/png";
-  if (path.endsWith(".jpg") || path.endsWith(".jpeg")) return "image/jpeg";
-  return "image/webp";
-}
-
 /**
  * Import d'une recette par photo (US-REC-02) :
- * 1. la photo (déjà compressée et envoyée par le navigateur) est lue dans mon dossier ;
- * 2. elle part chez Claude, côté serveur ; la réponse est vérifiée ;
+ * 1. les photos (1 à 3 pages, déjà compressées et envoyées par le navigateur) sont lues
+ *    dans mon dossier ;
+ * 2. elles partent chez Claude en une seule demande, côté serveur ; la réponse est vérifiée ;
  * 3. les ingrédients sont rattachés à mon catalogue ;
  * 4. on renvoie un brouillon : RIEN n'est enregistré comme recette à ce stade.
  * Chaque tentative est tracée dans recipe_imports.
@@ -72,8 +45,8 @@ export async function importRecipeFromPhoto(
   if (!userId)
     return { status: "failed", importId: null, message: "Connexion requise.", retryable: false };
 
-  const { photoPath } = parsed.data;
-  if (!photoPath.startsWith(`${userId}/`)) {
+  const { photoPaths } = parsed.data;
+  if (!photoPaths.every((path) => path.startsWith(`${userId}/`))) {
     return { status: "failed", importId: null, message: "Photo invalide.", retryable: false };
   }
 
@@ -91,7 +64,7 @@ export async function importRecipeFromPhoto(
   } else {
     const { data: created, error } = await supabase
       .from("recipe_imports")
-      .insert({ photo_path: photoPath, model })
+      .insert({ photo_paths: photoPaths, model })
       .select("id")
       .single();
     if (error || !created) {
@@ -105,10 +78,11 @@ export async function importRecipeFromPhoto(
     importId = created.id;
   }
 
-  const { data: file, error: downloadError } = await supabase.storage
-    .from(BUCKET)
-    .download(photoPath);
-  if (downloadError || !file) {
+  // Les pages sont téléchargées en parallèle depuis mon dossier
+  const downloads = await Promise.all(
+    photoPaths.map((path) => supabase.storage.from(BUCKET).download(path)),
+  );
+  if (downloads.some((d) => d.error || !d.data)) {
     await supabase
       .from("recipe_imports")
       .update({ status: "failed", error: "Photo introuvable" })
@@ -120,9 +94,30 @@ export async function importRecipeFromPhoto(
       retryable: false,
     };
   }
-  const base64 = Buffer.from(await file.arrayBuffer()).toString("base64");
+  // Le format est lu dans les octets de chaque photo, pas dans son nom (cf. image-type.ts)
+  const pages = await Promise.all(
+    downloads.map(async (d) => {
+      const bytes = Buffer.from(await d.data!.arrayBuffer());
+      return { data: bytes.toString("base64"), mediaType: detectImageType(bytes) };
+    }),
+  );
+  if (pages.some((p) => p.mediaType === null)) {
+    await supabase
+      .from("recipe_imports")
+      .update({ status: "failed", error: "Format d'image non reconnu" })
+      .eq("id", importId);
+    return {
+      status: "failed",
+      importId,
+      message: "Format de photo non reconnu. Reprenez la photo.",
+      retryable: false,
+    };
+  }
 
-  const result = await extractRecipeFromImage(base64, mediaTypeOf(photoPath), model);
+  const result = await extractRecipeFromImages(
+    pages.map((p) => ({ data: p.data, mediaType: p.mediaType! })),
+    model,
+  );
 
   if (result.status === "failed") {
     await supabase
@@ -171,7 +166,7 @@ export async function importRecipeFromPhoto(
     status: "done",
     draft: {
       importId,
-      photoPath,
+      photoPaths,
       title: recipe.title ?? "",
       titleUncertain: recipe.title_uncertain || !recipe.title,
       servings: recipe.servings ?? null,

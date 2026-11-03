@@ -351,7 +351,7 @@ export type Database = {
           id: string
           model: string | null
           owner_id: string
-          photo_path: string
+          photo_paths: string[]
           result: Json | null
           status: string
           updated_at: string
@@ -362,7 +362,7 @@ export type Database = {
           id?: string
           model?: string | null
           owner_id?: string
-          photo_path: string
+          photo_paths: string[]
           result?: Json | null
           status?: string
           updated_at?: string
@@ -373,7 +373,7 @@ export type Database = {
           id?: string
           model?: string | null
           owner_id?: string
-          photo_path?: string
+          photo_paths?: string[]
           result?: Json | null
           status?: string
           updated_at?: string

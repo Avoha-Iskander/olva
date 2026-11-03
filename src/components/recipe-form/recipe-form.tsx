@@ -1,6 +1,6 @@
 "use client";
 
-import { Plus, Trash2 } from "lucide-react";
+import { Camera, Plus, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
@@ -11,12 +11,14 @@ import { CollectionsPicker } from "@/components/recipe-form/collections-picker";
 import { IngredientRow } from "@/components/recipe-form/ingredient-row";
 import { NewItemDialog } from "@/components/recipe-form/new-item-dialog";
 import { PhotoPicker } from "@/components/recipe-form/photo-picker";
+import { ReviewHighlight } from "@/components/recipe-form/review-highlight";
 import { StepsEditor } from "@/components/recipe-form/steps-editor";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { ServingsStepper } from "@/components/ui/servings-stepper";
 import type { Aisle, CatalogueItem } from "@/lib/catalogue";
+import { countHighlights, type DraftHighlights, NO_HIGHLIGHTS } from "@/lib/import-draft";
 import { compressAndUploadPhoto } from "@/lib/photo-upload";
 import { quantityToInput } from "@/lib/quantity";
 import {
@@ -35,6 +37,8 @@ type RecipeFormProps = {
   aisles: Aisle[];
   collections: { id: string; name: string }[];
   initial: RecipeForEdit | null; // null = création
+  /** Brouillon importé par photo : formulaire pré-rempli et champs à vérifier. */
+  draft?: { state: RecipeFormState; highlights: DraftHighlights };
 };
 
 /**
@@ -88,7 +92,20 @@ function initialState(initial: RecipeForEdit | null, defaultServings: number): R
 export function RecipeForm(props: RecipeFormProps) {
   const { recipeId, userId, initial } = props;
   const router = useRouter();
-  const [state, setState] = useState(() => initialState(initial, props.defaultServings));
+  const [state, setState] = useState(
+    () => props.draft?.state ?? initialState(initial, props.defaultServings),
+  );
+  // Champs encore « À vérifier » : chacun disparaît dès qu'on le modifie
+  const [highlights, setHighlights] = useState(props.draft?.highlights ?? NO_HIGHLIGHTS);
+  const reviewed = (field: "title" | "servings") =>
+    setHighlights((h) => (h[field] ? { ...h, [field]: false } : h));
+  const reviewedLine = (key: string) =>
+    setHighlights((h) => {
+      if (!h.ingredients[key]) return h;
+      const rest = Object.fromEntries(Object.entries(h.ingredients).filter(([k]) => k !== key));
+      return { ...h, ingredients: rest };
+    });
+  const toReview = countHighlights(highlights);
   const [items, setItems] = useState(props.items);
   const [collections, setCollections] = useState(props.collections);
   const [errors, setErrors] = useState<FormErrors>({});
@@ -100,11 +117,13 @@ export function RecipeForm(props: RecipeFormProps) {
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   const update = (patch: Partial<RecipeFormState>) => setState((s) => ({ ...s, ...patch }));
-  const updateLine = (key: string, patch: Partial<FormIngredient>) =>
+  const updateLine = (key: string, patch: Partial<FormIngredient>) => {
+    reviewedLine(key);
     setState((s) => ({
       ...s,
       ingredients: s.ingredients.map((l) => (l.key === key ? { ...l, ...patch } : l)),
     }));
+  };
   const moveLine = (index: number, direction: -1 | 1) =>
     setState((s) => {
       const next = [...s.ingredients];
@@ -155,27 +174,58 @@ export function RecipeForm(props: RecipeFormProps) {
         submit();
       }}
     >
+      {props.draft && (
+        <div
+          role="status"
+          className="flex items-start gap-3 rounded-xl border border-amber-400 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-500 dark:bg-amber-950/40 dark:text-amber-200"
+        >
+          <Camera className="mt-0.5 size-5 shrink-0" aria-hidden />
+          <p>
+            Recette lue sur la photo : rien n&apos;est encore enregistré.{" "}
+            {toReview > 0
+              ? `Vérifiez les champs surlignés (${toReview}), puis enregistrez.`
+              : "Relisez-la, puis enregistrez."}
+          </p>
+        </div>
+      )}
+
       <Card>
         <CardContent className="grid gap-4">
-          <FormField
-            label="Titre"
-            name="title"
-            value={state.title}
-            onChange={(e) => update({ title: e.target.value })}
-            error={errors.title}
-            placeholder="ex. Gratin dauphinois"
-            required
-          />
-          <div className="grid gap-2">
-            <p className="text-sm font-medium">Nombre de personnes</p>
-            <ServingsStepper
-              name="servings"
-              defaultValue={state.servings}
-              max={50}
-              label="Nombre de personnes de la recette"
-              onValueChange={(servings) => update({ servings })}
+          <ReviewHighlight
+            active={highlights.title}
+            hint={state.title ? "Titre difficile à lire." : "Titre introuvable sur la photo."}
+          >
+            <FormField
+              label="Titre"
+              name="title"
+              value={state.title}
+              onChange={(e) => {
+                reviewed("title");
+                update({ title: e.target.value });
+              }}
+              error={errors.title}
+              placeholder="ex. Gratin dauphinois"
+              required
             />
-          </div>
+          </ReviewHighlight>
+          <ReviewHighlight
+            active={highlights.servings}
+            hint="Nombre de personnes incertain ou absent de la photo."
+          >
+            <div className="grid gap-2">
+              <p className="text-sm font-medium">Nombre de personnes</p>
+              <ServingsStepper
+                name="servings"
+                defaultValue={state.servings}
+                max={50}
+                label="Nombre de personnes de la recette"
+                onValueChange={(servings) => {
+                  reviewed("servings");
+                  update({ servings });
+                }}
+              />
+            </div>
+          </ReviewHighlight>
         </CardContent>
       </Card>
 
@@ -202,6 +252,7 @@ export function RecipeForm(props: RecipeFormProps) {
                   update({ ingredients: state.ingredients.filter((l) => l.key !== line.key) })
                 }
                 onCreateItem={(name) => setNewItem({ lineKey: line.key, name })}
+                highlight={highlights.ingredients[line.key]}
               />
             ))}
           </ul>
