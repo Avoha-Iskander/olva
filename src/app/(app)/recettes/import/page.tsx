@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { Suspense } from "react";
 
 import { PhotoImport } from "@/components/recipe-import/photo-import";
+import { AI_MODELS, canChooseAiModel, defaultAiModel } from "@/lib/ai/models";
 import { getCatalogue } from "@/lib/catalogue";
 import { getCurrentProfile } from "@/lib/profile";
 import { listMyCollections } from "@/lib/recipes";
@@ -39,6 +40,14 @@ async function ImportScreen() {
       items={catalogue.items}
       aisles={catalogue.aisles}
       collections={collections}
+      // Aperçus seulement : choix du modèle à chaque import, le modèle par défaut en premier
+      models={
+        canChooseAiModel()
+          ? Object.entries(AI_MODELS)
+              .map(([id, label]) => ({ id, label }))
+              .sort((a, b) => Number(b.id === defaultAiModel()) - Number(a.id === defaultAiModel()))
+          : []
+      }
     />
   );
 }

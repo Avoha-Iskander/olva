@@ -99,3 +99,18 @@ export function countHighlights(highlights: DraftHighlights): number {
     Object.keys(highlights.ingredients).length
   );
 }
+
+/**
+ * Pages d'un import à rattacher à une recette : seulement si elles sont toutes dans le
+ * dossier de cette recette (« <utilisateur>/<recette>/… ») ; sinon null (refusé).
+ * La base le vérifie aussi (contrainte sur recipes.import_photo_paths).
+ */
+export function importPagesForRecipe(
+  paths: string[],
+  userId: string,
+  recipeId: string,
+): string[] | null {
+  const folder = `${userId}/${recipeId}/`;
+  if (paths.length < 1 || paths.length > 3) return null;
+  return paths.every((path) => path.startsWith(folder) && !path.includes("..")) ? paths : null;
+}

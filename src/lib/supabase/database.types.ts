@@ -465,7 +465,7 @@ export type Database = {
           copied_from: string | null
           created_at: string
           id: string
-          import_photo_path: string | null
+          import_photo_paths: string[]
           is_example: boolean
           owner_id: string
           photo_path: string | null
@@ -481,7 +481,7 @@ export type Database = {
           copied_from?: string | null
           created_at?: string
           id?: string
-          import_photo_path?: string | null
+          import_photo_paths?: string[]
           is_example?: boolean
           owner_id?: string
           photo_path?: string | null
@@ -497,7 +497,7 @@ export type Database = {
           copied_from?: string | null
           created_at?: string
           id?: string
-          import_photo_path?: string | null
+          import_photo_paths?: string[]
           is_example?: boolean
           owner_id?: string
           photo_path?: string | null
@@ -827,7 +827,7 @@ export type Database = {
           copied_from: string | null
           created_at: string
           id: string
-          import_photo_path: string | null
+          import_photo_paths: string[]
           is_example: boolean
           owner_id: string
           photo_path: string | null

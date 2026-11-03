@@ -123,6 +123,7 @@ export type RecipeForEdit = {
   photoPath: string | null;
   thumbPath: string | null;
   photoUrl: string | null;
+  importPageUrls: string[]; // pages du livre photographiées à l'import (liens temporaires)
   collectionIds: string[];
   collections: { id: string; name: string }[]; // pour l'affichage sur la fiche
   ingredients: {
@@ -140,7 +141,7 @@ export async function getRecipeForEdit(id: string): Promise<RecipeForEdit | null
   const { data: recipe } = await supabase
     .from("recipes")
     .select(
-      "id, owner_id, title, servings, is_example, steps, book_title, book_page, photo_path, thumb_path, recipe_ingredients(position, item_id, quantity, unit, note, items(name)), recipe_collections(collection_id, collections(name))",
+      "id, owner_id, title, servings, is_example, steps, book_title, book_page, photo_path, thumb_path, import_photo_paths, recipe_ingredients(position, item_id, quantity, unit, note, items(name)), recipe_collections(collection_id, collections(name))",
     )
     .eq("id", id)
     .maybeSingle();
@@ -171,6 +172,20 @@ export async function getRecipeForEdit(id: string): Promise<RecipeForEdit | null
       ).data?.signedUrl ?? null)
     : null;
 
+  // Pages du livre photographiées à l'import : visibles par le propriétaire seulement
+  const importPageUrls =
+    !sharedBy && recipe.import_photo_paths.length
+      ? (
+          (
+            await supabase.storage
+              .from("recipe-photos")
+              .createSignedUrls(recipe.import_photo_paths, SIGNED_URL_SECONDS)
+          ).data ?? []
+        )
+          .map((f) => f.signedUrl)
+          .filter((url): url is string => Boolean(url))
+      : [];
+
   return {
     id: recipe.id,
     ownerId: recipe.owner_id,
@@ -185,6 +200,7 @@ export async function getRecipeForEdit(id: string): Promise<RecipeForEdit | null
     photoPath: recipe.photo_path,
     thumbPath: recipe.thumb_path,
     photoUrl,
+    importPageUrls,
     collectionIds: recipe.recipe_collections.map((c) => c.collection_id),
     collections: recipe.recipe_collections
       .map((c) => ({ id: c.collection_id, name: c.collections?.name ?? "" }))

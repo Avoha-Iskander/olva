@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import { countHighlights, draftToForm, type ImportDraft } from "@/lib/import-draft";
+import {
+  countHighlights,
+  draftToForm,
+  type ImportDraft,
+  importPagesForRecipe,
+} from "@/lib/import-draft";
 
 const draft = (patch: Partial<ImportDraft> = {}): ImportDraft => ({
   importId: "imp-1",
@@ -113,5 +118,24 @@ describe("draftToForm", () => {
     const a = draftToForm(draft(), 4).state.ingredients.map((l) => l.key);
     const b = draftToForm(draft(), 4).state.ingredients.map((l) => l.key);
     expect(a).toEqual(b);
+  });
+});
+
+describe("importPagesForRecipe", () => {
+  const pages = ["u1/r1/import-1.jpg", "u1/r1/import-2.jpg"];
+
+  it("accepte les pages rangées dans le dossier de la recette", () => {
+    expect(importPagesForRecipe(pages, "u1", "r1")).toEqual(pages);
+  });
+
+  it("refuse une page d'une autre recette ou d'un autre utilisateur", () => {
+    expect(importPagesForRecipe([...pages, "u1/r2/import-1.jpg"], "u1", "r1")).toBeNull();
+    expect(importPagesForRecipe(["u2/r1/import-1.jpg"], "u1", "r1")).toBeNull();
+    expect(importPagesForRecipe(["u1/r1/../r2/x.jpg"], "u1", "r1")).toBeNull();
+  });
+
+  it("refuse une liste vide ou de plus de 3 pages", () => {
+    expect(importPagesForRecipe([], "u1", "r1")).toBeNull();
+    expect(importPagesForRecipe([...pages, ...pages], "u1", "r1")).toBeNull();
   });
 });

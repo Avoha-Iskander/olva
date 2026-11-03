@@ -1,15 +1,16 @@
 "use client";
 
 import { Camera, ImagePlus, LoaderCircle, PenLine, ScanText, X } from "lucide-react";
-import Link from "next/link";
 import { useEffect, useRef, useState, useTransition } from "react";
 
 import { importRecipeFromPhoto } from "@/app/(app)/recettes/import/actions";
 import { RecipeForm } from "@/components/recipe-form/recipe-form";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import { NativeSelect } from "@/components/ui/native-select";
 import type { Aisle, CatalogueItem } from "@/lib/catalogue";
-import { draftToForm } from "@/lib/import-draft";
+import { draftToForm, NO_HIGHLIGHTS } from "@/lib/import-draft";
 import { compressAndUploadImportPages } from "@/lib/photo-upload";
 
 /** Nombre maximal de pages pour une recette (SPEC décision 049). */
@@ -24,7 +25,11 @@ type Props = {
   items: CatalogueItem[];
   aisles: Aisle[];
   collections: { id: string; name: string }[];
+  /** Aperçus seulement : modèles proposés pour comparer (vide en production). */
+  models: { id: string; label: string }[];
 };
+
+type Draft = NonNullable<React.ComponentProps<typeof RecipeForm>["draft"]>;
 
 /**
  * Import d'une recette par photo (US-REC-02), en trois temps :
@@ -36,7 +41,8 @@ export function PhotoImport(props: Props) {
   const [pages, setPages] = useState<Page[]>([]);
   const [step, setStep] = useState<"uploading" | "reading" | null>(null);
   const [error, setError] = useState<string>();
-  const [draft, setDraft] = useState<ReturnType<typeof draftToForm>>();
+  const [draft, setDraft] = useState<Draft>();
+  const [model, setModel] = useState(props.models[0]?.id);
   // Pages déjà envoyées : en cas d'échec, « Réessayer » ne les renvoie pas
   const [sent, setSent] = useState<{ paths: string[]; importId: string | null } | null>(null);
   const [pending, startTransition] = useTransition();
@@ -88,9 +94,15 @@ export function PhotoImport(props: Props) {
         const result = await importRecipeFromPhoto({
           photoPaths: paths,
           importId: sent?.importId ?? undefined,
+          model,
         });
         if (result.status === "done") {
-          setDraft(draftToForm(result.draft, props.defaultServings));
+          setDraft({
+            mode: "import",
+            ...draftToForm(result.draft, props.defaultServings),
+            importId: result.draft.importId,
+            pageUrls: pages.map((p) => p.previewUrl),
+          });
           return;
         }
         setSent({ paths, importId: result.importId });
@@ -100,6 +112,31 @@ export function PhotoImport(props: Props) {
       } finally {
         setStep(null);
       }
+    });
+  }
+
+  /** Après un échec : formulaire vide, avec les pages affichées à côté (US-REC-02). */
+  function enterManually() {
+    const empty = draftToForm(
+      {
+        importId: "",
+        photoPaths: [],
+        title: "",
+        titleUncertain: false,
+        servings: null,
+        servingsUncertain: false,
+        steps: [],
+        bookPage: null,
+        ingredients: [],
+      },
+      props.defaultServings,
+    );
+    setDraft({
+      mode: "manual",
+      state: empty.state,
+      highlights: NO_HIGHLIGHTS, // rien n'a été lu : rien à vérifier
+      importId: sent?.importId ?? null,
+      pageUrls: pages.map((p) => p.previewUrl),
     });
   }
 
@@ -214,14 +251,35 @@ export function PhotoImport(props: Props) {
         <Card role="alert" className="border-destructive">
           <CardContent className="grid gap-3">
             <p className="text-sm">{error}</p>
-            <Button asChild variant="outline" className="justify-self-start">
-              <Link href="/recettes/nouvelle">
-                <PenLine />
-                Saisir la recette à la main
-              </Link>
+            <Button
+              type="button"
+              variant="outline"
+              className="justify-self-start"
+              onClick={enterManually}
+            >
+              <PenLine />
+              Saisir à la main, avec la photo à côté
             </Button>
           </CardContent>
         </Card>
+      )}
+
+      {pages.length > 0 && props.models.length > 0 && (
+        <div className="grid gap-2">
+          <Label htmlFor="ai-model">Modèle d&apos;IA (aperçus seulement, pour comparer)</Label>
+          <NativeSelect
+            id="ai-model"
+            value={model}
+            disabled={busy}
+            onChange={(e) => setModel(e.target.value)}
+          >
+            {props.models.map((m) => (
+              <option key={m.id} value={m.id}>
+                {m.label}
+              </option>
+            ))}
+          </NativeSelect>
+        </div>
       )}
 
       {pages.length > 0 && (
