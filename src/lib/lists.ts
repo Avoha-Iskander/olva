@@ -350,6 +350,9 @@ export type ListLine = {
   quantity: number;
   unit: string;
   recipeTitles: string[];
+  checked: boolean; // mode courses (lot 6)
+  checkedBy: string | null;
+  checkedAt: string | null;
 };
 
 /** Page d'une liste prête : ses lignes, triées par rayon puis par nom. */
@@ -358,7 +361,7 @@ export async function getListPage(id: string) {
   const { data: list } = await supabase
     .from("shopping_lists")
     .select(
-      "id, owner_id, status, created_at, shopping_list_recipes(recipes(id, title)), shopping_list_items(id, item_id, quantity, unit, included, recipe_ids, items(name, aisle_id, aisles(name, position)))",
+      "id, owner_id, status, created_at, shopping_list_recipes(recipes(id, title)), shopping_list_items(id, item_id, quantity, unit, included, recipe_ids, checked, checked_by, checked_at, items(name, aisle_id, aisles(name, position)))",
     )
     .eq("id", id)
     .maybeSingle();
@@ -402,13 +405,22 @@ export async function getListPage(id: string) {
         quantity: Number(l.quantity),
         unit: l.unit,
         recipeTitles: l.recipe_ids.map((rid) => titles.get(rid)).filter((t): t is string => !!t),
+        checked: l.checked,
+        checkedBy: l.checked_by,
+        checkedAt: l.checked_at,
       };
     })
     .sort((a, b) => a.aislePosition - b.aislePosition || a.name.localeCompare(b.name, "fr"));
 
-  const { userId, names } = await ownerNames(supabase, [list.owner_id]);
+  const { userId, names } = await ownerNames(supabase, [
+    list.owner_id,
+    ...list.shopping_list_items.map((l) => l.checked_by).filter((id): id is string => !!id),
+  ]);
   return {
     id: list.id,
+    userId,
+    // Noms affichés des personnes concernées (créateur, personnes qui ont coché)
+    names: Object.fromEntries(names),
     status: list.status as ListStatus,
     createdAt: list.created_at,
     recipeTitles: [...titles.values()],

@@ -57,10 +57,11 @@ async function ListContent({ params }: { params: PageProps<"/listes/[id]">["para
       </header>
 
       <div className="flex flex-wrap gap-3">
-        {/* Mode courses : lot 6 */}
-        <Button disabled>
-          <ShoppingCart />
-          Faire les courses (bientôt)
+        <Button asChild>
+          <Link href={`/courses/${list.id}`}>
+            <ShoppingCart />
+            Faire les courses
+          </Link>
         </Button>
         {/* Seul le créateur partage sa liste */}
         {!list.sharedBy && <ShareListButton listId={list.id} />}

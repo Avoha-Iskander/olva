@@ -276,7 +276,10 @@ export async function addListLine(
       .select("id, item_id, quantity, unit")
       .eq("list_id", list.data)
       .eq("item_id", item.data)
-      .eq("included", true),
+      .eq("included", true)
+      // En courses, un article déjà coché (déjà dans le panier) n'est pas augmenté :
+      // le nouvel ajout fait une nouvelle ligne, à prendre
+      .eq("checked", false),
     supabase.from("unit_conversions").select("from_unit, to_unit, factor").eq("item_id", item.data),
   ]);
   const target = findMergeTarget(
@@ -307,5 +310,6 @@ export async function addListLine(
         unit: parsed.data.unit,
       });
   revalidatePath(`/listes/${list.data}`);
+  revalidatePath(`/courses/${list.data}`);
   return { ok: !error };
 }
