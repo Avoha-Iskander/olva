@@ -11,29 +11,10 @@ import {
 import { buildMatcher } from "@/lib/ai/match-ingredients";
 import { canChooseAiModel, defaultAiModel, isAiModel } from "@/lib/ai/models";
 import { getCatalogue } from "@/lib/catalogue";
+import type { ImportDraft } from "@/lib/import-draft";
 import { createClient } from "@/lib/supabase/server";
 
 const BUCKET = "recipe-photos";
-
-/** Brouillon de recette issu d'une photo : pré-remplit le formulaire, rien n'est enregistré. */
-export type ImportDraft = {
-  importId: string;
-  photoPaths: string[]; // les pages photographiées, dans l'ordre
-  title: string;
-  titleUncertain: boolean;
-  servings: number | null;
-  servingsUncertain: boolean;
-  steps: string[];
-  bookPage: number | null;
-  ingredients: {
-    name: string; // tel que lu par l'IA
-    itemId: string | null; // article du catalogue ; null : non reconnu (surligné)
-    quantity: number | null;
-    unit: string | null;
-    note: string | null;
-    uncertain: boolean;
-  }[];
-};
 
 export type ImportResult =
   | { status: "done"; draft: ImportDraft }

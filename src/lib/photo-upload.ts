@@ -43,3 +43,39 @@ export async function compressAndUploadPhoto(file: File, userId: string, recipeI
 
   return { photoPath, thumbPath };
 }
+
+/**
+ * Photos d'import (US-REC-02) : chaque page est compressée DANS LE NAVIGATEUR puis
+ * envoyée dans mon dossier, dans l'ordre. 1 568 px : la taille au-delà de laquelle
+ * Claude réduit lui-même l'image ; qualité un peu plus haute pour les petits caractères.
+ * Le dossier est celui de la future recette : la photo pourra lui être attachée.
+ */
+export async function compressAndUploadImportPages(
+  files: File[],
+  userId: string,
+  recipeId: string,
+): Promise<string[]> {
+  const pages = await Promise.all(
+    files.map((file) =>
+      imageCompression(file, {
+        maxWidthOrHeight: 1568,
+        fileType: "image/webp",
+        initialQuality: 0.85,
+        useWebWorker: true,
+      }),
+    ),
+  );
+
+  const stamp = Date.now();
+  const paths = pages.map((_, index) => `${userId}/${recipeId}/import-${stamp}-${index + 1}.webp`);
+
+  const storage = createClient().storage.from(BUCKET);
+  const results = await Promise.all(
+    pages.map((page, index) =>
+      storage.upload(paths[index], page, { contentType: "image/webp", upsert: false }),
+    ),
+  );
+  if (results.some((r) => r.error)) throw new Error("L'envoi des photos a échoué.");
+
+  return paths;
+}

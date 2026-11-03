@@ -1,7 +1,8 @@
 import Link from "next/link";
-import { BookOpen, Plus } from "lucide-react";
+import { BookOpen } from "lucide-react";
 import { Suspense } from "react";
 
+import { AddRecipeMenu } from "@/components/recipes/add-recipe-menu";
 import { CollectionFilter } from "@/components/recipes/collection-filter";
 import { ExamplesBanner } from "@/components/recipes/examples-banner";
 import { RecipeCard } from "@/components/recipes/recipe-card";
@@ -19,12 +20,7 @@ export default function RecipesPage({ searchParams }: PageProps<"/recettes">) {
         <h1 className="text-2xl font-semibold tracking-tight">Mes recettes</h1>
         <div className="flex gap-2">
           <ShareLibraryButton />
-          <Button asChild>
-            <Link href="/recettes/nouvelle">
-              <Plus />
-              <span>Ajouter</span>
-            </Link>
-          </Button>
+          <AddRecipeMenu />
         </div>
       </div>
       <Suspense fallback={<div className="h-11" />}>
