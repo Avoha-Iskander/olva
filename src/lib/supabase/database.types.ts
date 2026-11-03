@@ -851,6 +851,10 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      set_line_checked: {
+        Args: { line_id: string; value: boolean }
+        Returns: undefined
+      }
       set_list_recipes: {
         Args: { recipes: Json; target_list: string }
         Returns: undefined
@@ -859,6 +863,7 @@ export type Database = {
         Args: { kind: string; target_email: string; target_list: string }
         Returns: string
       }
+      start_shopping: { Args: { target_list: string }; Returns: undefined }
       share_by_email: {
         Args: { kind: string; target_email: string; target_recipe: string }
         Returns: string
