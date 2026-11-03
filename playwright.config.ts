@@ -29,6 +29,9 @@ export default defineConfig({
     timezoneId: "Europe/Paris",
     // En cas d'échec : capture d'écran et « trace » (film pas à pas) pour comprendre
     screenshot: "only-on-failure",
+    // Une action bloquée (élément introuvable…) échoue vite, avec un message précis
+    actionTimeout: 15_000,
+    navigationTimeout: 30_000,
     trace: "retain-on-failure",
   },
   projects: [
