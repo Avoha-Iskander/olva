@@ -81,36 +81,51 @@ export function ShoppingList(props: Props) {
   useEffect(() => {
     const supabase = createClient();
     let subscribedOnce = false;
-    const channel = supabase
-      .channel(`courses:${listId}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "shopping_list_items",
-          filter: `list_id=eq.${listId}`,
-        },
-        (payload) => {
-          const change = { eventType: payload.eventType, new: payload.new, old: payload.old };
-          // Le contenu reçu correspond aux colonnes de shopping_list_items (cf. LineChange)
-          const result = applyChange(linesRef.current, change as unknown as LineChange);
-          setLines(result.lines);
-          // Coche d'une personne dont on ne connaît pas encore le nom : on relit aussi
-          const checker = (payload.new as { checked_by?: string | null })?.checked_by;
-          const unknownChecker = checker && checker !== userId && !namesRef.current[checker];
-          if (result.needsReload || unknownChecker) void reload.current();
-        },
-      )
-      .subscribe((status) => {
-        setLive(status === "SUBSCRIBED");
-        if (status !== "SUBSCRIBED") return;
-        // Réabonnement après une coupure : des changements ont pu être manqués
-        if (subscribedOnce) void reload.current();
-        subscribedOnce = true;
-      });
+    let cancelled = false;
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+
+    async function subscribe() {
+      // La session (cookies) est lue AVANT de s'abonner, et transmise au temps réel :
+      // sans elle, l'abonnement se ferait en « anonyme » et les règles RLS filtreraient
+      // tous les changements, sans aucun message d'erreur.
+      const { data } = await supabase.auth.getSession();
+      if (cancelled) return;
+      await supabase.realtime.setAuth(data.session?.access_token ?? null);
+
+      channel = supabase
+        .channel(`courses:${listId}`)
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "shopping_list_items",
+            filter: `list_id=eq.${listId}`,
+          },
+          (payload) => {
+            const change = { eventType: payload.eventType, new: payload.new, old: payload.old };
+            // Le contenu reçu correspond aux colonnes de shopping_list_items (cf. LineChange)
+            const result = applyChange(linesRef.current, change as unknown as LineChange);
+            setLines(result.lines);
+            // Coche d'une personne dont on ne connaît pas encore le nom : on relit aussi
+            const checker = (payload.new as { checked_by?: string | null })?.checked_by;
+            const unknownChecker = checker && checker !== userId && !namesRef.current[checker];
+            if (result.needsReload || unknownChecker) void reload.current();
+          },
+        )
+        .subscribe((status) => {
+          setLive(status === "SUBSCRIBED");
+          if (status !== "SUBSCRIBED") return;
+          // Réabonnement après une coupure : des changements ont pu être manqués
+          if (subscribedOnce) void reload.current();
+          subscribedOnce = true;
+        });
+    }
+    void subscribe();
+
     return () => {
-      void supabase.removeChannel(channel);
+      cancelled = true;
+      if (channel) void supabase.removeChannel(channel);
     };
   }, [listId, userId]);
 
