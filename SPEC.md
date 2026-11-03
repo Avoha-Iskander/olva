@@ -54,7 +54,6 @@ Proposition de valeur : **Toutes vos recettes à un endroit, vos listes de cours
 
 - Commande automatique en drive
 - Planning des repas par jour
-- Import de recette par URL
 - Notifications push
 - Réseau social / partage public de recettes
 - Nutrition, calories
@@ -95,6 +94,7 @@ Chaque utilisateur possède ses propres données ; il n'y a pas de « foyer ».
 - [ ] Parcours d'accueil + recettes d'exemple
 - [ ] Recettes : saisie manuelle, collections, photo d'illustration, recherche
 - [ ] Import de recette par photo (IA) avec relecture
+- [ ] Import de recette par lien (URL) avec relecture
 - [ ] Catalogue d'articles (commun + personnalisations de chaque utilisateur), rayons, unités, conversions
 - [ ] Création de liste en 3 étapes : recettes → revue des ingrédients → pré-liste et articles libres
 - [ ] Regroupement des ingrédients et conversions d'unités
@@ -105,7 +105,6 @@ Chaque utilisateur possède ses propres données ; il n'y a pas de « foyer ».
 
 ### 4.2 Après MVP
 
-- Import de recette par URL (données schema.org Recipe, sinon analyse IA de la page)
 - Planning des repas : affecter une recette à un jour
 - Commande drive : tout ce qui est disponible au drive est commandé automatiquement, le reste (et les rayons exclus, ex. fruits et légumes) va sur la liste à cocher. Un drive au début, d'autres ensuite. Nécessite un partenariat ou un agrégateur (pas d'API publique côté enseignes)
 - Notifications push
@@ -153,6 +152,14 @@ Champs : titre (obligatoire), nombre de personnes (obligatoire), ingrédients (q
 - [ ] Si l'image n'est pas une recette, l'app le dit au lieu d'inventer
 - [ ] Si l'IA est indisponible : message clair, photo conservée, bouton « Réessayer » et bascule vers la saisie manuelle avec la photo affichée à côté
 - [ ] La photo d'import est conservée, attachée à la recette
+
+**US-REC-07 — Importer une recette depuis un lien** · M
+
+- [ ] Depuis « Ajouter », je colle le lien d'une page de recette ; le serveur lit la page (données schema.org Recipe si présentes, sinon le texte de la page) et l'IA en tire la recette
+- [ ] Le résultat s'affiche dans le même **brouillon surligné** que l'import photo ; rien n'est enregistré sans validation
+- [ ] La photo du plat fournie par le site est proposée comme photo de présentation
+- [ ] Le lien d'origine est conservé avec la recette
+- [ ] Si la page n'est pas lisible (site qui bloque, pas une recette) : message clair, sans invention, et proposition de l'import par photo
 
 **US-REC-03 — Organiser en collections** · M
 
@@ -438,7 +445,7 @@ Toutes les tables sont protégées par Row Level Security : je vois mes données
 | 2   | Catalogue (rayons, articles, unités, conversions, catalogue initial généré) + recettes manuelles, collections, recherche, photo d'illustration ; recettes d'exemple ; **partage des recettes** (une ou toutes, lecture), copie, « Mes partages » | US-CAT-01/02/04, US-REC-01/03/04/05/06, US-CPT-02 (exemples), US-CPT-03 | Composants React, formulaires, SQL et relations entre tables      | ✅ 2 nov. · date cible révisée |
 | 3   | Créer une liste — étapes 1 et 2 : recettes, portions, regroupement, conversions, **revue des ingrédients** (ajuster, retirer, ingrédients de base)                                                                                               | US-LST-01/02/05                                                         | Fonctions pures et tests, état d'un formulaire                    | ✅ 2 nov.                      |
 | 4   | Créer une liste — étape 3 : pré-liste, articles libres ; personnalisation catalogue ; listes en cours ; **partage des listes** (co-édition, partage automatique)                                                                                 | US-LST-03/04/06/07, US-CAT-03                                           | Formulaires, état d'un parcours en plusieurs étapes               | ✅ 3 nov. · date cible révisée |
-| 5   | Import photo IA + test Haiku/Sonnet                                                                                                                                                                                                              | US-REC-02                                                               | async/await, appels d'API côté serveur                            | mi-nov.                        |
+| 5   | Import photo IA + test Haiku/Sonnet ; import par lien                                                                                                                                                                                            | US-REC-02, US-REC-07                                                    | async/await, appels d'API côté serveur                            | mi-nov.                        |
 | 6   | Faire ses courses : liste par rayon, temps réel entre co-acheteurs, PWA hors ligne, report, historique ; achat du domaine                                                                                                                        | US-CRS-*                                                                | Temps réel, service workers, stockage hors ligne                  | début déc. · Playwright        |
 | 7   | Import des ~100 recettes du Sheets (CSV → base, correspondance des ingrédients assistée par IA, liste des cas non résolus)                                                                                                                       | —                                                                       | Scripts de migration de données                                   | mi-déc.                        |
 | 8   | Période d'usage : 4 semaines, corrections uniquement                                                                                                                                                                                             | —                                                                       | —                                                                 | mi-déc. → mi-janv.             |
@@ -517,6 +524,7 @@ Toutes les tables sont protégées par Row Level Security : je vois mes données
 | 047 | 2026-11-03 | Date cible MVP avancée au **15/01/2027** (lots 3 et 4 finis le 3 nov., ~3 semaines d'avance) ; **Playwright introduit au début du lot 6** (hors ligne, temps réel entre deux téléphones), avec un compte de test dont le mot de passe est un secret GitHub                                                                                                          | Garder le 31/01 ; 31/12 ; Playwright tout de suite ; pas de Playwright              |
 | 048 | 2026-11-03 | Lot 5 : bibliothèque officielle `@anthropic-ai/sdk` (version exacte, au moins une semaine d'ancienneté) ; réponse forcée par un « outil » au format JSON Schema, revérifiée par zod ; prompt en fichier TypeScript versionné ; choix du modèle à chaque import sur les aperçus seulement, modèle de prod par variable `OLVA_AI_MODEL`                               | `fetch` sans dépendance ; prompt en Markdown lu à l'exécution                       |
 | 049 | 2026-11-03 | Import photo : **jusqu'à 3 pages** par recette, envoyées ensemble à l'IA en une seule demande (prompt v2) ; `recipe_imports.photo_paths` (tableau) remplace `photo_path` ; la photo de présentation reste ajoutée à part, dans la section « Photo » du brouillon                                                                                                    | Une seule page ; page photographiée utilisée comme photo de présentation            |
+| 050 | 2026-11-03 | **Import de recette par lien (US-REC-07) ajouté au MVP, lot 5 (PR 4)** : retiré des non-objectifs ; lecture côté serveur (schema.org Recipe, sinon texte de la page), puis l'IA en mode texte remplit le même brouillon que l'import photo ; ~3 semaines d'avance, mécanique réutilisée                                                                             | Garder l'import par lien après le MVP                                               |
 
 ---
 
