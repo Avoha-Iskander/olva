@@ -88,25 +88,25 @@ export async function saveRecipe(input: {
   });
   if (error) return { ok: false, message: "L'enregistrement a échoué. Réessayez." };
 
-  // Recette issue d'un import : les pages photographiées (US-REC-02) ou le lien d'origine
-  // (US-REC-07) sont repris de l'import lui-même, jamais du navigateur.
-  // Échec sans gravité : la recette est enregistrée, seules ces informations manqueront.
+  // Lien de la page d'origine : celui du formulaire (pré-rempli lors d'un import par lien)
+  await supabase
+    .from("recipes")
+    .update({ source_url: r.sourceUrl ?? null })
+    .eq("id", id.data);
+
+  // Import photo : les pages photographiées restent attachées à la recette (US-REC-02).
+  // Elles sont reprises de l'import lui-même, jamais du navigateur.
+  // Échec sans gravité : la recette est enregistrée, seules les pages manqueront.
   if (input.importId && z.uuid().safeParse(input.importId).success) {
     const { data: imported } = await supabase
       .from("recipe_imports")
-      .select("photo_paths, source_url")
+      .select("photo_paths")
       .eq("id", input.importId)
       .maybeSingle();
     const pages =
       imported?.photo_paths && importPagesForRecipe(imported.photo_paths, userId, id.data);
-    if (pages || imported?.source_url) {
-      await supabase
-        .from("recipes")
-        .update({
-          ...(pages ? { import_photo_paths: pages } : {}),
-          ...(imported?.source_url ? { source_url: imported.source_url } : {}),
-        })
-        .eq("id", id.data);
+    if (pages) {
+      await supabase.from("recipes").update({ import_photo_paths: pages }).eq("id", id.data);
     }
   }
 

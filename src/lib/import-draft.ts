@@ -89,6 +89,7 @@ export function draftToForm(
       steps: draft.steps.length ? draft.steps : [""],
       bookTitle: "",
       bookPageText: draft.bookPage ? String(draft.bookPage) : "",
+      sourceUrl: draft.sourceUrl ?? "", // import par lien : pré-rempli, modifiable
       collectionIds: [],
     },
     highlights,

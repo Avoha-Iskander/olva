@@ -27,6 +27,7 @@ import {
   type FormIngredient,
   formToRecipeInput,
   type RecipeFormState,
+  unitForChosenItem,
 } from "@/lib/recipe-form";
 import type { RecipeForEdit } from "@/lib/recipes";
 
@@ -73,6 +74,7 @@ function initialState(initial: RecipeForEdit | null, defaultServings: number): R
       steps: [""],
       bookTitle: "",
       bookPageText: "",
+      sourceUrl: "",
       collectionIds: [],
     };
   }
@@ -90,6 +92,7 @@ function initialState(initial: RecipeForEdit | null, defaultServings: number): R
     steps: initial.steps.length ? initial.steps : [""],
     bookTitle: initial.bookTitle ?? "",
     bookPageText: initial.bookPage ? String(initial.bookPage) : "",
+    sourceUrl: initial.sourceUrl ?? "",
     collectionIds: initial.collectionIds,
   };
 }
@@ -351,6 +354,17 @@ export function RecipeForm(props: RecipeFormProps) {
               error={errors.bookPage}
             />
           </div>
+          <FormField
+            label="Lien de la page"
+            name="sourceUrl"
+            type="url"
+            inputMode="url"
+            autoComplete="off"
+            value={state.sourceUrl}
+            onChange={(e) => update({ sourceUrl: e.target.value })}
+            error={errors.sourceUrl}
+            placeholder="https://… (site ou blog de la recette)"
+          />
           <div className="grid gap-2">
             <Label>Collections</Label>
             <CollectionsPicker
@@ -429,10 +443,12 @@ export function RecipeForm(props: RecipeFormProps) {
               : [...list, item].sort((a, b) => a.name.localeCompare(b.name, "fr")),
           );
           if (newItem) {
+            const line = state.ingredients.find((l) => l.key === newItem.lineKey);
             updateLine(newItem.lineKey, {
               itemId: item.id,
               itemName: item.name,
-              unit: item.defaultUnit,
+              // L'unité déjà présente (celle de la recette) n'est pas écrasée
+              unit: unitForChosenItem(line?.unit ?? "", item.defaultUnit),
             });
           }
         }}

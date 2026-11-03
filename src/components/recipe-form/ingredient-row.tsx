@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
 import type { CatalogueItem } from "@/lib/catalogue";
 import type { DraftHighlights } from "@/lib/import-draft";
-import type { FormIngredient } from "@/lib/recipe-form";
+import { type FormIngredient, unitForChosenItem } from "@/lib/recipe-form";
 import { cn } from "@/lib/utils";
 
 /**
@@ -87,7 +87,7 @@ export function IngredientRow({
             itemId: item.id,
             itemName: item.name,
             // L'unité habituelle de l'article est proposée si aucune n'est choisie
-            unit: line.unit || item.defaultUnit,
+            unit: unitForChosenItem(line.unit, item.defaultUnit),
           })
         }
         onCreate={onCreateItem}

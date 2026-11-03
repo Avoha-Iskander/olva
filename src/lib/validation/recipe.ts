@@ -32,6 +32,14 @@ export const recipeSchema = z.object({
   steps: z.array(z.string()).transform((steps) => steps.map((s) => s.trim()).filter(Boolean)),
   bookTitle: z.string().trim().max(120, "120 caractères maximum").optional(),
   bookPage: z.number().int().positive("Numéro de page invalide").nullable().optional(),
+  // Lien de la page d'origine : http ou https seulement (jamais « javascript: »…)
+  sourceUrl: z
+    .string()
+    .trim()
+    .max(2000, "Lien trop long")
+    .refine((v) => /^https?:\/\//i.test(v) && URL.canParse(v), "Lien invalide (https://…)")
+    .nullable()
+    .optional(),
   collectionIds: z.array(z.uuid()).default([]),
 });
 

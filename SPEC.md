@@ -137,7 +137,7 @@ Paramètres : nom affiché, nombre de personnes par défaut, mes partages (envoy
 ### 6.1 Recettes
 
 **US-REC-01 — Créer une recette manuellement** · M
-Champs : titre (obligatoire), nombre de personnes (obligatoire), ingrédients (quantité, unité, article du catalogue, remarque), étapes (facultatives), référence livre (titre du livre, numéro de page — facultatifs), photo d'illustration (facultative), collections.
+Champs : titre (obligatoire), nombre de personnes (obligatoire), ingrédients (quantité, unité, article du catalogue, remarque), étapes (facultatives), référence livre (titre du livre, numéro de page — facultatifs), lien de la page d'origine (facultatif, pré-rempli lors d'un import par lien), photo d'illustration (facultative), collections.
 
 - [ ] Une recette sans titre ou sans nombre de personnes ne peut pas être enregistrée
 - [ ] La quantité est facultative : un ingrédient sans quantité (sel, poivre, persil pour décorer…) s'affiche « au goût »
@@ -526,6 +526,7 @@ Toutes les tables sont protégées par Row Level Security : je vois mes données
 | 049 | 2026-11-03 | Import photo : **jusqu'à 3 pages** par recette, envoyées ensemble à l'IA en une seule demande (prompt v2) ; `recipe_imports.photo_paths` (tableau) remplace `photo_path` ; la photo de présentation reste ajoutée à part, dans la section « Photo » du brouillon                                                                                                    | Une seule page ; page photographiée utilisée comme photo de présentation            |
 | 050 | 2026-11-03 | **Import de recette par lien (US-REC-07) ajouté au MVP, lot 5 (PR 4)** : retiré des non-objectifs ; lecture côté serveur (schema.org Recipe, sinon texte de la page), puis l'IA en mode texte remplit le même brouillon que l'import photo ; ~3 semaines d'avance, mécanique réutilisée                                                                             | Garder l'import par lien après le MVP                                               |
 | 051 | 2026-11-03 | Comparatif Haiku / Sonnet (lot 5) : pas de différence visible sur les pages testées ; **Haiku retenu en production** (valeur par défaut, `OLVA_AI_MODEL` non renseignée) ; Sonnet 5.5 refuse la réponse forcée par outil (`tool_choice` « tool ») : appel en mode « auto » pour ce modèle                                                                           | Sonnet en production                                                                |
+| 052 | 2026-11-03 | Retours d'Alex sur le lot 5 : **lien de la page** modifiable dans « Livre et collections » pour toute recette (pré-rempli par l'import par lien, http/https seulement) ; en créant un article depuis le brouillon, l'unité lue sur la recette n'est plus remplacée par l'unité habituelle de l'article                                                              | Lien en lecture seule, réservé aux imports                                          |
 
 ---
 
