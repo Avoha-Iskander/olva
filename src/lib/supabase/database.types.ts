@@ -344,6 +344,42 @@ export type Database = {
           },
         ]
       }
+      recipe_imports: {
+        Row: {
+          created_at: string
+          error: string | null
+          id: string
+          model: string | null
+          owner_id: string
+          photo_path: string
+          result: Json | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          error?: string | null
+          id?: string
+          model?: string | null
+          owner_id?: string
+          photo_path: string
+          result?: Json | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          error?: string | null
+          id?: string
+          model?: string | null
+          owner_id?: string
+          photo_path?: string
+          result?: Json | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       recipe_ingredients: {
         Row: {
           id: string
