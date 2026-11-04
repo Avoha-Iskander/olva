@@ -6,7 +6,16 @@ import { getSupabaseEnv } from "./env";
 import { isShareLinkPath, PENDING_SHARE_COOKIE, PENDING_SHARE_MAX_AGE } from "@/lib/share-cookie";
 
 /** Pages accessibles sans être connecté. */
-const PUBLIC_PATHS = ["/connexion", "/inscription", "/mot-de-passe-oublie", "/auth/confirm"];
+const PUBLIC_PATHS = [
+  "/connexion",
+  "/inscription",
+  "/mot-de-passe-oublie",
+  "/auth/confirm",
+  // Hors ligne et installation (lot 6) : accessibles sans session
+  "/hors-ligne",
+  "/sw.js",
+  "/manifest.webmanifest",
+];
 
 function isPublicPath(pathname: string) {
   return PUBLIC_PATHS.some((path) => pathname === path || pathname.startsWith(`${path}/`));
