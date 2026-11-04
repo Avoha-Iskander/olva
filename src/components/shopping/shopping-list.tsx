@@ -1,8 +1,15 @@
 "use client";
 
-import { Check } from "lucide-react";
+import { Check, CloudOff, RefreshCw } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState, useTransition } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+  useTransition,
+} from "react";
 
 import { reloadShoppingLines, setLineChecked, startShopping } from "@/app/(app)/courses/actions";
 import { addListLine } from "@/app/(app)/listes/actions";
@@ -11,6 +18,15 @@ import { ItemCombobox } from "@/components/recipe-form/item-combobox";
 import { NewItemDialog } from "@/components/recipe-form/new-item-dialog";
 import type { Aisle, CatalogueItem } from "@/lib/catalogue";
 import type { ListStatus } from "@/lib/lists";
+import {
+  canToggle,
+  mergePending,
+  type PendingCheck,
+  stillRelevant,
+  syncBanner,
+  toggleOffline,
+} from "@/lib/offline-queue";
+import { loadQueue, loadSavedList, saveList, saveQueue } from "@/lib/offline-store";
 import {
   applyChange,
   type LineChange,
@@ -33,49 +49,157 @@ type Props = {
   aisles: Aisle[];
 };
 
+/** En ligne ? Suivi des événements « online » / « offline » du navigateur. */
+function subscribeOnline(callback: () => void) {
+  window.addEventListener("online", callback);
+  window.addEventListener("offline", callback);
+  return () => {
+    window.removeEventListener("online", callback);
+    window.removeEventListener("offline", callback);
+  };
+}
+const useOnline = () =>
+  useSyncExternalStore(
+    subscribeOnline,
+    () => navigator.onLine,
+    () => true, // rendu serveur : toujours « en ligne »
+  );
+
 /**
  * Écran de courses (US-CRS-01, US-CRS-02) : la liste par rayon, des cases larges.
  * Temps réel : l'écran s'abonne aux changements des lignes de CETTE liste (Supabase
  * Realtime). Une coche faite sur un autre téléphone apparaît ici aussitôt.
  * Affichage immédiat : ma coche s'affiche avant la réponse du serveur, et revient en
  * arrière si l'enregistrement échoue.
+ * Hors ligne (lot 6.3) : la liste est gardée sur le téléphone (IndexedDB) ; les coches
+ * vont dans une file d'attente, envoyée au retour du réseau (« coché gagne »).
  */
 export function ShoppingList(props: Props) {
   const { listId, userId } = props;
   const router = useRouter();
-  const [lines, setLinesState] = useState(props.initialLines);
-  // Copie toujours à jour des lignes : les changements reçus en temps réel sont calculés
-  // à partir d'elle (la fonction passée à setState peut s'exécuter plus tard)
-  const linesRef = useRef(props.initialLines);
-  const setLines = (next: ShoppingLine[]) => {
-    linesRef.current = next;
-    setLinesState(next);
-  };
   const [names, setNamesState] = useState(props.initialNames);
   const namesRef = useRef(props.initialNames);
   const setNames = (next: Record<string, string>) => {
     namesRef.current = next;
     setNamesState(next);
   };
+  const [lines, setLinesState] = useState(props.initialLines);
+  // Copie toujours à jour des lignes : les changements reçus en temps réel sont calculés
+  // à partir d'elle (la fonction passée à setState peut s'exécuter plus tard)
+  const linesRef = useRef(props.initialLines);
+  // useCallback : la même fonction à chaque affichage (utilisée dans les effets plus bas)
+  const setLines = useCallback(
+    (next: ShoppingLine[]) => {
+      linesRef.current = next;
+      setLinesState(next);
+      // Chaque version de la liste est gardée sur le téléphone, pour l'ouvrir hors ligne
+      void saveList(listId, {
+        lines: next,
+        names: namesRef.current,
+        savedAt: new Date().toISOString(),
+      });
+    },
+    [listId],
+  );
   const [items, setItems] = useState(props.catalogue);
   const [newItemName, setNewItemName] = useState<string | null>(null);
   const [failed, setFailed] = useState(false);
   // Abonnement au temps réel actif ? (repère data-realtime, utilisé par les tests)
   const [live, setLive] = useState(false);
   const [adding, startAdding] = useTransition();
+  const online = useOnline();
+  // File des coches faites hors ligne, pas encore envoyées
+  const [pending, setPendingState] = useState<PendingCheck[]>([]);
+  const pendingRef = useRef<PendingCheck[]>([]);
+  const setPending = (next: PendingCheck[]) => {
+    pendingRef.current = next;
+    setPendingState(next);
+    void saveQueue(listId, next);
+  };
+  const [syncing, setSyncing] = useState(false);
+  // Page gardée par le service worker : la liste s'ouvrira sans réseau (repère pour les tests)
+  const [offlineReady, setOfflineReady] = useState(false);
 
   // Relecture complète : ajout venu d'ailleurs, ou retour après une coupure
+  // (mes coches pas encore envoyées restent affichées par-dessus)
   const reload = useRef(async () => {
-    const fresh = await reloadShoppingLines(listId);
-    if (fresh) {
-      setLines(fresh.lines);
+    try {
+      const fresh = await reloadShoppingLines(listId);
+      if (!fresh) return;
       setNames(fresh.names);
+      setPending(stillRelevant(pendingRef.current, fresh.lines));
+      setLines(mergePending(fresh.lines, pendingRef.current, userId));
+    } catch {
+      // Pas de réseau : on garde ce qu'on a
     }
   });
 
+  // Envoi de la file au retour du réseau. Chaque coche est renvoyée telle quelle :
+  // set_line_checked ne fait rien si l'article est déjà coché (aucun risque de doublon).
+  const flush = useRef(async () => {
+    if (!pendingRef.current.length) return;
+    setSyncing(true);
+    try {
+      for (const check of [...pendingRef.current]) {
+        const { ok } = await setLineChecked(check.lineId, true);
+        // ok, ou ligne retirée de la liste entre-temps : la coche quitte la file
+        if (ok || !linesRef.current.some((l) => l.id === check.lineId)) {
+          setPending(pendingRef.current.filter((p) => p.lineId !== check.lineId));
+        }
+      }
+    } catch {
+      // Le réseau est retombé : on réessaiera au prochain retour
+    } finally {
+      setSyncing(false);
+    }
+    await reload.current();
+  });
+
+  // Au chargement : file d'attente gardée sur le téléphone ; hors ligne, la dernière
+  // version de la liste gardée (plus récente que la page servie par le cache)
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      const [queue, saved] = await Promise.all([loadQueue(listId), loadSavedList(listId)]);
+      if (cancelled) return;
+      pendingRef.current = queue;
+      setPendingState(queue);
+      const base = !navigator.onLine && saved ? saved.lines : linesRef.current;
+      if (!navigator.onLine && saved) setNames({ ...saved.names, ...namesRef.current });
+      setLines(mergePending(base, queue, userId));
+      if (navigator.onLine && queue.length) void flush.current();
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [listId, userId, setLines]);
+
+  // Retour du réseau : envoi de la file, puis relecture
+  useEffect(() => {
+    const onOnline = () => void flush.current();
+    window.addEventListener("online", onOnline);
+    return () => window.removeEventListener("online", onOnline);
+  }, []);
+
+  // En ligne : demande au service worker de garder cette page (et l'accueil) pour le hors ligne
+  useEffect(() => {
+    if (!("serviceWorker" in navigator)) return;
+    const onMessage = (event: MessageEvent) => {
+      if (event.data?.type === "pages-gardees" && event.data.kept > 0) setOfflineReady(true);
+    };
+    navigator.serviceWorker.addEventListener("message", onMessage);
+    void navigator.serviceWorker.ready.then((registration) =>
+      registration.active?.postMessage({
+        type: "garder-pages",
+        urls: ["/", "/courses", `/courses/${listId}`],
+      }),
+    );
+    return () => navigator.serviceWorker.removeEventListener("message", onMessage);
+  }, [listId]);
+
   // Ouvrir une liste prête la fait passer « en courses » (une seule fois)
   useEffect(() => {
-    if (props.status === "ready") void startShopping(listId);
+    if (props.status === "ready") startShopping(listId).catch(() => {});
   }, [listId, props.status]);
 
   useEffect(() => {
@@ -127,15 +251,45 @@ export function ShoppingList(props: Props) {
       cancelled = true;
       if (channel) void supabase.removeChannel(channel);
     };
-  }, [listId, userId]);
+  }, [listId, userId, setLines]);
+
+  /** Hors ligne : la coche rejoint la file (ou en sort, pour une erreur de doigt). */
+  function toggleWithoutNetwork(lineId: string) {
+    const result = toggleOffline(
+      linesRef.current,
+      pendingRef.current,
+      lineId,
+      userId,
+      new Date().toISOString(),
+    );
+    setPending(result.pending);
+    setLines(result.lines);
+  }
 
   async function toggle(line: ShoppingLine) {
-    const value = !line.checked;
     setFailed(false);
+    if (!navigator.onLine) return toggleWithoutNetwork(line.id);
+
+    const value = !line.checked;
+    // Une coche encore en file (faite hors ligne) : la décocher la retire simplement de la file
+    if (!value && pendingRef.current.some((p) => p.lineId === line.id)) {
+      return toggleWithoutNetwork(line.id);
+    }
     setLines(setChecked(linesRef.current, line.id, value, userId));
-    const { ok } = await setLineChecked(line.id, value);
-    if (!ok) {
-      // Échec : la case revient en arrière
+    try {
+      const { ok } = await setLineChecked(line.id, value);
+      if (!ok) throw new Error("refus");
+    } catch (error) {
+      // Coupure pendant l'envoi : une coche passe dans la file ; sinon retour en arrière
+      const networkLost =
+        !navigator.onLine || !(error instanceof Error && error.message === "refus");
+      if (value && networkLost) {
+        setPending([
+          ...pendingRef.current.filter((p) => p.lineId !== line.id),
+          { lineId: line.id, checkedAt: new Date().toISOString() },
+        ]);
+        return;
+      }
       setLines(setChecked(linesRef.current, line.id, !value, userId));
       setFailed(true);
     }
@@ -143,10 +297,13 @@ export function ShoppingList(props: Props) {
 
   function add(item: CatalogueItem) {
     startAdding(async () => {
-      const { ok } = await addListLine(listId, item.id, {
+      const ok = await addListLine(listId, item.id, {
         quantity: 1,
         unit: item.purchaseUnit ?? item.defaultUnit,
-      });
+      }).then(
+        (r) => r.ok,
+        () => false,
+      );
       setFailed(!ok);
       if (ok) {
         await reload.current();
@@ -157,9 +314,14 @@ export function ShoppingList(props: Props) {
 
   const { checked, total } = progress(lines);
   const groups = shoppingGroups(lines);
+  const banner = syncBanner(online, pending.length, syncing);
 
   return (
-    <div className="grid gap-6" data-realtime={live ? "connecte" : "deconnecte"}>
+    <div
+      className="grid gap-6"
+      data-realtime={live ? "connecte" : "deconnecte"}
+      data-hors-ligne-pret={offlineReady ? "oui" : "non"}
+    >
       {/* Progression : reste visible en haut pendant qu'on fait défiler */}
       <div className="bg-background/95 sticky top-0 z-10 -mx-4 grid gap-2 border-b px-4 py-3 backdrop-blur">
         <p className="text-sm font-medium" aria-live="polite">
@@ -180,6 +342,26 @@ export function ShoppingList(props: Props) {
             style={{ width: total ? `${(checked / total) * 100}%` : "0%" }}
           />
         </div>
+        {banner && (
+          <div
+            role="status"
+            className="flex items-start gap-2 rounded-lg bg-amber-50 p-2 text-sm text-amber-900 dark:bg-amber-950/40 dark:text-amber-200"
+          >
+            {online ? (
+              <RefreshCw className="mt-0.5 size-4 shrink-0 animate-spin" aria-hidden="true" />
+            ) : (
+              <CloudOff className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+            )}
+            <p>
+              {banner}
+              {!online && (
+                <span className="block text-xs">
+                  Décocher un article déjà enregistré : en ligne seulement.
+                </span>
+              )}
+            </p>
+          </div>
+        )}
         {failed && (
           <p role="alert" className="text-destructive text-sm">
             L&apos;enregistrement a échoué. Vérifiez votre connexion et réessayez.
@@ -211,6 +393,8 @@ export function ShoppingList(props: Props) {
                       type="checkbox"
                       className="peer sr-only"
                       checked={line.checked}
+                      // Hors ligne, une coche déjà enregistrée ne se décoche pas (coché gagne)
+                      disabled={!canToggle(line, online, pending)}
                       onChange={() => void toggle(line)}
                     />
                     <span
@@ -257,14 +441,20 @@ export function ShoppingList(props: Props) {
 
       <div className="grid gap-2">
         <p className="text-sm font-medium">Un oubli ?</p>
-        <ItemCombobox
-          items={items}
-          selectedId={null}
-          selectedName=""
-          placeholder={adding ? "Ajout…" : "Ajouter un article…"}
-          onSelect={add}
-          onCreate={setNewItemName}
-        />
+        {online ? (
+          <ItemCombobox
+            items={items}
+            selectedId={null}
+            selectedName=""
+            placeholder={adding ? "Ajout…" : "Ajouter un article…"}
+            onSelect={add}
+            onCreate={setNewItemName}
+          />
+        ) : (
+          <p className="text-muted-foreground text-sm">
+            Ajouter un article : possible au retour du réseau.
+          </p>
+        )}
       </div>
 
       <NewItemDialog

@@ -49,6 +49,8 @@ async function Content({ params }: { params: PageProps<"/courses/[id]">["params"
         )}
       </header>
       <ShoppingList
+        // Un écran neuf pour chaque liste (file d'attente et abonnement propres à la liste)
+        key={list.id}
         listId={list.id}
         status={list.status}
         userId={list.userId}

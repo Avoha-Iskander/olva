@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Store } from "lucide-react";
 import { Suspense } from "react";
 
-import { signOut } from "@/app/(auth)/actions";
+import { SignOutButton } from "@/components/profile/sign-out-button";
 import { DeleteAccount } from "@/components/profile/delete-account";
 import { ProfileForm } from "@/components/profile/profile-form";
 import { MyShares } from "@/components/sharing/my-shares";
@@ -68,11 +68,7 @@ export default function SettingsPage() {
           <CardTitle>Compte</CardTitle>
         </CardHeader>
         <CardContent className="grid gap-6">
-          <form action={signOut}>
-            <Button type="submit" variant="outline">
-              Se déconnecter
-            </Button>
-          </form>
+          <SignOutButton />
           <Suspense fallback={null}>
             <DeleteAccountSection />
           </Suspense>
