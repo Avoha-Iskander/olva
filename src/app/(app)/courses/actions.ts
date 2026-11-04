@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
 import { getShoppingList } from "@/lib/shopping";
@@ -41,4 +42,19 @@ export async function reloadShoppingLines(
   if (!id.success) return null;
   const list = await getShoppingList(id.data);
   return list ? { lines: list.lines, names: list.names } : null;
+}
+
+/**
+ * « Terminer les courses » (US-CRS-03) : la liste passe dans l'historique et les articles
+ * non cochés vont dans la réserve à reporter de son créateur (fonction finish_shopping).
+ */
+export async function finishShopping(listId: string): Promise<{ ok: boolean }> {
+  const id = z.uuid().safeParse(listId);
+  if (!id.success) return { ok: false };
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("finish_shopping", { target_list: id.data });
+  if (error) return { ok: false };
+  revalidatePath("/listes");
+  revalidatePath("/courses");
+  return { ok: true };
 }

@@ -63,3 +63,15 @@ export function finishMessage(unchecked: number, ownerName: string | null): stri
     ? `${articles} ${verb} sur la prochaine liste de ${ownerName}.`
     : `${articles} ${verb} sur votre prochaine liste.`;
 }
+
+/**
+ * Reports sur lesquels je n'ai rien décidé pour cette liste (étape 3 passée sans y
+ * toucher) : ils sont gardés par défaut au moment de terminer la préparation.
+ */
+export function undecidedCarryover<T extends { itemId: string; unit: string }>(
+  pool: T[],
+  saved: Pick<SavedCarryoverLine, "itemId" | "unit">[],
+): T[] {
+  const decided = new Set(saved.map(carryoverKey));
+  return pool.filter((item) => !decided.has(carryoverKey(item)));
+}

@@ -5,6 +5,7 @@ import {
   carryoverChoices,
   carryoverLines,
   finishMessage,
+  undecidedCarryover,
 } from "@/lib/carryover";
 
 const item = (patch: Partial<CarryoverItem> = {}): CarryoverItem => ({
@@ -74,5 +75,13 @@ describe("finishMessage", () => {
     expect(finishMessage(2, "Marie")).toBe(
       "2 articles non cochés seront reportés sur la prochaine liste de Marie.",
     );
+  });
+});
+
+describe("undecidedCarryover", () => {
+  it("renvoie les reports sans décision enregistrée pour cette liste", () => {
+    const pool = [item(), item({ itemId: "oeuf", unit: "piece" })];
+    expect(undecidedCarryover(pool, [{ itemId: "lait", unit: "l" }])).toEqual([pool[1]]);
+    expect(undecidedCarryover(pool, [])).toEqual(pool);
   });
 });

@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { ArrowLeft, Share2, ShoppingCart } from "lucide-react";
+import { ArrowLeft, Flag, Share2, ShoppingCart } from "lucide-react";
 import { Suspense } from "react";
 
+import { FinishedList } from "@/components/lists/finished-list";
 import { ListEditor } from "@/components/lists/list-editor";
 import { ShareListButton } from "@/components/sharing/share-list-button";
 import { Button } from "@/components/ui/button";
@@ -36,6 +37,34 @@ async function ListContent({ params }: { params: PageProps<"/listes/[id]">["para
   if (!list) notFound();
   if (list.status === "draft") {
     redirect(listHref({ id, status: list.status, hasRecipes: list.recipeTitles.length > 0 }));
+  }
+
+  // Liste terminée (US-CRS-03) : récapitulatif en lecture seule
+  if (list.status === "done") {
+    return (
+      <>
+        <header className="grid gap-1">
+          <h1 className="text-2xl font-semibold tracking-tight first-letter:uppercase">
+            {listTitle(list.createdAt)}
+          </h1>
+          <p className="text-muted-foreground flex items-center gap-2 text-sm">
+            <Flag className="size-4" aria-hidden="true" />
+            Courses terminées
+            {list.finishedAt &&
+              ` le ${new Date(list.finishedAt).toLocaleDateString("fr-FR", {
+                weekday: "long",
+                day: "numeric",
+                month: "long",
+                timeZone: "Europe/Paris",
+              })}`}
+          </p>
+          {list.sharedBy && (
+            <p className="text-muted-foreground text-sm">Liste partagée par {list.sharedBy}</p>
+          )}
+        </header>
+        <FinishedList lines={list.lines} />
+      </>
+    );
   }
 
   return (
