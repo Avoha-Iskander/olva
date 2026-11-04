@@ -30,10 +30,12 @@ export async function prepareList(page: Page): Promise<string> {
 /** Supprime une liste depuis « Mes listes » (compte de test laissé propre). */
 export async function deleteList(page: Page, listId: string, finished = false) {
   await page.goto(finished ? "/listes?onglet=terminees" : "/listes");
-  const card = page.locator("div", { has: page.locator(`a[href="/listes/${listId}"]`) }).last();
+  // Un brouillon mène à son étape en cours (/listes/<id>/revue…) : on compare le début
+  const link = page.locator(`a[href^="/listes/${listId}"]`);
+  const card = page.locator("div", { has: link }).last();
   await card.getByRole("button", { name: /^Supprimer la / }).click();
   await page.getByRole("dialog").getByRole("button", { name: "Supprimer", exact: true }).click();
-  await expect(page.locator(`a[href="/listes/${listId}"]`)).toHaveCount(0);
+  await expect(link).toHaveCount(0);
 }
 
 /** Ouvre l'écran de courses et attend que le temps réel soit branché. */

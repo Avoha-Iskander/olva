@@ -1,4 +1,4 @@
-# Cahier des charges — Olva (nom provisoire)
+# Cahier des charges — Olva
 
 > **Statut** : v0.5 — revue des ingrédients, ingrédients de base
 > **Auteur** : Alex
