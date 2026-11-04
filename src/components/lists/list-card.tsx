@@ -34,6 +34,7 @@ export function ListCard({
   itemCount,
   listId,
   sharedBy,
+  detail,
 }: {
   href: string;
   status: ListStatus;
@@ -42,6 +43,7 @@ export function ListCard({
   itemCount: number;
   listId: string;
   sharedBy: string | null; // liste qu'on me partage : pas de suppression (seul le créateur)
+  detail?: string; // remplace la ligne « recettes · articles » (ex. historique)
 }) {
   const [confirm, setConfirm] = useState(false);
   const [failed, setFailed] = useState(false);
@@ -75,8 +77,12 @@ export function ListCard({
             </span>
           )}
           <span className="text-muted-foreground truncate text-sm">
-            {recipeTitles.length ? recipeTitles.join(", ") : "Aucune recette"}
-            {itemCount > 0 && ` · ${itemCount} article${itemCount > 1 ? "s" : ""}`}
+            {detail ?? (
+              <>
+                {recipeTitles.length ? recipeTitles.join(", ") : "Aucune recette"}
+                {itemCount > 0 && ` · ${itemCount} article${itemCount > 1 ? "s" : ""}`}
+              </>
+            )}
           </span>
         </span>
         <ChevronRight className="text-muted-foreground size-5 shrink-0" aria-hidden="true" />

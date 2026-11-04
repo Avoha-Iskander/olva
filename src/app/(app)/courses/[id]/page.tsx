@@ -37,6 +37,8 @@ async function Content({ params }: { params: PageProps<"/courses/[id]">["params"
   if (list.status === "draft") {
     redirect(listHref({ id, status: list.status, hasRecipes: list.recipeTitles.length > 0 }));
   }
+  // Courses déjà terminées : le récapitulatif
+  if (list.status === "done") redirect(`/listes/${id}`);
 
   return (
     <>
@@ -56,6 +58,7 @@ async function Content({ params }: { params: PageProps<"/courses/[id]">["params"
         userId={list.userId}
         initialLines={list.lines}
         initialNames={list.names}
+        ownerName={list.sharedBy}
         catalogue={catalogue.items}
         aisles={catalogue.aisles}
       />

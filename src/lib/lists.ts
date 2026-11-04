@@ -11,6 +11,7 @@ import {
   type ItemOverride,
   preferMine,
 } from "@/lib/catalogue-overrides";
+import { carryoverChoices, type CarryoverChoice } from "@/lib/carryover";
 import { createClient } from "@/lib/supabase/server";
 
 type Supabase = Awaited<ReturnType<typeof createClient>>;
@@ -130,6 +131,46 @@ export async function listMyLists(): Promise<ListSummary[]> {
     itemCount: l.shopping_list_items.filter((i) => i.included).length,
     sharedBy: l.owner_id === userId ? null : (names.get(l.owner_id) ?? "Quelqu'un"),
   }));
+}
+
+/** Une carte de l'onglet « Terminées » (US-CRS-03). */
+export type FinishedSummary = ListSummary & {
+  finishedAt: string | null;
+  checkedCount: number; // articles pris
+};
+
+/** Historique : mes listes terminées (et celles qu'on me partage), les plus récentes d'abord. */
+export async function listFinishedLists(): Promise<FinishedSummary[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("shopping_lists")
+    .select(
+      "id, owner_id, status, created_at, finished_at, shopping_list_recipes(position, recipes(title)), shopping_list_items(included, checked)",
+    )
+    .eq("status", "done")
+    .order("finished_at", { ascending: false, nullsFirst: false })
+    .limit(50);
+  const { userId, names } = await ownerNames(
+    supabase,
+    (data ?? []).map((l) => l.owner_id),
+  );
+
+  return (data ?? []).map((l) => {
+    const kept = l.shopping_list_items.filter((i) => i.included);
+    return {
+      id: l.id,
+      status: "done" as const,
+      createdAt: l.created_at,
+      finishedAt: l.finished_at,
+      recipeTitles: [...l.shopping_list_recipes]
+        .sort((a, b) => a.position - b.position)
+        .map((r) => r.recipes?.title)
+        .filter((t): t is string => Boolean(t)),
+      itemCount: kept.length,
+      checkedCount: kept.filter((i) => i.checked).length,
+      sharedBy: l.owner_id === userId ? null : (names.get(l.owner_id) ?? "Quelqu'un"),
+    };
+  });
 }
 
 /** Adresse où reprendre une liste : son étape en cours (brouillon) ou sa page. */
@@ -276,25 +317,34 @@ export async function getExtras(listId: string): Promise<{
   prelist: ExtraItem[];
   checked: ExtraItem[]; // articles de la pré-liste cochés pour cette liste
   free: ExtraItem[]; // articles libres ajoutés à cette liste
+  carryover: CarryoverChoice[]; // reports de mes dernières courses (gardés ou non)
 }> {
   const supabase = await createClient();
   await supabase.rpc("ensure_my_prelist");
 
-  const [{ data: prelist }, { data: lines }] = await Promise.all([
+  const [{ data: prelist }, { data: lines }, { data: pool }] = await Promise.all([
     supabase
       .from("prelist_items")
       .select("item_id, quantity, unit, position, items(name, aisle_id, aisles(name, position))")
       .order("position"),
     supabase
       .from("shopping_list_items")
-      .select("item_id, origin, quantity, unit, items(name, aisle_id, aisles(name, position))")
+      .select(
+        "item_id, origin, quantity, unit, included, items(name, aisle_id, aisles(name, position))",
+      )
       .eq("list_id", listId)
-      .in("origin", ["prelist", "free"])
+      .in("origin", ["prelist", "free", "carryover"])
+      .order("created_at"),
+    supabase
+      .from("carryover_items")
+      .select("item_id, quantity, unit, items(name, aisle_id, aisles(name, position))")
       .order("created_at"),
   ]);
 
   // Mes rayons personnalisés s'appliquent aussi au regroupement de l'étape 3
-  const itemIds = [...new Set([...(prelist ?? []), ...(lines ?? [])].map((row) => row.item_id))];
+  const itemIds = [
+    ...new Set([...(prelist ?? []), ...(lines ?? []), ...(pool ?? [])].map((row) => row.item_id)),
+  ];
   const { overrides, aisles } = await loadOverrides(
     supabase,
     await currentUserId(supabase),
@@ -337,6 +387,12 @@ export async function getExtras(listId: string): Promise<{
     prelist: (prelist ?? []).map(toExtra),
     checked: (lines ?? []).filter((l) => l.origin === "prelist").map(toExtra),
     free: (lines ?? []).filter((l) => l.origin === "free").map(toExtra),
+    carryover: carryoverChoices(
+      (pool ?? []).map(toExtra),
+      (lines ?? [])
+        .filter((l) => l.origin === "carryover")
+        .map((l) => ({ itemId: l.item_id, unit: l.unit, included: l.included })),
+    ),
   };
 }
 
@@ -361,7 +417,7 @@ export async function getListPage(id: string) {
   const { data: list } = await supabase
     .from("shopping_lists")
     .select(
-      "id, owner_id, status, created_at, shopping_list_recipes(recipes(id, title)), shopping_list_items(id, item_id, quantity, unit, included, recipe_ids, checked, checked_by, checked_at, items(name, aisle_id, aisles(name, position)))",
+      "id, owner_id, status, created_at, finished_at, shopping_list_recipes(recipes(id, title)), shopping_list_items(id, item_id, quantity, unit, included, recipe_ids, checked, checked_by, checked_at, items(name, aisle_id, aisles(name, position)))",
     )
     .eq("id", id)
     .maybeSingle();
@@ -423,6 +479,7 @@ export async function getListPage(id: string) {
     names: Object.fromEntries(names),
     status: list.status as ListStatus,
     createdAt: list.created_at,
+    finishedAt: list.finished_at,
     recipeTitles: [...titles.values()],
     lines,
     sharedBy: list.owner_id === userId ? null : (names.get(list.owner_id) ?? "Quelqu'un"),

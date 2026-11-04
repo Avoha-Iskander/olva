@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-Olva (nom provisoire) — application de recettes et de listes de courses (Next.js + TypeScript, Supabase, Vercel).
+Olva — application de recettes et de listes de courses (Next.js + TypeScript, Supabase, Vercel).
 **Le cahier des charges est dans `SPEC.md`** : lis la section concernée avant toute tâche.
 
 ## Règles de travail

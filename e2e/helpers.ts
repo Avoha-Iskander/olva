@@ -4,26 +4,38 @@ import { expect } from "./fixtures";
 
 /** Outils partagés par les tests du mode courses. */
 
-/** Prépare une liste avec la recette d'exemple « Crêpes » (étapes 1 à 3) ; renvoie son id. */
-export async function prepareList(page: Page): Promise<string> {
+/** Étapes 1 et 2 avec la recette d'exemple « Crêpes » : arrive à l'étape 3 (pré-liste). */
+export async function goToPrelist(page: Page) {
   await page.goto("/nouvelle-liste");
   await page.getByRole("button", { name: /^Crêpes/ }).click();
   await page.getByRole("button", { name: /^Revoir les ingrédients/ }).click();
   await expect(page).toHaveURL(/\/revue$/);
   await page.getByRole("button", { name: "Continuer : pré-liste et articles libres" }).click();
   await expect(page).toHaveURL(/\/pre-liste$/);
+}
+
+/** Termine la préparation (étape 3) ; renvoie l'id de la liste. */
+export async function finishPreparation(page: Page): Promise<string> {
   await page.getByRole("button", { name: "Terminer la liste" }).click();
   await expect(page).toHaveURL(/\/listes\/[0-9a-f-]{36}$/);
   return page.url().split("/").pop()!;
 }
 
-/** Supprime une liste depuis « Mes listes en cours » (compte de test laissé propre). */
-export async function deleteList(page: Page, listId: string) {
-  await page.goto("/listes");
-  const card = page.locator("div", { has: page.locator(`a[href="/listes/${listId}"]`) }).last();
+/** Prépare une liste avec la recette d'exemple « Crêpes » (étapes 1 à 3) ; renvoie son id. */
+export async function prepareList(page: Page): Promise<string> {
+  await goToPrelist(page);
+  return finishPreparation(page);
+}
+
+/** Supprime une liste depuis « Mes listes » (compte de test laissé propre). */
+export async function deleteList(page: Page, listId: string, finished = false) {
+  await page.goto(finished ? "/listes?onglet=terminees" : "/listes");
+  // Un brouillon mène à son étape en cours (/listes/<id>/revue…) : on compare le début
+  const link = page.locator(`a[href^="/listes/${listId}"]`);
+  const card = page.locator("div", { has: link }).last();
   await card.getByRole("button", { name: /^Supprimer la / }).click();
   await page.getByRole("dialog").getByRole("button", { name: "Supprimer", exact: true }).click();
-  await expect(page.locator(`a[href="/listes/${listId}"]`)).toHaveCount(0);
+  await expect(link).toHaveCount(0);
 }
 
 /** Ouvre l'écran de courses et attend que le temps réel soit branché. */

@@ -1,6 +1,7 @@
 "use client";
 
-import { Check, CloudOff, RefreshCw } from "lucide-react";
+import { Check, CloudOff, Flag, RefreshCw } from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   useCallback,
@@ -16,6 +17,8 @@ import { addListLine } from "@/app/(app)/listes/actions";
 import { AisleHeading } from "@/components/lists/aisle-heading";
 import { ItemCombobox } from "@/components/recipe-form/item-combobox";
 import { NewItemDialog } from "@/components/recipe-form/new-item-dialog";
+import { FinishShopping } from "@/components/shopping/finish-shopping";
+import { Button } from "@/components/ui/button";
 import type { Aisle, CatalogueItem } from "@/lib/catalogue";
 import type { ListStatus } from "@/lib/lists";
 import {
@@ -45,6 +48,7 @@ type Props = {
   userId: string | null;
   initialLines: ShoppingLine[];
   initialNames: Record<string, string>; // noms des personnes qui ont coché
+  ownerName: string | null; // liste qu'on me partage : nom de son créateur
   catalogue: CatalogueItem[];
   aisles: Aisle[];
 };
@@ -117,6 +121,8 @@ export function ShoppingList(props: Props) {
     void saveQueue(listId, next);
   };
   const [syncing, setSyncing] = useState(false);
+  // Courses terminées (ici ou sur un autre téléphone) : les cases sont bloquées
+  const [finished, setFinished] = useState(false);
   // Page gardée par le service worker : la liste s'ouvrira sans réseau (repère pour les tests)
   const [offlineReady, setOfflineReady] = useState(false);
 
@@ -235,6 +241,14 @@ export function ShoppingList(props: Props) {
             const checker = (payload.new as { checked_by?: string | null })?.checked_by;
             const unknownChecker = checker && checker !== userId && !namesRef.current[checker];
             if (result.needsReload || unknownChecker) void reload.current();
+          },
+        )
+        // Fin des courses sur un autre téléphone : la liste passe à « terminée »
+        .on(
+          "postgres_changes",
+          { event: "UPDATE", schema: "public", table: "shopping_lists", filter: `id=eq.${listId}` },
+          (payload) => {
+            if ((payload.new as { status?: string }).status === "done") setFinished(true);
           },
         )
         .subscribe((status) => {
@@ -369,6 +383,19 @@ export function ShoppingList(props: Props) {
         )}
       </div>
 
+      {finished && (
+        <div
+          role="status"
+          className="bg-secondary flex flex-wrap items-center gap-3 rounded-xl p-4 text-sm"
+        >
+          <Flag className="size-5 shrink-0" aria-hidden="true" />
+          <p className="flex-1">Ces courses sont terminées.</p>
+          <Button asChild size="sm">
+            <Link href={`/listes/${listId}`}>Voir le récapitulatif</Link>
+          </Button>
+        </div>
+      )}
+
       {lines.length === 0 && (
         <p className="text-muted-foreground py-6 text-center text-sm">La liste est vide.</p>
       )}
@@ -394,7 +421,7 @@ export function ShoppingList(props: Props) {
                       className="peer sr-only"
                       checked={line.checked}
                       // Hors ligne, une coche déjà enregistrée ne se décoche pas (coché gagne)
-                      disabled={!canToggle(line, online, pending)}
+                      disabled={finished || !canToggle(line, online, pending)}
                       onChange={() => void toggle(line)}
                     />
                     <span
@@ -439,7 +466,7 @@ export function ShoppingList(props: Props) {
         </section>
       ))}
 
-      <div className="grid gap-2">
+      <div className={cn("grid gap-2", finished && "hidden")}>
         <p className="text-sm font-medium">Un oubli ?</p>
         {online ? (
           <ItemCombobox
@@ -456,6 +483,21 @@ export function ShoppingList(props: Props) {
           </p>
         )}
       </div>
+
+      {!finished && (
+        <FinishShopping
+          listId={listId}
+          unchecked={total - checked}
+          ownerName={props.ownerName}
+          blockedReason={
+            !online
+              ? "Terminer : possible au retour du réseau."
+              : pending.length || syncing
+                ? "Envoi des coches en cours…"
+                : null
+          }
+        />
+      )}
 
       <NewItemDialog
         key={newItemName ?? "closed"}
