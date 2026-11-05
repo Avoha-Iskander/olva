@@ -31,8 +31,6 @@ async function UrlImportScreen() {
 
   return (
     <UrlImport
-      // Identifiant de la future recette : dossier de sa photo, comme pour une saisie manuelle
-      recipeId={crypto.randomUUID()}
       userId={profile.id}
       defaultServings={profile.default_servings}
       items={catalogue.items}

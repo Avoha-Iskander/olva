@@ -46,6 +46,21 @@ test("créer, afficher puis supprimer une recette", async ({ page }) => {
     ).toBeVisible();
   });
 
+  await test.step("revenir sur « Nouvelle recette » : le formulaire est vierge", async () => {
+    // Navigation dans l'app (et non rechargement) : Next.js garde les écrans quittés en
+    // mémoire ; un écran de création doit pourtant repartir de zéro
+    await page
+      .getByRole("link", { name: "Mes recettes" })
+      .filter({ visible: true })
+      .first()
+      .click();
+    await expect(page).toHaveURL(/\/recettes$/);
+    await page.getByRole("button", { name: "Ajouter" }).click();
+    await page.getByRole("link", { name: "Saisir à la main" }).click();
+    await expect(page).toHaveURL(/\/recettes\/nouvelle$/);
+    await expect(page.getByLabel("Titre")).toHaveValue("");
+  });
+
   // La carte existe en deux versions (mobile et ordinateur) : on prend celle qui est visible
   const card = page.getByRole("link").filter({ hasText: title }).filter({ visible: true });
 

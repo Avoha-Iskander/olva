@@ -32,9 +32,6 @@ async function ImportScreen() {
 
   return (
     <PhotoImport
-      // Identifiant de la future recette, choisi dès maintenant : c'est aussi le dossier
-      // des photos d'import, qui pourront ainsi lui être attachées
-      recipeId={crypto.randomUUID()}
       userId={profile.id}
       defaultServings={profile.default_servings}
       items={catalogue.items}
