@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   countHighlights,
+  countProposed,
   draftToForm,
   type ImportDraft,
   importPagesForRecipe,
@@ -26,6 +27,8 @@ const draft = (patch: Partial<ImportDraft> = {}): ImportDraft => ({
       unit: "piece",
       note: "bien mûres",
       uncertain: false,
+      proposed: false,
+      newItem: null,
     },
     {
       name: "Sucre",
@@ -34,6 +37,8 @@ const draft = (patch: Partial<ImportDraft> = {}): ImportDraft => ({
       unit: "kg",
       note: null,
       uncertain: false,
+      proposed: false,
+      newItem: null,
     },
   ],
   ...patch,
@@ -80,8 +85,30 @@ describe("draftToForm", () => {
       readName: "Sucre muscovado",
       uncertain: false,
       unrecognized: true,
+      proposed: false,
+      newItem: null,
     });
     expect(countHighlights(highlights)).toBe(1);
+  });
+
+  it("article proposé : mention discrète, rien à vérifier", () => {
+    const d = draft();
+    d.ingredients[0] = { ...d.ingredients[0], name: "Petit oignon", proposed: true };
+    const { state, highlights } = draftToForm(d, 4);
+    expect(highlights.ingredients[state.ingredients[0].key]).toMatchObject({ proposed: true });
+    expect(countHighlights(highlights)).toBe(0);
+    expect(countProposed(highlights)).toBe(1);
+  });
+
+  it("article non reconnu : la création proposée par l'IA est transmise", () => {
+    const d = draft();
+    const newItem = { aisleId: 11, defaultUnit: "cac", purchaseUnit: "pot" };
+    d.ingredients[1] = { ...d.ingredients[1], name: "Sumac", itemId: null, newItem };
+    const { state, highlights } = draftToForm(d, 4);
+    expect(highlights.ingredients[state.ingredients[1].key]).toMatchObject({
+      unrecognized: true,
+      newItem,
+    });
   });
 
   it("surligne un ingrédient à la lecture douteuse, même reconnu", () => {
@@ -104,6 +131,8 @@ describe("draftToForm", () => {
           unit: null,
           note: null,
           uncertain: false,
+          proposed: false,
+          newItem: null,
         },
       ],
     });

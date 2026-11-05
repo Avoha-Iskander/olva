@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 
-import { RecipeForm } from "@/components/recipe-form/recipe-form";
+import { NewRecipeForm } from "@/components/recipe-form/new-recipe-form";
 import { getCatalogue } from "@/lib/catalogue";
 import { getCurrentProfile } from "@/lib/profile";
 import { listMyCollections } from "@/lib/recipes";
@@ -13,13 +13,13 @@ export default function NewRecipePage() {
     <main className="grid gap-4 px-4 py-6">
       <h1 className="text-2xl font-semibold tracking-tight">Nouvelle recette</h1>
       <Suspense fallback={<p className="text-muted-foreground">Chargement…</p>}>
-        <NewRecipeForm />
+        <NewRecipeScreen />
       </Suspense>
     </main>
   );
 }
 
-async function NewRecipeForm() {
+async function NewRecipeScreen() {
   const [profile, catalogue, collections] = await Promise.all([
     getCurrentProfile(),
     getCatalogue(),
@@ -28,15 +28,12 @@ async function NewRecipeForm() {
   if (!profile) redirect("/connexion");
 
   return (
-    <RecipeForm
-      // L'identifiant est choisi dès maintenant : il sert aussi de dossier pour la photo
-      recipeId={crypto.randomUUID()}
+    <NewRecipeForm
       userId={profile.id}
       defaultServings={profile.default_servings}
       items={catalogue.items}
       aisles={catalogue.aisles}
       collections={collections}
-      initial={null}
     />
   );
 }

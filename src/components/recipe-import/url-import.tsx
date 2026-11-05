@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useFreshSession } from "@/hooks/use-fresh-session";
 import type { Aisle, CatalogueItem } from "@/lib/catalogue";
 import { draftToForm, type ImportDraft } from "@/lib/import-draft";
 
@@ -41,7 +42,16 @@ function photoToFile(photo: NonNullable<ImportDraft["photo"]>): File {
  * le serveur la lit, Claude en tire la recette, et le même brouillon surligné que pour
  * l'import photo s'ouvre, avec la photo du plat et le lien d'origine.
  */
-export function UrlImport(props: Props) {
+/**
+ * Point d'entrée : une session neuve (formulaire vierge, nouvel identifiant de recette)
+ * à chaque retour sur l'écran (cf. useFreshSession).
+ */
+export function UrlImport(props: Omit<Props, "recipeId">) {
+  const { key, recipeId } = useFreshSession();
+  return <UrlImportFlow key={key} {...props} recipeId={recipeId} />;
+}
+
+function UrlImportFlow(props: Props) {
   const [url, setUrl] = useState("");
   const [model, setModel] = useState(props.models[0]?.id);
   const [error, setError] = useState<{

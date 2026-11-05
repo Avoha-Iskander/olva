@@ -16,6 +16,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { NativeSelect } from "@/components/ui/native-select";
 import type { Aisle, CatalogueItem } from "@/lib/catalogue";
+import type { NewItemSuggestion } from "@/lib/import-draft";
 
 /**
  * Fenêtre « Nouvel article » : ajoute un article à mon catalogue (US-CAT-02).
@@ -25,21 +26,25 @@ import type { Aisle, CatalogueItem } from "@/lib/catalogue";
 export function NewItemDialog({
   open,
   initialName,
+  suggestion,
   aisles,
   onOpenChange,
   onCreated,
 }: {
   open: boolean;
   initialName: string;
+  /** Rayon et unités proposés par l'IA (import) : il n'y a plus qu'à valider. */
+  suggestion?: NewItemSuggestion | null;
   aisles: Aisle[];
   onOpenChange: (open: boolean) => void;
   onCreated: (item: CatalogueItem) => void;
 }) {
   const [name, setName] = useState(initialName);
-  const [aisleId, setAisleId] = useState("");
-  const [defaultUnit, setDefaultUnit] = useState("g");
-  const [isStaple, setIsStaple] = useState(false);
-  const [purchaseUnit, setPurchaseUnit] = useState("paquet");
+  const [aisleId, setAisleId] = useState(suggestion ? String(suggestion.aisleId) : "");
+  const [defaultUnit, setDefaultUnit] = useState(suggestion?.defaultUnit ?? "g");
+  // Une unité d'achat proposée = produit de placard (« ingrédient de base »)
+  const [isStaple, setIsStaple] = useState(Boolean(suggestion?.purchaseUnit));
+  const [purchaseUnit, setPurchaseUnit] = useState(suggestion?.purchaseUnit ?? "paquet");
   const [errors, setErrors] = useState<Partial<Record<string, string>>>({});
   const [pending, startTransition] = useTransition();
 

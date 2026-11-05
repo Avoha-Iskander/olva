@@ -8,6 +8,7 @@ import { RecipeForm } from "@/components/recipe-form/recipe-form";
 import { ModelPicker } from "@/components/recipe-import/model-picker";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { useFreshSession } from "@/hooks/use-fresh-session";
 import type { Aisle, CatalogueItem } from "@/lib/catalogue";
 import { draftToForm, NO_HIGHLIGHTS } from "@/lib/import-draft";
 import { compressAndUploadImportPages } from "@/lib/photo-upload";
@@ -36,7 +37,16 @@ type Draft = NonNullable<React.ComponentProps<typeof RecipeForm>["draft"]>;
  * 2. lecture : les pages sont compressées, envoyées, puis lues par Claude côté serveur ;
  * 3. brouillon : le formulaire habituel, pré-rempli, avec les champs à vérifier surlignés.
  */
-export function PhotoImport(props: Props) {
+/**
+ * Point d'entrée : une session neuve (formulaire vierge, nouvel identifiant de recette)
+ * à chaque retour sur l'écran (cf. useFreshSession).
+ */
+export function PhotoImport(props: Omit<Props, "recipeId">) {
+  const { key, recipeId } = useFreshSession();
+  return <PhotoImportFlow key={key} {...props} recipeId={recipeId} />;
+}
+
+function PhotoImportFlow(props: Props) {
   const [pages, setPages] = useState<Page[]>([]);
   const [step, setStep] = useState<"uploading" | "reading" | null>(null);
   const [error, setError] = useState<string>();
