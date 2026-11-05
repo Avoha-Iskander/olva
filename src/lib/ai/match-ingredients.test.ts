@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildMatcher, singularize } from "@/lib/ai/match-ingredients";
+import { buildMatcher, resolveItem, singularize } from "@/lib/ai/match-ingredients";
 
 const items = [
   { id: "oignon", name: "Oignon" },
@@ -49,5 +49,50 @@ describe("singularize", () => {
     expect(singularize("poireaux")).toBe("poireau");
     expect(singularize("choux")).toBe("chou");
     expect(singularize("ananas")).toBe("anana"); // limite connue : rattrapée par le nom exact
+  });
+});
+
+describe("resolveItem", () => {
+  const items = [
+    { id: "pate", name: "Pâté" },
+    { id: "tomates-concassees", name: "Tomates concassées" },
+    { id: "tomate", name: "Tomate" },
+    { id: "oignon-grelot", name: "Oignon grelot" },
+    { id: "coriandre-perso", name: "Coriandre", isPersonal: true },
+    { id: "coriandre", name: "Coriandre" },
+  ];
+  const match = buildMatcher(items);
+
+  it("retient l'article exact choisi par Claude, avec accents", () => {
+    expect(resolveItem({ name: "Tomate", item: "Tomates concassées" }, items, match)).toEqual({
+      itemId: "tomates-concassees",
+      proposed: false,
+    });
+  });
+
+  it("garde l'indication « proposé » quand Claude n'était pas sûr", () => {
+    expect(
+      resolveItem(
+        { name: "Petit oignon", item: "Oignon grelot", item_proposed: true },
+        items,
+        match,
+      ),
+    ).toEqual({ itemId: "oignon-grelot", proposed: true });
+  });
+
+  it("préfère mon article personnel à homonyme", () => {
+    expect(resolveItem({ name: "x", item: "Coriandre" }, items, match).itemId).toBe(
+      "coriandre-perso",
+    );
+  });
+
+  it("sans article choisi (ou inconnu), revient au rattachement par le nom lu", () => {
+    expect(resolveItem({ name: "Tomates", item: null }, items, match)).toEqual({
+      itemId: "tomate",
+      proposed: false,
+    });
+    expect(resolveItem({ name: "Tomate", item: "Article inventé" }, items, match).itemId).toBe(
+      "tomate",
+    );
   });
 });

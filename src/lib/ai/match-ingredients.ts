@@ -55,3 +55,26 @@ export function buildMatcher(
     return null;
   };
 }
+
+/**
+ * Article choisi par Claude dans le catalogue (US-CAT-05) → identifiant.
+ * - nom exact du catalogue (accents compris, mes articles d'abord) : retenu tel quel ;
+ * - sinon, le nom lu passe par le rattachement habituel (noms, pluriels, synonymes) ;
+ * - sinon : non reconnu.
+ * `proposed` : Claude n'était pas sûr de la correspondance (affichée « proposé »).
+ */
+export function resolveItem(
+  ingredient: { name: string; item?: string | null; item_proposed?: boolean },
+  items: (MatchableItem & { isPersonal?: boolean })[],
+  match: (name: string) => string | null,
+): { itemId: string | null; proposed: boolean } {
+  if (ingredient.item) {
+    const wanted = ingredient.item.trim().toLowerCase();
+    const exact =
+      items.find((i) => i.isPersonal && i.name.toLowerCase() === wanted) ??
+      items.find((i) => i.name.toLowerCase() === wanted);
+    const found = exact?.id ?? match(ingredient.item);
+    if (found) return { itemId: found, proposed: Boolean(ingredient.item_proposed) };
+  }
+  return { itemId: match(ingredient.name), proposed: false };
+}

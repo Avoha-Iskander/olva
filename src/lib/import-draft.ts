@@ -8,6 +8,13 @@ import type { RecipeFormState } from "@/lib/recipe-form";
  */
 
 /** Brouillon renvoyé par le serveur : rien n'est encore enregistré. */
+/** Article à créer proposé par l'IA : l'utilisateur n'a qu'à valider. */
+export type NewItemSuggestion = {
+  aisleId: number;
+  defaultUnit: string;
+  purchaseUnit: string | null;
+};
+
 export type ImportDraft = {
   importId: string;
   photoPaths: string[]; // les pages photographiées, dans l'ordre (vide : import par lien)
@@ -23,6 +30,9 @@ export type ImportDraft = {
   ingredients: {
     name: string; // tel que lu par l'IA
     itemId: string | null; // article du catalogue ; null : non reconnu (surligné)
+    proposed: boolean; // article choisi par l'IA sans correspondance évidente
+    // Non reconnu : l'article à créer, pré-rempli par l'IA (rayon, unités)
+    newItem: NewItemSuggestion | null;
     quantity: number | null;
     unit: string | null;
     note: string | null;
@@ -30,12 +40,27 @@ export type ImportDraft = {
   }[];
 };
 
-/** Ce qu'il faut surligner dans le formulaire (« À vérifier »). */
+/**
+ * Ce qu'on signale sur une ligne d'ingrédient :
+ * - uncertain : lecture douteuse (mot ou nombre illisible) → « À vérifier » ;
+ * - unrecognized : aucun article → « À vérifier », avec l'article à créer pré-rempli ;
+ * - proposed : article choisi par l'IA sans correspondance évidente → simple mention
+ *   « proposé », sans rien à faire si c'est le bon.
+ */
+export type IngredientHighlight = {
+  readName: string;
+  uncertain: boolean;
+  unrecognized: boolean;
+  proposed: boolean;
+  newItem: NewItemSuggestion | null;
+};
+
+/** Ce qu'il faut signaler dans le formulaire. */
 export type DraftHighlights = {
   title: boolean;
   servings: boolean;
-  /** Par ligne d'ingrédient (clé de ligne) : le nom lu, et pourquoi on surligne. */
-  ingredients: Record<string, { readName: string; uncertain: boolean; unrecognized: boolean }>;
+  /** Par ligne d'ingrédient (clé de ligne) : le nom lu, et pourquoi on le signale. */
+  ingredients: Record<string, IngredientHighlight>;
 };
 
 /** Aucun surlignage : formulaire de saisie ou de modification habituel. */
@@ -61,11 +86,14 @@ export function draftToForm(
     // Clé fixe (et non aléatoire) : identique côté serveur et côté navigateur
     const key = `import-${index}`;
     const unrecognized = ingredient.itemId === null;
-    if (unrecognized || ingredient.uncertain) {
+    const proposed = !unrecognized && ingredient.proposed;
+    if (unrecognized || ingredient.uncertain || proposed) {
       highlights.ingredients[key] = {
         readName: ingredient.name,
         uncertain: ingredient.uncertain,
         unrecognized,
+        proposed,
+        newItem: unrecognized ? ingredient.newItem : null,
       };
     }
     return {
@@ -96,12 +124,15 @@ export function draftToForm(
   };
 }
 
+/** Une ligne demande-t-elle une action (et pas seulement une mention « proposé ») ? */
+export const needsReview = (h: IngredientHighlight) => h.uncertain || h.unrecognized;
+
 /** Nombre de champs à vérifier : affiché dans le bandeau du brouillon. */
 export function countHighlights(highlights: DraftHighlights): number {
   return (
     Number(highlights.title) +
     Number(highlights.servings) +
-    Object.keys(highlights.ingredients).length
+    Object.values(highlights.ingredients).filter(needsReview).length
   );
 }
 
@@ -118,4 +149,9 @@ export function importPagesForRecipe(
   const folder = `${userId}/${recipeId}/`;
   if (paths.length < 1 || paths.length > 3) return null;
   return paths.every((path) => path.startsWith(folder) && !path.includes("..")) ? paths : null;
+}
+
+/** Nombre d'articles proposés par l'IA (mention discrète, sans action obligatoire). */
+export function countProposed(highlights: DraftHighlights): number {
+  return Object.values(highlights.ingredients).filter((h) => h.proposed && !needsReview(h)).length;
 }

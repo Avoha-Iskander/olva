@@ -23,6 +23,17 @@ export const extractedRecipeSchema = z.object({
     .array(
       z.object({
         name: z.string().trim().min(1).max(80),
+        // Article choisi dans le catalogue (nom exact) ; null si aucun ne convient
+        item: z.string().trim().max(80).nullish(),
+        item_proposed: z.boolean().default(false), // correspondance pas évidente
+        // Aucun article : proposition pour en créer un (l'utilisateur n'a qu'à valider)
+        new_item: z
+          .object({
+            aisle: z.string().trim().max(60),
+            unit: z.enum(UNIT_CODES),
+            purchase_unit: z.enum(UNIT_CODES).nullish(),
+          })
+          .nullish(),
         quantity: z.number().positive().max(100000).nullable(), // null : « au goût »
         unit: z.enum(UNIT_CODES).nullable(),
         note: z.string().trim().max(120).nullish(),
@@ -62,7 +73,31 @@ export const extractRecipeTool = {
           properties: {
             name: {
               type: "string",
-              description: "Nom de l'ingrédient, au singulier, sans quantité.",
+              description: "Nom de l'ingrédient tel qu'écrit, court, au singulier, sans quantité.",
+            },
+            item: {
+              type: ["string", "null"],
+              description:
+                "Nom EXACT d'un article du catalogue fourni (copié tel quel) ; null si aucun ne convient.",
+            },
+            item_proposed: {
+              type: "boolean",
+              description:
+                "Vrai si l'article choisi n'est pas une correspondance évidente (le plus proche).",
+            },
+            new_item: {
+              type: ["object", "null"],
+              description: "Seulement si item est null : l'article à créer.",
+              properties: {
+                aisle: { type: "string", description: "Un des rayons de la liste fournie." },
+                unit: { type: "string", enum: UNIT_CODES, description: "Unité de cuisine." },
+                purchase_unit: {
+                  type: ["string", "null"],
+                  enum: [...UNIT_CODES, null],
+                  description: "Unité d'achat pour un produit de placard (bouteille, pot…).",
+                },
+              },
+              required: ["aisle", "unit"],
             },
             quantity: {
               type: ["number", "null"],
@@ -75,7 +110,10 @@ export const extractRecipeTool = {
               description: "Code d'unité ; null si la quantité est null.",
             },
             note: { type: "string", description: "Précision : « émincé », « bien mûres »…" },
-            uncertain: { type: "boolean", description: "Vrai si la lecture est douteuse." },
+            uncertain: {
+              type: "boolean",
+              description: "Vrai seulement si un mot ou un nombre est illisible ou coupé.",
+            },
           },
           required: ["name", "quantity", "unit"],
         },

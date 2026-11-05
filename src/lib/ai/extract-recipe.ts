@@ -31,9 +31,13 @@ type Content = Anthropic.Messages.ContentBlockParam[];
 /**
  * Envoie les pages à Claude, en une seule demande, et renvoie LA recette lue, vérifiée.
  */
+/** Le catalogue mis en forme pour Claude (cf. catalogue-prompt.ts). */
+export type PromptCatalogue = { common: string; personal: string | null };
+
 export async function extractRecipeFromImages(
   pages: PageImage[],
   model: AiModel,
+  catalogue: PromptCatalogue,
 ): Promise<ExtractionResult> {
   if (pages.length < 1 || pages.length > MAX_PAGES) {
     return { status: "failed", error: "Nombre de pages invalide", retryable: false };
@@ -54,6 +58,7 @@ export async function extractRecipeFromImages(
       },
     ],
     model,
+    catalogue,
   );
 }
 
@@ -66,6 +71,7 @@ export async function extractRecipeFromText(
   pageText: string,
   pageUrl: string,
   model: AiModel,
+  catalogue: PromptCatalogue,
 ): Promise<ExtractionResult> {
   // Une page piégée ne doit pas pouvoir « fermer » l'encadré elle-même
   const safeText = pageText.replace(/<\/?page>/gi, "");
@@ -77,6 +83,7 @@ export async function extractRecipeFromText(
       },
     ],
     model,
+    catalogue,
   );
 }
 
@@ -84,7 +91,11 @@ export async function extractRecipeFromText(
  * L'appel commun : réponse par l'outil extract_recipe, puis vérification par zod.
  * « Outil forcé » (tool_choice) quand le modèle l'accepte, sinon « auto » (cf. models.ts).
  */
-async function callExtraction(content: Content, model: AiModel): Promise<ExtractionResult> {
+async function callExtraction(
+  content: Content,
+  model: AiModel,
+  catalogue: PromptCatalogue,
+): Promise<ExtractionResult> {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) return { status: "failed", error: "Clé API absente", retryable: false };
 
@@ -96,7 +107,13 @@ async function callExtraction(content: Content, model: AiModel): Promise<Extract
     const response = await client.messages.create({
       model,
       max_tokens: settings.maxTokens,
-      system: RECIPE_EXTRACTION_PROMPT,
+      // Consignes, puis catalogue commun (mis en cache : identique pour tous, il ne
+      // coûte presque rien après le premier import), puis mes articles personnels
+      system: [
+        { type: "text", text: RECIPE_EXTRACTION_PROMPT },
+        { type: "text", text: catalogue.common, cache_control: { type: "ephemeral" } },
+        ...(catalogue.personal ? [{ type: "text" as const, text: catalogue.personal }] : []),
+      ],
       tools: [extractRecipeTool],
       tool_choice: settings.forcedTool
         ? { type: "tool", name: extractRecipeTool.name }

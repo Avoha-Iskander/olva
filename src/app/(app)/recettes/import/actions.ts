@@ -9,7 +9,9 @@ import {
   MAX_PAGES,
   PROMPT_VERSION,
 } from "@/lib/ai/extract-recipe";
-import { buildMatcher } from "@/lib/ai/match-ingredients";
+import { catalogueForPrompt } from "@/lib/ai/catalogue-prompt";
+import { cleanTitle } from "@/lib/ai/clean-title";
+import { buildMatcher, resolveItem } from "@/lib/ai/match-ingredients";
 import { type AiModel, canChooseAiModel, defaultAiModel, isAiModel } from "@/lib/ai/models";
 import { getCatalogue } from "@/lib/catalogue";
 import { detectImageType } from "@/lib/image-type";
@@ -44,6 +46,27 @@ async function prepare(requestedModel: string | undefined) {
   const model: AiModel =
     canChooseAiModel() && isAiModel(requestedModel) ? requestedModel : defaultAiModel();
   return { supabase, userId, model };
+}
+
+type Catalogue = Awaited<ReturnType<typeof getCatalogue>>;
+
+/**
+ * Le catalogue de l'utilisateur (commun + personnel) et les synonymes : chargés AVANT la
+ * lecture, car Claude choisit les articles dans ce catalogue (US-CAT-05).
+ */
+async function loadCatalogue(supabase: Supabase) {
+  const [catalogue, { data: aliases }] = await Promise.all([
+    getCatalogue(),
+    supabase.from("item_aliases").select("alias, item_id"),
+  ]);
+  return {
+    catalogue,
+    aliases: (aliases ?? []).map((a) => ({ alias: a.alias, itemId: a.item_id })),
+    prompt: catalogueForPrompt(
+      catalogue.items,
+      catalogue.aisles.map((a) => a.name),
+    ),
+  };
 }
 
 /** Trace de l'import dans recipe_imports : nouvelle, ou reprise pour « Réessayer ». */
@@ -83,6 +106,7 @@ async function finishImport(
   result: ExtractionResult,
   source: Pick<ImportDraft, "photoPaths" | "sourceUrl" | "photo">,
   messages: { failed: string; unavailable: string; notRecipe: string },
+  known: { catalogue: Catalogue; aliases: { alias: string; itemId: string }[] },
 ): Promise<ImportResult> {
   if (result.status === "failed") {
     await markFailed(supabase, importId, result.error);
@@ -107,34 +131,43 @@ async function finishImport(
     .update({ status: "done", result: { ...recipe, prompt: PROMPT_VERSION } })
     .eq("id", importId);
 
-  const [catalogue, { data: aliases }] = await Promise.all([
-    getCatalogue(),
-    supabase.from("item_aliases").select("alias, item_id"),
-  ]);
-  const match = buildMatcher(
-    catalogue.items,
-    (aliases ?? []).map((a) => ({ alias: a.alias, itemId: a.item_id })),
-  );
+  const match = buildMatcher(known.catalogue.items, known.aliases);
+  const aisleIds = new Map(known.catalogue.aisles.map((a) => [a.name.toLowerCase(), a.id]));
 
   return {
     status: "done",
     draft: {
       importId,
       ...source,
-      title: recipe.title ?? "",
+      title: cleanTitle(recipe.title ?? ""),
       titleUncertain: recipe.title_uncertain || !recipe.title,
       servings: recipe.servings ?? null,
       servingsUncertain: recipe.servings_uncertain || !recipe.servings,
       steps: recipe.steps,
       bookPage: recipe.book_page ?? null,
-      ingredients: recipe.ingredients.map((i) => ({
-        name: i.name,
-        itemId: match(i.name),
-        quantity: i.quantity,
-        unit: i.unit,
-        note: i.note ?? null,
-        uncertain: i.uncertain,
-      })),
+      ingredients: recipe.ingredients.map((i) => {
+        // L'article choisi par Claude dans le catalogue, sinon le rattachement par le nom
+        const { itemId, proposed } = resolveItem(i, known.catalogue.items, match);
+        const aisleId = i.new_item ? aisleIds.get(i.new_item.aisle.toLowerCase()) : undefined;
+        return {
+          name: i.name,
+          itemId,
+          proposed,
+          // Article à créer, pré-rempli (seulement si le rayon proposé existe)
+          newItem:
+            !itemId && i.new_item && aisleId
+              ? {
+                  aisleId,
+                  defaultUnit: i.new_item.unit,
+                  purchaseUnit: i.new_item.purchase_unit ?? null,
+                }
+              : null,
+          quantity: i.quantity,
+          unit: i.unit,
+          note: i.note ?? null,
+          uncertain: i.uncertain,
+        };
+      }),
     },
   };
 }
@@ -198,9 +231,11 @@ export async function importRecipeFromPhoto(
     return failed(importId, "Format de photo non reconnu. Reprenez la photo.", false);
   }
 
+  const known = await loadCatalogue(supabase);
   const result = await extractRecipeFromImages(
     pages.map((p) => ({ data: p.data, mediaType: p.mediaType! })),
     model,
+    known.prompt,
   );
   return finishImport(
     supabase,
@@ -214,6 +249,7 @@ export async function importRecipeFromPhoto(
         "L'import par photo n'est pas disponible pour le moment. Saisissez la recette à la main.",
       notRecipe: "Cette photo ne semble pas contenir de recette",
     },
+    known,
   );
 }
 
@@ -301,8 +337,9 @@ export async function importRecipeFromUrl(
   }
 
   // La lecture par Claude et le téléchargement de la photo se font en même temps
+  const known = await loadCatalogue(supabase);
   const [result, photo] = await Promise.all([
-    extractRecipeFromText(pageToPromptText(page), sourceUrl, model),
+    extractRecipeFromText(pageToPromptText(page), sourceUrl, model, known.prompt),
     page.imageUrl ? fetchDishPhoto(page.imageUrl) : Promise.resolve(null),
   ]);
 
@@ -316,6 +353,7 @@ export async function importRecipeFromUrl(
       unavailable: "L'import n'est pas disponible pour le moment. Essayez plus tard.",
       notRecipe: "Cette page ne semble pas contenir de recette",
     },
+    known,
   );
 }
 

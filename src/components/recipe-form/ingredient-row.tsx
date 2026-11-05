@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowDown, ArrowUp, Plus, Trash2, TriangleAlert } from "lucide-react";
+import { ArrowDown, ArrowUp, Plus, Sparkles, Trash2, TriangleAlert } from "lucide-react";
 
 import { ItemCombobox } from "@/components/recipe-form/item-combobox";
 import { UNIT_OPTIONS } from "@/components/recipe-form/units";
@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
 import type { CatalogueItem } from "@/lib/catalogue";
-import type { DraftHighlights } from "@/lib/import-draft";
+import { type DraftHighlights, needsReview, type NewItemSuggestion } from "@/lib/import-draft";
 import { type FormIngredient, unitForChosenItem } from "@/lib/recipe-form";
 import { cn } from "@/lib/utils";
 
@@ -37,41 +37,50 @@ export function IngredientRow({
   onChange: (patch: Partial<FormIngredient>) => void;
   onMove: (direction: -1 | 1) => void;
   onRemove: () => void;
-  onCreateItem: (name: string) => void;
+  onCreateItem: (name: string, suggestion?: NewItemSuggestion | null) => void;
   highlight?: DraftHighlights["ingredients"][string];
 }) {
   const label = `Ingrédient ${index + 1}`;
+  // « À vérifier » (fond ambre) seulement s'il y a quelque chose à faire ;
+  // un article simplement proposé par l'IA reçoit une mention discrète
+  const review = highlight && needsReview(highlight) ? highlight : null;
+  const proposedOnly = highlight && !review && highlight.proposed ? highlight : null;
   return (
     <li
       className={cn(
         "grid gap-2 rounded-lg border p-3",
-        highlight &&
+        review &&
           "border-transparent bg-amber-50 ring-2 ring-amber-400 dark:bg-amber-950/40 dark:ring-amber-500",
       )}
       aria-label={label}
     >
-      {highlight && (
+      {proposedOnly && (
+        <p className="text-muted-foreground flex items-center gap-1.5 text-xs">
+          <Sparkles className="size-3.5 shrink-0" aria-hidden />
+          Proposé pour « {proposedOnly.readName} » : changez l&apos;article s&apos;il ne convient
+          pas.
+        </p>
+      )}
+      {review && (
         <div className="grid gap-2 text-sm text-amber-900 dark:text-amber-200">
           <p className="flex items-center gap-1.5 font-medium">
             <TriangleAlert className="size-4 shrink-0" aria-hidden />À vérifier
           </p>
           <p>
-            Lu sur la photo : « {highlight.readName} »
-            {highlight.unrecognized
+            Lu : « {review.readName} »
+            {review.unrecognized
               ? ". Cet article n'est pas dans votre catalogue : choisissez-en un, ou créez-le."
-              : highlight.uncertain
-                ? ". Lecture incertaine : vérifiez la quantité et l'unité."
-                : ""}
+              : ". Lecture incertaine : vérifiez la quantité et l'unité."}
           </p>
-          {highlight.unrecognized && (
+          {review.unrecognized && (
             <Button
               type="button"
               variant="outline"
               className="bg-background justify-self-start"
-              onClick={() => onCreateItem(highlight.readName)}
+              onClick={() => onCreateItem(review.readName, review.newItem)}
             >
               <Plus />
-              Créer l&apos;article « {highlight.readName} »
+              Créer l&apos;article « {review.readName} »
             </Button>
           )}
         </div>

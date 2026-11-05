@@ -19,7 +19,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { ServingsStepper } from "@/components/ui/servings-stepper";
 import type { Aisle, CatalogueItem } from "@/lib/catalogue";
-import { countHighlights, type DraftHighlights, NO_HIGHLIGHTS } from "@/lib/import-draft";
+import {
+  countHighlights,
+  countProposed,
+  type DraftHighlights,
+  NO_HIGHLIGHTS,
+  type NewItemSuggestion,
+} from "@/lib/import-draft";
 import { compressAndUploadPhoto } from "@/lib/photo-upload";
 import { quantityToInput } from "@/lib/quantity";
 import {
@@ -118,13 +124,18 @@ export function RecipeForm(props: RecipeFormProps) {
       return { ...h, ingredients: rest };
     });
   const toReview = countHighlights(highlights);
+  const proposedCount = countProposed(highlights);
   const [items, setItems] = useState(props.items);
   const [collections, setCollections] = useState(props.collections);
   const [errors, setErrors] = useState<FormErrors>({});
   const [message, setMessage] = useState<string>();
   const [photoFile, setPhotoFile] = useState<File | null>(props.draft?.photoFile ?? null);
   const [photoRemoved, setPhotoRemoved] = useState(false);
-  const [newItem, setNewItem] = useState<{ lineKey: string; name: string } | null>(null);
+  const [newItem, setNewItem] = useState<{
+    lineKey: string;
+    name: string;
+    suggestion?: NewItemSuggestion | null; // rayon et unités proposés par l'IA
+  } | null>(null);
   const [pending, startTransition] = useTransition();
   const [confirmDelete, setConfirmDelete] = useState(false);
 
@@ -218,6 +229,8 @@ export function RecipeForm(props: RecipeFormProps) {
               {toReview > 0
                 ? `Vérifiez les champs surlignés (${toReview}), puis enregistrez.`
                 : "Relisez-la, puis enregistrez."}
+              {proposedCount > 0 &&
+                ` ${proposedCount} article${proposedCount > 1 ? "s ont été proposés" : " a été proposé"} : un coup d'œil suffit.`}
             </p>
           )}
         </div>
@@ -285,7 +298,9 @@ export function RecipeForm(props: RecipeFormProps) {
                 onRemove={() =>
                   update({ ingredients: state.ingredients.filter((l) => l.key !== line.key) })
                 }
-                onCreateItem={(name) => setNewItem({ lineKey: line.key, name })}
+                onCreateItem={(name, suggestion) =>
+                  setNewItem({ lineKey: line.key, name, suggestion })
+                }
                 highlight={highlights.ingredients[line.key]}
               />
             ))}
@@ -434,6 +449,7 @@ export function RecipeForm(props: RecipeFormProps) {
         key={newItem ? `${newItem.lineKey}-${newItem.name}` : "closed"}
         open={newItem !== null}
         initialName={newItem?.name ?? ""}
+        suggestion={newItem?.suggestion ?? null}
         aisles={props.aisles}
         onOpenChange={(open) => !open && setNewItem(null)}
         onCreated={(item) => {
