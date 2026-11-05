@@ -15,7 +15,7 @@ import { convertToItemUnit } from "@/lib/ai/convert-to-item-unit";
 import { buildMatcher, resolveItem } from "@/lib/ai/match-ingredients";
 import { type AiModel, canChooseAiModel, defaultAiModel, isAiModel } from "@/lib/ai/models";
 import { detectImageType } from "@/lib/image-type";
-import type { ImportDraft } from "@/lib/import-draft";
+import { coverIndex, type ImportDraft } from "@/lib/import-draft";
 import { loadMyCatalogue } from "@/lib/my-catalogue";
 import { createClient } from "@/lib/supabase/server";
 import { hasReadableContent, pageToPromptText, readRecipePage } from "@/lib/url-import/recipe-page";
@@ -138,6 +138,8 @@ async function finishImport(
     draft: {
       importId,
       ...source,
+      // Photo du plat parmi les photos envoyées : elle servira de couverture (décision 062)
+      coverPage: coverIndex(recipe.cover_page, source.photoPaths.length),
       title: cleanTitle(recipe.title ?? ""),
       titleUncertain: recipe.title_uncertain || !recipe.title,
       servings: recipe.servings ?? null,

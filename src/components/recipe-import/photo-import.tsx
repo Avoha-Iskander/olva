@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useFreshSession } from "@/hooks/use-fresh-session";
 import type { Aisle, CatalogueItem } from "@/lib/catalogue";
-import { draftToForm, NO_HIGHLIGHTS } from "@/lib/import-draft";
+import { draftToForm, NO_HIGHLIGHTS, withoutCover } from "@/lib/import-draft";
 import { compressAndUploadImportPages } from "@/lib/photo-upload";
 
 /** Nombre maximal de pages pour une recette (SPEC décision 049). */
@@ -109,6 +109,10 @@ function PhotoImportFlow(props: Props) {
           model,
         });
         if (result.status === "done") {
+          // Photo du plat repérée par l'IA : elle devient la couverture, en qualité
+          // d'origine ; les autres photos restent les pages de la recette (décision 062)
+          const cover = result.draft.coverPage;
+          const photoFile = cover === null ? null : (pages[cover]?.file ?? null);
           // Rien à vérifier : la recette est enregistrée et sa fiche s'ouvre (décision 060)
           setStep("saving");
           const recipeUrl = await saveImportDirectly({
@@ -116,7 +120,7 @@ function PhotoImportFlow(props: Props) {
             recipeId: props.recipeId,
             userId: props.userId,
             defaultServings: props.defaultServings,
-            photoFile: null, // les pages photographiées sont rattachées par le serveur
+            photoFile, // les pages, elles, sont rattachées par le serveur
           });
           if (recipeUrl) return router.push(recipeUrl);
           // Sinon : le brouillon, avec seulement les points à regarder
@@ -124,7 +128,11 @@ function PhotoImportFlow(props: Props) {
             mode: "import",
             ...draftToForm(result.draft, props.defaultServings),
             importId: result.draft.importId,
-            pageUrls: pages.map((p) => p.previewUrl),
+            pageUrls: withoutCover(
+              pages.map((p) => p.previewUrl),
+              cover,
+            ),
+            photoFile, // pré-placée dans la section « Photo » du brouillon
           });
           return;
         }
@@ -144,6 +152,7 @@ function PhotoImportFlow(props: Props) {
       {
         importId: "",
         photoPaths: [],
+        coverPage: null,
         sourceUrl: null,
         photo: null,
         title: "",

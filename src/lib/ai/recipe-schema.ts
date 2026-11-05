@@ -44,6 +44,9 @@ export const extractedRecipeSchema = z.object({
     .default([]),
   steps: z.array(z.string().trim().min(1).max(2000)).max(40).default([]),
   book_page: z.number().int().positive().max(5000).nullish(),
+  // Import photo : numéro (à partir de 1) de l'image qui montre le plat, sans texte de
+  // recette. Elle devient la photo de couverture (décision 062).
+  cover_page: z.number().int().min(1).max(10).nullish(),
 });
 export type ExtractedRecipe = z.infer<typeof extractedRecipeSchema>;
 
@@ -120,6 +123,11 @@ export const extractRecipeTool = {
       },
       steps: { type: "array", items: { type: "string" } },
       book_page: { type: "integer", description: "Numéro de page imprimé, s'il est visible." },
+      cover_page: {
+        type: ["integer", "null"],
+        description:
+          "Numéro (1, 2, 3…) de l'image qui montre le plat SANS texte de recette ; null s'il n'y en a pas.",
+      },
     },
     required: ["is_recipe"],
   },

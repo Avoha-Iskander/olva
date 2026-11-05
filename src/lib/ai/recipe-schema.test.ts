@@ -32,6 +32,13 @@ describe("parseExtraction", () => {
     expect(result.recipe).toMatchObject({ title_uncertain: false, ingredients: [], steps: [] });
   });
 
+  it("lit le numéro de la photo de couverture, et refuse un numéro impossible", () => {
+    const result = parseExtraction({ ...valid, cover_page: 2 });
+    if (!result.ok) throw new Error(result.error);
+    expect(result.recipe.cover_page).toBe(2);
+    expect(parseExtraction({ ...valid, cover_page: 0 }).ok).toBe(false);
+  });
+
   it("refuse une unité inventée", () => {
     expect(
       parseExtraction({ ...valid, ingredients: [{ name: "Lait", quantity: 1, unit: "tasse" }] }).ok,

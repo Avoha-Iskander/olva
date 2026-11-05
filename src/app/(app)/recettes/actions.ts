@@ -5,7 +5,12 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 
 import type { CatalogueItem } from "@/lib/catalogue";
-import { importPagesForRecipe, type LearnedAlias } from "@/lib/import-draft";
+import {
+  coverIndex,
+  importPagesForRecipe,
+  type LearnedAlias,
+  withoutCover,
+} from "@/lib/import-draft";
 import { createClient } from "@/lib/supabase/server";
 import { isUnitCode } from "@/lib/units";
 import { recipeSchema, type RecipeInput } from "@/lib/validation/recipe";
@@ -111,11 +116,17 @@ export async function saveRecipe(input: {
   if (input.importId && z.uuid().safeParse(input.importId).success) {
     const { data: imported } = await supabase
       .from("recipe_imports")
-      .select("photo_paths")
+      .select("photo_paths, result")
       .eq("id", input.importId)
       .maybeSingle();
-    const pages =
-      imported?.photo_paths && importPagesForRecipe(imported.photo_paths, userId, id.data);
+    // La photo du plat (couverture, décision 062) n'est pas une page du livre
+    const paths = imported?.photo_paths ?? [];
+    const result = imported?.result as { cover_page?: number | null } | null;
+    const pages = importPagesForRecipe(
+      withoutCover(paths, coverIndex(result?.cover_page, paths.length)),
+      userId,
+      id.data,
+    );
     if (pages) {
       await supabase.from("recipes").update({ import_photo_paths: pages }).eq("id", id.data);
     }
