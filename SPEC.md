@@ -395,7 +395,7 @@ Toutes les tables sont protégées par Row Level Security : je vois mes données
 - GitHub Actions : lint + vérification TypeScript + tests à chaque push ; fusion dans `main` bloquée si échec
 - Vercel : preview par branche, production à la fusion dans `main`
 - Migrations : testées sur dev, appliquées **à la main** en prod
-- Adresse `*.vercel.app` pendant le développement ; **domaine personnel acheté avant la fin du lot 6**
+- Adresse de production : **https://myolva.app** (OVHcloud, DNS chez OVH, DNSSEC ; décision 056) ; `www.myolva.app` redirige vers elle
 - Suivi des erreurs : journaux Vercel et Supabase (pas de Sentry pour l'instant)
 
 ### 9.4 Sauvegardes
@@ -408,15 +408,15 @@ Toutes les tables sont protégées par Row Level Security : je vois mes données
 
 ## 10. Exigences non fonctionnelles
 
-| Domaine       | Exigence                                                                                          |
-| ------------- | ------------------------------------------------------------------------------------------------- |
-| Hors ligne    | Mode courses consultable et cochable sans réseau                                                  |
-| Responsive    | Mobile d'abord ; largeur min. 360 px                                                              |
-| Accessibilité | Contrastes lisibles, cibles tactiles ≥ 44 px, texte agrandissable, navigation clavier sur desktop |
-| Mode sombre   | Suit le réglage du téléphone                                                                      |
-| Langue        | Français                                                                                          |
-| Photos        | Compressées côté client (~1 600 px) ; taille max par photo [À COMPLÉTER]                          |
-| Budget        | Hébergement ~15–25 €/an (domaine + API) ; plans gratuits Vercel, Supabase, GitHub                 |
+| Domaine       | Exigence                                                                                           |
+| ------------- | -------------------------------------------------------------------------------------------------- |
+| Hors ligne    | Mode courses consultable et cochable sans réseau                                                   |
+| Responsive    | Mobile d'abord ; largeur min. 360 px                                                               |
+| Accessibilité | Contrastes lisibles, cibles tactiles ≥ 44 px, texte agrandissable, navigation clavier sur desktop  |
+| Mode sombre   | Suit le réglage du téléphone                                                                       |
+| Langue        | Français                                                                                           |
+| Photos        | Compressées côté client (~1 600 px) ; taille max par photo [À COMPLÉTER]                           |
+| Budget        | Domaine ~22 €/an TTC (myolva.app) + API Claude plafonnée ; plans gratuits Vercel, Supabase, GitHub |
 
 ---
 
@@ -530,6 +530,7 @@ Toutes les tables sont protégées par Row Level Security : je vois mes données
 | 053 | 2026-11-03 | Lot 6 en 4 PR (Playwright ; mode courses en ligne + temps réel ; hors ligne + PWA ; fin des courses). Hors ligne : **service worker écrit à la main + `idb-keyval`** ; articles reportés proposés dans la **pré-liste** de la liste suivante (marqués « Reporté ») ; historique dans un onglet **« Terminées »** de Mes listes. Playwright en CI sur l'app construite, branchée sur Supabase dev, avec un compte de test                                                       | Serwist ; IndexedDB sans bibliothèque ; report direct dans la liste ; historique dans Paramètres |
 | 054 | 2026-11-04 | Hors ligne (lot 6.3) : une liste ouverte une fois avec réseau reste consultable et cochable ; coches en file d'attente (IndexedDB), envoyées au retour du réseau ; décocher hors ligne seulement une coche pas encore envoyée ; pas d'ajout d'article hors ligne ; l'écran de courses demande au service worker de garder sa page ; tout est effacé à la déconnexion. App installable, ouverture sur l'**accueil** ; icône provisoire jusqu'au nom définitif                   | Ouverture sur « Faire ses courses » ; ajout d'articles hors ligne                                |
 | 055 | 2026-11-04 | Fin des courses (lot 6.4) : « Terminer » par le créateur ou un co-éditeur, en ligne et une fois les coches envoyées ; les non-cochés vont dans la réserve à reporter du **créateur** (`carryover_items`), proposés cochés par défaut à l'étape 3 de la liste suivante, réserve vidée quand cette liste est terminée ; l'autre téléphone est prévenu en temps réel. Historique : onglets « En cours » / « Terminées », récapitulatif en lecture seule. **Nom définitif : Olva** | Report au co-éditeur qui termine ; report direct dans la liste                                   |
+| 056 | 2026-11-05 | Domaine **myolva.app** (olva.fr et olva.app pris) chez OVHcloud : 1 an, renouvellement automatique (~18 € HT/an), DNS OVH + DNSSEC, coordonnées masquées ; A → Vercel, `www` redirigé ; Supabase prod : Site URL et Redirect URLs mises à jour. Budget revu (domaine ~22 € TTC/an + API plafonnée)                                                                                                                                                                             | monolva.fr, olva.eu ; DNS Vercel                                                                 |
 
 ---
 
