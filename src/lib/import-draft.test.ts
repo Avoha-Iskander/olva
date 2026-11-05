@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  learnedAliases,
   countHighlights,
   countProposed,
   draftToForm,
@@ -174,5 +175,36 @@ describe("importPagesForRecipe", () => {
   it("refuse une liste vide ou de plus de 3 pages", () => {
     expect(importPagesForRecipe([], "u1", "r1")).toBeNull();
     expect(importPagesForRecipe([...pages, ...pages], "u1", "r1")).toBeNull();
+  });
+});
+
+describe("learnedAliases", () => {
+  const original = [
+    { key: "import-0", itemId: "huile-olive", itemName: "Huile" },
+    { key: "import-1", itemId: null, itemName: "Petits  oignons" },
+    { key: "import-2", itemId: "sel", itemName: "Sel" },
+  ];
+
+  it("retient le mot lu quand j'ai changé ou choisi l'article", () => {
+    expect(
+      learnedAliases(original, [
+        { key: "import-0", itemId: "huile-tournesol" },
+        { key: "import-1", itemId: "oignon-grelot" },
+        { key: "import-2", itemId: "sel" },
+      ]),
+    ).toEqual([
+      { alias: "huile", itemId: "huile-tournesol" },
+      { alias: "petits oignons", itemId: "oignon-grelot" },
+    ]);
+  });
+
+  it("n'apprend rien d'une ligne inchangée, vidée, ou ajoutée à la main", () => {
+    expect(
+      learnedAliases(original, [
+        { key: "import-0", itemId: "huile-olive" },
+        { key: "import-1", itemId: null },
+        { key: "ajout", itemId: "beurre" },
+      ]),
+    ).toEqual([]);
   });
 });

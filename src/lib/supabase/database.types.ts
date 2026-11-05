@@ -281,6 +281,35 @@ export type Database = {
           },
         ]
       }
+      my_item_aliases: {
+        Row: {
+          alias: string
+          created_at: string
+          item_id: string
+          owner_id: string
+        }
+        Insert: {
+          alias: string
+          created_at?: string
+          item_id: string
+          owner_id?: string
+        }
+        Update: {
+          alias?: string
+          created_at?: string
+          item_id?: string
+          owner_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "my_item_aliases_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       prelist_items: {
         Row: {
           created_at: string

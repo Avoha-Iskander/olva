@@ -23,51 +23,95 @@ export function singularize(text: string): string {
     .join(" ");
 }
 
-/** Clés de comparaison d'un nom : tel quel, et au singulier. */
-function keys(name: string): string[] {
-  const n = normalizeText(name);
-  return [...new Set([n, singularize(n)])];
+/** Minuscules, espaces et ligatures normalisés, mais accents GARDÉS : « Pâté » → « pâté ». */
+function lowerKeepAccents(text: string): string {
+  return text
+    .toLowerCase()
+    .replace(/œ/g, "oe")
+    .replace(/æ/g, "ae")
+    .normalize("NFC")
+    .replace(/\s+/g, " ")
+    .trim();
 }
+
+/** Le texte contient-il au moins un accent ? */
+const hasAccent = (text: string) => normalizeText(text) !== lowerKeepAccents(text);
+
+/** Un nom indexé, avec ses accents (l'index le range sous sa forme sans accents). */
+type Entry = { accented: string; itemId: string };
 
 /**
  * Prépare un index nom → article (noms du catalogue et synonymes), puis renvoie une
  * fonction qui retrouve l'article d'un nom lu par l'IA, ou null.
- * Mes articles personnels passent avant ceux du catalogue commun.
+ * Ordre de priorité : mes articles personnels, le catalogue commun, puis les synonymes.
+ *
+ * Les accents comptent, avec une tolérance (US-CAT-05) :
+ * 1. même nom, accents compris (au singulier si besoin) : « Tomates cerises » → Tomate cerise ;
+ * 2. même nom tel quel, l'un des deux écrit sans aucun accent : « creme fraiche » → Crème
+ *    fraîche (synonyme ou saisie sans accents) ;
+ * 3. au singulier, sans accents, seulement si le mot lu n'en a aucun : « echalotes » → Échalote.
+ * Ainsi « pâtes » (singulier « pâte ») ne devient plus « Pâté » : les deux mots ont des
+ * accents, et ce ne sont pas les mêmes.
  */
 export function buildMatcher(
   items: (MatchableItem & { isPersonal?: boolean })[],
   aliases: { alias: string; itemId: string }[] = [],
 ): (name: string) => string | null {
-  const index = new Map<string, string>();
+  // Index : nom sans accents → noms avec accents qui y correspondent, par priorité
+  const index = new Map<string, Entry[]>();
   const add = (name: string, itemId: string) => {
-    for (const key of keys(name)) if (!index.has(key)) index.set(key, itemId);
+    const accented = lowerKeepAccents(name);
+    for (const form of new Set([accented, singularize(accented)])) {
+      const plain = normalizeText(form);
+      const entries = index.get(plain) ?? [];
+      if (!entries.some((e) => e.accented === form)) entries.push({ accented: form, itemId });
+      index.set(plain, entries);
+    }
   };
-  // Ordre d'ajout = priorité : articles perso, puis catalogue commun, puis synonymes
+  // Ordre d'ajout = priorité
   for (const item of items.filter((i) => i.isPersonal)) add(item.name, item.id);
   for (const item of items.filter((i) => !i.isPersonal)) add(item.name, item.id);
   for (const a of aliases) add(a.alias, a.itemId);
 
+  const candidates = (form: string) => index.get(normalizeText(form)) ?? [];
+
   return (name: string) => {
-    for (const key of keys(name)) {
-      const found = index.get(key);
-      if (found) return found;
+    const asIs = lowerKeepAccents(name);
+    const singular = singularize(asIs);
+
+    // 1. Même nom, accents compris
+    for (const form of [asIs, singular]) {
+      const exact = candidates(form).find((e) => e.accented === form);
+      if (exact) return exact.itemId;
     }
+    // 2. Tel quel, quand l'un des deux noms est écrit sans aucun accent (« creme fraiche »)
+    const tolerant = candidates(asIs).find((e) => !hasAccent(asIs) || !hasAccent(e.accented));
+    if (tolerant) return tolerant.itemId;
+    // 3. Au singulier, sans accents : seulement si le mot lu n'en a aucun (« echalotes »)
+    if (!hasAccent(asIs)) return candidates(singular)[0]?.itemId ?? null;
     return null;
   };
 }
 
 /**
- * Article choisi par Claude dans le catalogue (US-CAT-05) → identifiant.
- * - nom exact du catalogue (accents compris, mes articles d'abord) : retenu tel quel ;
- * - sinon, le nom lu passe par le rattachement habituel (noms, pluriels, synonymes) ;
- * - sinon : non reconnu.
+ * Article d'un ingrédient importé → identifiant (US-CAT-05) :
+ * 1. mes synonymes d'abord : j'ai déjà corrigé ce mot lors d'un import précédent, mon
+ *    choix l'emporte (même sur celui de Claude) ;
+ * 2. l'article choisi par Claude : nom exact du catalogue (accents compris, mes articles
+ *    d'abord), sinon le rattachement habituel de ce nom ;
+ * 3. sinon, le nom lu passe par le rattachement habituel (noms, pluriels, synonymes) ;
+ * 4. sinon : non reconnu.
  * `proposed` : Claude n'était pas sûr de la correspondance (affichée « proposé »).
  */
 export function resolveItem(
   ingredient: { name: string; item?: string | null; item_proposed?: boolean },
   items: (MatchableItem & { isPersonal?: boolean })[],
   match: (name: string) => string | null,
+  mine: (name: string) => string | null = () => null,
 ): { itemId: string | null; proposed: boolean } {
+  const learned = mine(ingredient.name);
+  if (learned) return { itemId: learned, proposed: false };
+
   if (ingredient.item) {
     const wanted = ingredient.item.trim().toLowerCase();
     const exact =

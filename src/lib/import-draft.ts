@@ -155,3 +155,30 @@ export function importPagesForRecipe(
 export function countProposed(highlights: DraftHighlights): number {
   return Object.values(highlights.ingredients).filter((h) => h.proposed && !needsReview(h)).length;
 }
+
+/** Un synonyme personnel à retenir : « mot lu dans la recette » → article choisi. */
+export type LearnedAlias = { alias: string; itemId: string };
+
+/**
+ * Ce que j'ai corrigé dans un brouillon importé (US-CAT-05) : pour chaque ligne lue par
+ * l'IA dont j'ai changé l'article (ou choisi un article alors qu'il n'y en avait pas),
+ * on retient « mot lu → mon article », pour le prochain import.
+ * - On compare par clé de ligne (« import-0 »…) : une ligne ajoutée à la main n'a rien
+ *   à apprendre ;
+ * - le mot lu est mis en minuscules (comme les synonymes communs) ;
+ * - un même mot corrigé deux fois : le dernier choix gagne.
+ */
+export function learnedAliases(
+  original: { key: string; itemId: string | null; itemName: string }[],
+  current: { key: string; itemId: string | null }[],
+): LearnedAlias[] {
+  const before = new Map(original.map((line) => [line.key, line]));
+  const learned = new Map<string, string>();
+  for (const line of current) {
+    const read = before.get(line.key);
+    if (!read || !line.itemId || line.itemId === read.itemId) continue;
+    const alias = read.itemName.trim().toLowerCase().replace(/\s+/g, " ");
+    if (alias) learned.set(alias, line.itemId);
+  }
+  return [...learned].map(([alias, itemId]) => ({ alias, itemId }));
+}
