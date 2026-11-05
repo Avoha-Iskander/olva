@@ -8,3 +8,5 @@ sachet, paquet, pot, bouteille, botte, tranche, gousse, brin, feuille.
 
 Une fois relus et validés, ces fichiers sont transformés en migration d'insertion
 (catalogue commun : visible par tous, non modifiable par les utilisateurs).
+
+- `aliases.csv` : synonymes communs — « ce que dit la recette » → article du catalogue (décision 057)
