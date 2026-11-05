@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { applyOverride, preferMine } from "@/lib/catalogue-overrides";
+import { applyOverride, conversionsByItem, preferMine } from "@/lib/catalogue-overrides";
+import { convertQuantity } from "@/lib/units";
 
 const aisles = new Map([
   [1, { name: "Fruits et légumes", position: 1 }],
@@ -58,5 +59,27 @@ describe("preferMine", () => {
       { ownerId: "moi", factor: 400 },
     ];
     expect(preferMine(list, "moi").map((c) => c.factor)).toEqual([400, 250]);
+  });
+});
+
+describe("conversionsByItem", () => {
+  const rows = [
+    { item_id: "tomates", owner_id: null, from_unit: "boite", to_unit: "g", factor: "400" },
+    { item_id: "tomates", owner_id: "moi", from_unit: "boite", to_unit: "g", factor: 250 },
+    { item_id: "carotte", owner_id: null, from_unit: "piece", to_unit: "g", factor: 100 },
+  ];
+
+  it("range par article, ma conversion d'abord, facteur en nombre", () => {
+    const byItem = conversionsByItem(rows, "moi");
+    expect(byItem.get("tomates")).toEqual([
+      { fromUnit: "boite", toUnit: "g", factor: 250 },
+      { fromUnit: "boite", toUnit: "g", factor: 400 },
+    ]);
+    expect(byItem.get("carotte")).toEqual([{ fromUnit: "piece", toUnit: "g", factor: 100 }]);
+  });
+
+  it("ma conversion est celle qu'on applique (non-régression : fin des courses, ajout)", () => {
+    const mine = conversionsByItem(rows, "moi").get("tomates");
+    expect(convertQuantity(2, "boite", "g", mine)).toBe(500);
   });
 });

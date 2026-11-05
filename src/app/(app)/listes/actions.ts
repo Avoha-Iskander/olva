@@ -7,8 +7,9 @@ import { z } from "zod";
 import { undecidedCarryover } from "@/lib/carryover";
 
 import { consolidateLines, findMergeTarget, type LineOrigin } from "@/lib/list-lines";
+import { currentUserId, loadConversions } from "@/lib/my-catalogue";
 import { createClient } from "@/lib/supabase/server";
-import { type ItemConversion, roundQuantity } from "@/lib/units";
+import { roundQuantity } from "@/lib/units";
 
 const recipesSchema = z
   .array(z.object({ recipeId: z.uuid(), servings: z.number().int().min(1).max(50) }))
@@ -209,20 +210,8 @@ export async function finishList(listId: string): Promise<{ ok: false } | never>
     })),
   ];
   const itemIds = [...new Set(lines.map((l) => l.item_id))];
-  const { data: conversions } = itemIds.length
-    ? await supabase
-        .from("unit_conversions")
-        .select("item_id, from_unit, to_unit, factor")
-        .in("item_id", itemIds)
-    : { data: [] };
-
-  const conversionsByItem = new Map<string, ItemConversion[]>();
-  for (const c of conversions ?? []) {
-    conversionsByItem.set(c.item_id, [
-      ...(conversionsByItem.get(c.item_id) ?? []),
-      { fromUnit: c.from_unit, toUnit: c.to_unit, factor: Number(c.factor) },
-    ]);
-  }
+  // Mes conversions d'abord (comme dans la revue) : le regroupement final les respecte
+  const conversionsByItem = await loadConversions(supabase, await currentUserId(supabase), itemIds);
 
   const final = consolidateLines(
     lines.map((l) => ({
@@ -297,7 +286,7 @@ export async function addListLine(
   if (!list.success || !item.success || !parsed.success) return { ok: false };
   const supabase = await createClient();
 
-  const [{ data: existing }, { data: conversions }] = await Promise.all([
+  const [{ data: existing }, conversions] = await Promise.all([
     supabase
       .from("shopping_list_items")
       .select("id, item_id, quantity, unit")
@@ -307,18 +296,14 @@ export async function addListLine(
       // En courses, un article déjà coché (déjà dans le panier) n'est pas augmenté :
       // le nouvel ajout fait une nouvelle ligne, à prendre
       .eq("checked", false),
-    supabase.from("unit_conversions").select("from_unit, to_unit, factor").eq("item_id", item.data),
+    loadConversions(supabase, await currentUserId(supabase), [item.data]),
   ]);
   const target = findMergeTarget(
     (existing ?? []).map((l) => ({ itemId: l.item_id, unit: l.unit })),
     item.data,
     parsed.data.quantity,
     parsed.data.unit,
-    (conversions ?? []).map((c) => ({
-      fromUnit: c.from_unit,
-      toUnit: c.to_unit,
-      factor: Number(c.factor),
-    })),
+    conversions.get(item.data) ?? [], // les miennes d'abord
   );
 
   const { error } = target
