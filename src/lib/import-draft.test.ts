@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  coverIndex,
+  withoutCover,
   canSaveDirectly,
   proposedItemIds,
   learnedAliases,
@@ -14,6 +16,7 @@ import {
 const draft = (patch: Partial<ImportDraft> = {}): ImportDraft => ({
   importId: "imp-1",
   photoPaths: ["u/r/import-1.webp"],
+  coverPage: null,
   sourceUrl: null,
   photo: null,
   title: "Tarte aux pommes",
@@ -263,5 +266,24 @@ describe("proposedItemIds", () => {
         }),
       ),
     ).toEqual(["item-pomme"]);
+  });
+});
+
+describe("photo de couverture (décision 062)", () => {
+  it("retient un numéro valable, parmi au moins 2 photos", () => {
+    expect(coverIndex(2, 2)).toBe(1);
+    expect(coverIndex(1, 3)).toBe(0);
+  });
+
+  it("ignore un numéro absent, impossible, ou une photo seule", () => {
+    expect(coverIndex(null, 2)).toBeNull();
+    expect(coverIndex(undefined, 2)).toBeNull();
+    expect(coverIndex(3, 2)).toBeNull();
+    expect(coverIndex(1, 1)).toBeNull();
+  });
+
+  it("retire la couverture des pages de la recette", () => {
+    expect(withoutCover(["p1", "plat", "p2"], 1)).toEqual(["p1", "p2"]);
+    expect(withoutCover(["p1", "p2"], null)).toEqual(["p1", "p2"]);
   });
 });

@@ -18,6 +18,9 @@ export type NewItemSuggestion = {
 export type ImportDraft = {
   importId: string;
   photoPaths: string[]; // les pages photographiées, dans l'ordre (vide : import par lien)
+  // Import photo : position (à partir de 0) de la photo du plat, sans texte de recette ;
+  // elle devient la photo de couverture et ne compte pas parmi les pages (décision 062)
+  coverPage: number | null;
   sourceUrl: string | null; // import par lien : adresse de la page
   // Import par lien : photo du plat fournie par le site, proposée comme photo de présentation
   photo: { data: string; mediaType: ImageMediaType } | null;
@@ -202,4 +205,22 @@ export function canSaveDirectly(draft: ImportDraft): boolean {
 /** Articles « proposés » par l'IA dans un brouillon : signalés sur la fiche après l'import. */
 export function proposedItemIds(draft: ImportDraft): string[] {
   return [...new Set(draft.ingredients.flatMap((i) => (i.proposed && i.itemId ? [i.itemId] : [])))];
+}
+
+/**
+ * Les pages d'un import photo, sans la photo de couverture (décision 062) : c'est ce qui
+ * est rangé avec la recette comme « pages du livre », et affiché à côté du brouillon.
+ */
+export function withoutCover<T>(pages: T[], coverPage: number | null): T[] {
+  return coverPage === null ? pages : pages.filter((_, index) => index !== coverPage);
+}
+
+/**
+ * Numéro de couverture donné par l'IA (à partir de 1) → position fiable, ou null :
+ * il faut au moins 2 photos (une seule photo de plat n'est pas une recette) et un numéro
+ * qui existe.
+ */
+export function coverIndex(coverPage: number | null | undefined, pageCount: number): number | null {
+  if (!coverPage || pageCount < 2 || coverPage > pageCount) return null;
+  return coverPage - 1;
 }

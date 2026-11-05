@@ -54,7 +54,7 @@ type RecipeFormProps = {
     importId: string | null; // sa source (pages ou lien) sera attachée à la recette
     pageUrls: string[]; // aperçus des pages, affichés à côté du formulaire
     sourceUrl?: string | null; // import par lien : page d'origine
-    photoFile?: File | null; // import par lien : photo du plat proposée par le site
+    photoFile?: File | null; // photo du plat : celle du site (lien) ou la couverture (photo)
   };
 };
 
