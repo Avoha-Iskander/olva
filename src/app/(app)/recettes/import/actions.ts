@@ -11,13 +11,16 @@ import {
 } from "@/lib/ai/extract-recipe";
 import { catalogueForPrompt } from "@/lib/ai/catalogue-prompt";
 import { cleanTitle } from "@/lib/ai/clean-title";
+import { convertToItemUnit } from "@/lib/ai/convert-to-item-unit";
 import { buildMatcher, resolveItem } from "@/lib/ai/match-ingredients";
 import { type AiModel, canChooseAiModel, defaultAiModel, isAiModel } from "@/lib/ai/models";
 import { getCatalogue } from "@/lib/catalogue";
+import { preferMine } from "@/lib/catalogue-overrides";
 import { detectImageType } from "@/lib/image-type";
 import type { ImportDraft } from "@/lib/import-draft";
 import { createClient } from "@/lib/supabase/server";
 import { hasReadableContent, pageToPromptText, readRecipePage } from "@/lib/url-import/recipe-page";
+import type { ItemConversion } from "@/lib/units";
 import { parsePublicUrl, safeFetch } from "@/lib/url-import/safe-fetch";
 
 const BUCKET = "recipe-photos";
@@ -48,26 +51,49 @@ async function prepare(requestedModel: string | undefined) {
   return { supabase, userId, model };
 }
 
-type Catalogue = Awaited<ReturnType<typeof getCatalogue>>;
-
 /**
- * Le catalogue de l'utilisateur (commun + personnel) et les synonymes : chargés AVANT la
- * lecture, car Claude choisit les articles dans ce catalogue (US-CAT-05).
+ * Le catalogue de l'utilisateur (commun + personnel), les synonymes (communs et les miens)
+ * et les conversions : chargés AVANT la lecture, car Claude choisit les articles dans ce
+ * catalogue (US-CAT-05).
  */
-async function loadCatalogue(supabase: Supabase) {
-  const [catalogue, { data: aliases }] = await Promise.all([
-    getCatalogue(),
-    supabase.from("item_aliases").select("alias, item_id"),
-  ]);
+async function loadCatalogue(supabase: Supabase, userId: string) {
+  const [catalogue, { data: aliases }, { data: myAliases }, { data: conversions }] =
+    await Promise.all([
+      getCatalogue(),
+      supabase.from("item_aliases").select("alias, item_id"),
+      supabase.from("my_item_aliases").select("alias, item_id"),
+      // Communes + les miennes (les règles d'accès ne montrent rien d'autre)
+      supabase.from("unit_conversions").select("item_id, owner_id, from_unit, to_unit, factor"),
+    ]);
+
+  // Conversions par article, les miennes d'abord (elles remplacent celles du catalogue)
+  const byItem = new Map<string, ItemConversion[]>();
+  for (const c of preferMine(
+    (conversions ?? []).map((c) => ({ ...c, ownerId: c.owner_id })),
+    userId,
+  )) {
+    const list = byItem.get(c.item_id) ?? [];
+    list.push({ fromUnit: c.from_unit, toUnit: c.to_unit, factor: Number(c.factor) });
+    byItem.set(c.item_id, list);
+  }
+
+  const toAlias = (a: { alias: string; item_id: string }) => ({
+    alias: a.alias,
+    itemId: a.item_id,
+  });
   return {
     catalogue,
-    aliases: (aliases ?? []).map((a) => ({ alias: a.alias, itemId: a.item_id })),
+    aliases: (aliases ?? []).map(toAlias),
+    myAliases: (myAliases ?? []).map(toAlias),
+    conversions: byItem,
     prompt: catalogueForPrompt(
       catalogue.items,
       catalogue.aisles.map((a) => a.name),
     ),
   };
 }
+
+type Known = Awaited<ReturnType<typeof loadCatalogue>>;
 
 /** Trace de l'import dans recipe_imports : nouvelle, ou reprise pour « Réessayer ». */
 async function startImport(
@@ -106,7 +132,7 @@ async function finishImport(
   result: ExtractionResult,
   source: Pick<ImportDraft, "photoPaths" | "sourceUrl" | "photo">,
   messages: { failed: string; unavailable: string; notRecipe: string },
-  known: { catalogue: Catalogue; aliases: { alias: string; itemId: string }[] },
+  known: Known,
 ): Promise<ImportResult> {
   if (result.status === "failed") {
     await markFailed(supabase, importId, result.error);
@@ -132,6 +158,8 @@ async function finishImport(
     .eq("id", importId);
 
   const match = buildMatcher(known.catalogue.items, known.aliases);
+  const mine = buildMatcher([], known.myAliases); // mes corrections passées
+  const itemUnits = new Map(known.catalogue.items.map((i) => [i.id, i.defaultUnit]));
   const aisleIds = new Map(known.catalogue.aisles.map((a) => [a.name.toLowerCase(), a.id]));
 
   return {
@@ -147,7 +175,7 @@ async function finishImport(
       bookPage: recipe.book_page ?? null,
       ingredients: recipe.ingredients.map((i) => {
         // L'article choisi par Claude dans le catalogue, sinon le rattachement par le nom
-        const { itemId, proposed } = resolveItem(i, known.catalogue.items, match);
+        const { itemId, proposed } = resolveItem(i, known.catalogue.items, match, mine);
         const aisleId = i.new_item ? aisleIds.get(i.new_item.aisle.toLowerCase()) : undefined;
         return {
           name: i.name,
@@ -162,9 +190,15 @@ async function finishImport(
                   purchaseUnit: i.new_item.purchase_unit ?? null,
                 }
               : null,
-          quantity: i.quantity,
-          unit: i.unit,
-          note: i.note ?? null,
+          // Dans l'unité habituelle de l'article quand un poids moyen le permet
+          // (« 200 g » de carottes → 2 pièces, « 200 g dans la recette » en note)
+          ...(itemId
+            ? convertToItemUnit(
+                { quantity: i.quantity, unit: i.unit, note: i.note ?? null },
+                itemUnits.get(itemId) ?? "",
+                known.conversions.get(itemId) ?? [],
+              )
+            : { quantity: i.quantity, unit: i.unit, note: i.note ?? null }),
           uncertain: i.uncertain,
         };
       }),
@@ -231,7 +265,7 @@ export async function importRecipeFromPhoto(
     return failed(importId, "Format de photo non reconnu. Reprenez la photo.", false);
   }
 
-  const known = await loadCatalogue(supabase);
+  const known = await loadCatalogue(supabase, userId);
   const result = await extractRecipeFromImages(
     pages.map((p) => ({ data: p.data, mediaType: p.mediaType! })),
     model,
@@ -337,7 +371,7 @@ export async function importRecipeFromUrl(
   }
 
   // La lecture par Claude et le téléchargement de la photo se font en même temps
-  const known = await loadCatalogue(supabase);
+  const known = await loadCatalogue(supabase, userId);
   const [result, photo] = await Promise.all([
     extractRecipeFromText(pageToPromptText(page), sourceUrl, model, known.prompt),
     page.imageUrl ? fetchDishPhoto(page.imageUrl) : Promise.resolve(null),

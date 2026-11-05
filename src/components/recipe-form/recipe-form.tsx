@@ -23,8 +23,9 @@ import {
   countHighlights,
   countProposed,
   type DraftHighlights,
-  NO_HIGHLIGHTS,
+  learnedAliases,
   type NewItemSuggestion,
+  NO_HIGHLIGHTS,
 } from "@/lib/import-draft";
 import { compressAndUploadPhoto } from "@/lib/photo-upload";
 import { quantityToInput } from "@/lib/quantity";
@@ -181,6 +182,11 @@ export function RecipeForm(props: RecipeFormProps) {
           photoPath,
           thumbPath,
           importId: props.draft?.importId ?? undefined,
+          // Import lu par l'IA : mes corrections d'articles, retenues pour la prochaine fois
+          learnedAliases:
+            props.draft?.mode === "import"
+              ? learnedAliases(props.draft.state.ingredients, state.ingredients)
+              : [],
         });
         if (!saved.ok) {
           // Échec : la photo qu'on vient d'envoyer ne servira pas, on la supprime

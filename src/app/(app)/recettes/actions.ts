@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 
 import type { CatalogueItem } from "@/lib/catalogue";
-import { importPagesForRecipe } from "@/lib/import-draft";
+import { importPagesForRecipe, type LearnedAlias } from "@/lib/import-draft";
 import { createClient } from "@/lib/supabase/server";
 import { isUnitCode } from "@/lib/units";
 import { recipeSchema, type RecipeInput } from "@/lib/validation/recipe";
@@ -38,12 +38,23 @@ export type SaveRecipeResult = { ok: true; id: string } | { ok: false; message: 
  * ses collections, en un seul bloc (fonction SQL save_recipe).
  * Les photos ont déjà été envoyées par le navigateur ; on reçoit leurs chemins.
  */
+/** Synonymes appris : mot en minuscules (comme la contrainte de la table), article valide. */
+const learnedAliasesSchema = z
+  .array(
+    z.object({
+      alias: z.string().trim().toLowerCase().min(1).max(80),
+      itemId: z.uuid(),
+    }),
+  )
+  .max(50);
+
 export async function saveRecipe(input: {
   id: string;
   recipe: RecipeInput;
   photoPath: string | null;
   thumbPath: string | null;
   importId?: string; // recette issue d'un import (photo ou lien) : on y rattache sa source
+  learnedAliases?: LearnedAlias[]; // import : mes corrections d'articles (US-CAT-05)
 }): Promise<SaveRecipeResult> {
   const id = z.uuid().safeParse(input.id);
   const parsed = recipeSchema.safeParse(input.recipe);
@@ -108,6 +119,16 @@ export async function saveRecipe(input: {
     if (pages) {
       await supabase.from("recipes").update({ import_photo_paths: pages }).eq("id", id.data);
     }
+  }
+
+  // Mes corrections d'articles deviennent mes synonymes : au prochain import, le même mot
+  // lu ira directement vers l'article que j'ai choisi. Échec sans gravité (recette enregistrée).
+  const aliases = learnedAliasesSchema.safeParse(input.learnedAliases ?? []);
+  if (aliases.success && aliases.data.length) {
+    await supabase.from("my_item_aliases").upsert(
+      aliases.data.map((a) => ({ owner_id: userId, alias: a.alias, item_id: a.itemId })),
+      { onConflict: "owner_id,alias" }, // déjà appris : le nouveau choix remplace l'ancien
+    );
   }
 
   const obsolete = [previous?.photo_path, previous?.thumb_path].filter(

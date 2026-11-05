@@ -41,6 +41,39 @@ describe("buildMatcher", () => {
   });
 });
 
+describe("buildMatcher : les accents comptent", () => {
+  const match = buildMatcher(
+    [
+      { id: "pate", name: "Pâté" },
+      { id: "pate-brisee", name: "Pâte brisée" },
+      { id: "echalote", name: "Échalote" },
+      { id: "creme", name: "Crème fraîche" },
+    ],
+    [{ alias: "creme liquide", itemId: "creme" }],
+  );
+
+  it("« pâtes » n'est pas « Pâté » (accents différents)", () => {
+    expect(match("pâtes")).toBeNull();
+    expect(match("Pâtes")).toBeNull();
+    expect(match("pâte")).toBeNull(); // la pâte à tarte non plus
+  });
+
+  it("retrouve toujours « Pâté » et « Pâte brisée » écrits correctement", () => {
+    expect(match("pâté")).toBe("pate");
+    expect(match("Pâtes brisées")).toBe("pate-brisee");
+  });
+
+  it("tolère un mot écrit sans aucun accent", () => {
+    expect(match("echalote")).toBe("echalote");
+    expect(match("echalotes")).toBe("echalote");
+    expect(match("creme fraiche")).toBe("creme");
+  });
+
+  it("tolère un synonyme écrit sans accents", () => {
+    expect(match("Crème liquide")).toBe("creme");
+  });
+});
+
 describe("singularize", () => {
   it("retire le pluriel de chaque mot, pas des mots courts", () => {
     expect(singularize("pommes de terre")).toBe("pomme de terre");
@@ -49,6 +82,32 @@ describe("singularize", () => {
     expect(singularize("poireaux")).toBe("poireau");
     expect(singularize("choux")).toBe("chou");
     expect(singularize("ananas")).toBe("anana"); // limite connue : rattrapée par le nom exact
+  });
+});
+
+describe("resolveItem : mes synonymes", () => {
+  const items = [
+    { id: "huile-olive", name: "Huile d'olive" },
+    { id: "huile-tournesol", name: "Huile de tournesol" },
+  ];
+  const match = buildMatcher(items);
+  const mine = buildMatcher([], [{ alias: "huile", itemId: "huile-tournesol" }]);
+
+  it("mon choix passé l'emporte sur celui de Claude, sans mention « proposé »", () => {
+    expect(
+      resolveItem(
+        { name: "Huile", item: "Huile d'olive", item_proposed: true },
+        items,
+        match,
+        mine,
+      ),
+    ).toEqual({ itemId: "huile-tournesol", proposed: false });
+  });
+
+  it("sans synonyme, le choix de Claude reste", () => {
+    expect(
+      resolveItem({ name: "Huile neutre", item: "Huile d'olive" }, items, match, mine),
+    ).toEqual({ itemId: "huile-olive", proposed: false });
   });
 });
 
