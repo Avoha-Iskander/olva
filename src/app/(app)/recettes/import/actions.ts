@@ -289,7 +289,7 @@ const FETCH_MESSAGES = {
  */
 export async function importRecipeFromUrl(
   input: z.infer<typeof urlInputSchema>,
-): Promise<ImportResult> {
+): Promise<ImportResult | { status: "exists"; recipeId: string }> {
   const parsed = urlInputSchema.safeParse(input);
   const url = parsed.success ? parsePublicUrl(parsed.data.url) : null;
   if (!parsed.success || !url) return failed(null, FETCH_MESSAGES.invalid, false);
@@ -298,6 +298,17 @@ export async function importRecipeFromUrl(
   if (!userId) return failed(null, "Connexion requise.", false);
 
   const sourceUrl = url.toString();
+
+  // Déjà importé (même adresse) : pas de doublon, ni de lecture payante inutile (décision 060)
+  const { data: existing } = await supabase
+    .from("recipes")
+    .select("id")
+    .eq("owner_id", userId)
+    .eq("source_url", sourceUrl)
+    .limit(1)
+    .maybeSingle();
+  if (existing) return { status: "exists", recipeId: existing.id };
+
   const importId = await startImport(
     supabase,
     parsed.data.importId,

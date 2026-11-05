@@ -8,10 +8,14 @@ import { expect, test } from "./fixtures";
  */
 test("créer, afficher puis supprimer une recette", async ({ page }) => {
   const title = `E2E Pâte à crêpes ${Date.now()}`;
+  // Lien d'origine fictif : sert à vérifier qu'un lien déjà importé n'est pas relu
+  const link = `https://example.com/olva-e2e-${Date.now()}`;
+  let recipeUrl = "";
 
   await test.step("ouvrir le formulaire et saisir le titre", async () => {
     await page.goto("/recettes/nouvelle");
     await page.getByLabel("Titre").fill(title);
+    await page.getByLabel("Lien de la page").fill(link);
   });
 
   await test.step("choisir l'ingrédient dans le catalogue", async () => {
@@ -39,6 +43,7 @@ test("créer, afficher puis supprimer une recette", async ({ page }) => {
   await test.step("enregistrer et voir la fiche", async () => {
     await page.getByRole("button", { name: "Enregistrer" }).click();
     await expect(page).toHaveURL(/\/recettes\/[0-9a-f-]{36}$/);
+    recipeUrl = new URL(page.url()).pathname;
     await expect(page.getByRole("heading", { level: 1, name: title })).toBeVisible();
     // L'étape, dans le texte de la fiche (pas dans le champ du formulaire qu'on vient de quitter)
     await expect(
@@ -59,6 +64,15 @@ test("créer, afficher puis supprimer une recette", async ({ page }) => {
     await page.getByRole("link", { name: "Saisir à la main" }).click();
     await expect(page).toHaveURL(/\/recettes\/nouvelle$/);
     await expect(page.getByLabel("Titre")).toHaveValue("");
+  });
+
+  await test.step("recoller le même lien : la recette existante s'ouvre, sans doublon", async () => {
+    // Décision 060 : aucun appel à Claude, on reconnaît le lien avant de lire la page
+    await page.goto("/recettes/lien");
+    await page.getByLabel("Lien de la recette").fill(link);
+    await page.getByRole("button", { name: "Lire la recette" }).click();
+    await expect(page).toHaveURL(new RegExp(`${recipeUrl}\\?deja=1$`));
+    await expect(page.getByText("Vous aviez déjà importé cette recette")).toBeVisible();
   });
 
   // La carte existe en deux versions (mobile et ordinateur) : on prend celle qui est visible

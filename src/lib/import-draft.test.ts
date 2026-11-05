@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  canSaveDirectly,
+  proposedItemIds,
   learnedAliases,
   countHighlights,
   countProposed,
@@ -206,5 +208,60 @@ describe("learnedAliases", () => {
         { key: "ajout", itemId: "beurre" },
       ]),
     ).toEqual([]);
+  });
+});
+
+describe("canSaveDirectly", () => {
+  const line = draft().ingredients[0];
+
+  it("enregistre directement quand rien n'est à vérifier", () => {
+    expect(canSaveDirectly(draft())).toBe(true);
+  });
+
+  it("accepte un article proposé, et un nouvel article pré-rempli", () => {
+    expect(
+      canSaveDirectly(
+        draft({
+          ingredients: [
+            { ...line, proposed: true },
+            {
+              ...line,
+              name: "Piment d'Espelette",
+              itemId: null,
+              newItem: { aisleId: 3, defaultUnit: "pincee", purchaseUnit: "pot" },
+            },
+          ],
+        }),
+      ),
+    ).toBe(true);
+  });
+
+  it("ouvre le brouillon au moindre doute", () => {
+    expect(canSaveDirectly(draft({ titleUncertain: true }))).toBe(false);
+    expect(canSaveDirectly(draft({ title: " " }))).toBe(false);
+    expect(canSaveDirectly(draft({ servings: null }))).toBe(false);
+    expect(canSaveDirectly(draft({ servingsUncertain: true }))).toBe(false);
+    expect(canSaveDirectly(draft({ steps: [] }))).toBe(false);
+    expect(canSaveDirectly(draft({ ingredients: [] }))).toBe(false);
+    expect(canSaveDirectly(draft({ ingredients: [{ ...line, uncertain: true }] }))).toBe(false);
+    // Non reconnu, sans nouvel article pré-rempli
+    expect(canSaveDirectly(draft({ ingredients: [{ ...line, itemId: null }] }))).toBe(false);
+  });
+});
+
+describe("proposedItemIds", () => {
+  it("liste les articles proposés, sans doublon", () => {
+    const line = draft().ingredients[0];
+    expect(
+      proposedItemIds(
+        draft({
+          ingredients: [
+            { ...line, proposed: true },
+            { ...line, proposed: true },
+            { ...line, itemId: "item-sucre", proposed: false },
+          ],
+        }),
+      ),
+    ).toEqual(["item-pomme"]);
   });
 });

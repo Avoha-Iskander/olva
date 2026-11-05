@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { SearchX } from "lucide-react";
 import { Suspense } from "react";
 
+import { ImportBanner } from "@/components/recipes/import-banner";
 import { RecipeView } from "@/components/recipes/recipe-view";
 import { Button } from "@/components/ui/button";
 import { getCurrentProfile } from "@/lib/profile";
@@ -12,18 +13,24 @@ export const metadata = { title: "Recette — Olva" };
 
 // Fiche recette (US-REC-01) : la page serveur charge la recette, le composant
 // client RecipeView l'affiche et gère le sélecteur de personnes.
-export default function RecipePage({ params }: PageProps<"/recettes/[id]">) {
+export default function RecipePage({ params, searchParams }: PageProps<"/recettes/[id]">) {
   return (
     <main className="mx-auto w-full max-w-5xl px-4 py-6">
       <Suspense fallback={<p className="text-muted-foreground">Chargement…</p>}>
-        <Recipe params={params} />
+        <Recipe params={params} searchParams={searchParams} />
       </Suspense>
     </main>
   );
 }
 
-async function Recipe({ params }: { params: PageProps<"/recettes/[id]">["params"] }) {
-  const { id } = await params;
+async function Recipe({
+  params,
+  searchParams,
+}: {
+  params: PageProps<"/recettes/[id]">["params"];
+  searchParams: PageProps<"/recettes/[id]">["searchParams"];
+}) {
+  const [{ id }, query] = await Promise.all([params, searchParams]);
   // Les deux lectures partent en même temps (Promise.all) plutôt que l'une après l'autre
   const [profile, recipe] = await Promise.all([getCurrentProfile(), getRecipeForEdit(id)]);
   if (!profile) redirect("/connexion");
@@ -44,5 +51,23 @@ async function Recipe({ params }: { params: PageProps<"/recettes/[id]">["params"
     );
   }
 
-  return <RecipeView recipe={recipe} defaultServings={profile.default_servings} />;
+  // Juste après un import (décision 060) : bandeau, avec les articles proposés par l'IA
+  const banner = query.importee ? "imported" : query.deja ? "already" : null;
+  const proposedIds = new Set(String(query.proposes ?? "").split(","));
+  const proposedNames = recipe.ingredients
+    .filter((i) => proposedIds.has(i.itemId))
+    .map((i) => i.itemName);
+
+  return (
+    <>
+      {banner && recipe.ownerId === profile.id && (
+        <ImportBanner
+          recipeId={recipe.id}
+          kind={banner}
+          proposedNames={[...new Set(proposedNames)]}
+        />
+      )}
+      <RecipeView recipe={recipe} defaultServings={profile.default_servings} />
+    </>
+  );
 }
