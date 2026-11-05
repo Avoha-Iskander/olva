@@ -14,13 +14,11 @@ import { cleanTitle } from "@/lib/ai/clean-title";
 import { convertToItemUnit } from "@/lib/ai/convert-to-item-unit";
 import { buildMatcher, resolveItem } from "@/lib/ai/match-ingredients";
 import { type AiModel, canChooseAiModel, defaultAiModel, isAiModel } from "@/lib/ai/models";
-import { getCatalogue } from "@/lib/catalogue";
-import { preferMine } from "@/lib/catalogue-overrides";
 import { detectImageType } from "@/lib/image-type";
 import type { ImportDraft } from "@/lib/import-draft";
+import { loadMyCatalogue } from "@/lib/my-catalogue";
 import { createClient } from "@/lib/supabase/server";
 import { hasReadableContent, pageToPromptText, readRecipePage } from "@/lib/url-import/recipe-page";
-import type { ItemConversion } from "@/lib/units";
 import { parsePublicUrl, safeFetch } from "@/lib/url-import/safe-fetch";
 
 const BUCKET = "recipe-photos";
@@ -52,40 +50,13 @@ async function prepare(requestedModel: string | undefined) {
 }
 
 /**
- * Le catalogue de l'utilisateur (commun + personnel), les synonymes (communs et les miens)
- * et les conversions : chargés AVANT la lecture, car Claude choisit les articles dans ce
- * catalogue (US-CAT-05).
+ * Mon catalogue (articles, synonymes, conversions), chargé AVANT la lecture car Claude
+ * choisit les articles dans ce catalogue (US-CAT-05), et sa version pour le prompt.
  */
-async function loadCatalogue(supabase: Supabase, userId: string) {
-  const [catalogue, { data: aliases }, { data: myAliases }, { data: conversions }] =
-    await Promise.all([
-      getCatalogue(),
-      supabase.from("item_aliases").select("alias, item_id"),
-      supabase.from("my_item_aliases").select("alias, item_id"),
-      // Communes + les miennes (les règles d'accès ne montrent rien d'autre)
-      supabase.from("unit_conversions").select("item_id, owner_id, from_unit, to_unit, factor"),
-    ]);
-
-  // Conversions par article, les miennes d'abord (elles remplacent celles du catalogue)
-  const byItem = new Map<string, ItemConversion[]>();
-  for (const c of preferMine(
-    (conversions ?? []).map((c) => ({ ...c, ownerId: c.owner_id })),
-    userId,
-  )) {
-    const list = byItem.get(c.item_id) ?? [];
-    list.push({ fromUnit: c.from_unit, toUnit: c.to_unit, factor: Number(c.factor) });
-    byItem.set(c.item_id, list);
-  }
-
-  const toAlias = (a: { alias: string; item_id: string }) => ({
-    alias: a.alias,
-    itemId: a.item_id,
-  });
+async function loadCatalogue(supabase: Supabase) {
+  const catalogue = await loadMyCatalogue(supabase);
   return {
-    catalogue,
-    aliases: (aliases ?? []).map(toAlias),
-    myAliases: (myAliases ?? []).map(toAlias),
-    conversions: byItem,
+    ...catalogue,
     prompt: catalogueForPrompt(
       catalogue.items,
       catalogue.aisles.map((a) => a.name),
@@ -157,10 +128,10 @@ async function finishImport(
     .update({ status: "done", result: { ...recipe, prompt: PROMPT_VERSION } })
     .eq("id", importId);
 
-  const match = buildMatcher(known.catalogue.items, known.aliases);
+  const match = buildMatcher(known.items, known.aliases);
   const mine = buildMatcher([], known.myAliases); // mes corrections passées
-  const itemUnits = new Map(known.catalogue.items.map((i) => [i.id, i.defaultUnit]));
-  const aisleIds = new Map(known.catalogue.aisles.map((a) => [a.name.toLowerCase(), a.id]));
+  const itemUnits = new Map(known.items.map((i) => [i.id, i.defaultUnit]));
+  const aisleIds = new Map(known.aisles.map((a) => [a.name.toLowerCase(), a.id]));
 
   return {
     status: "done",
@@ -175,7 +146,7 @@ async function finishImport(
       bookPage: recipe.book_page ?? null,
       ingredients: recipe.ingredients.map((i) => {
         // L'article choisi par Claude dans le catalogue, sinon le rattachement par le nom
-        const { itemId, proposed } = resolveItem(i, known.catalogue.items, match, mine);
+        const { itemId, proposed } = resolveItem(i, known.items, match, mine);
         const aisleId = i.new_item ? aisleIds.get(i.new_item.aisle.toLowerCase()) : undefined;
         return {
           name: i.name,
@@ -265,7 +236,7 @@ export async function importRecipeFromPhoto(
     return failed(importId, "Format de photo non reconnu. Reprenez la photo.", false);
   }
 
-  const known = await loadCatalogue(supabase, userId);
+  const known = await loadCatalogue(supabase);
   const result = await extractRecipeFromImages(
     pages.map((p) => ({ data: p.data, mediaType: p.mediaType! })),
     model,
@@ -371,7 +342,7 @@ export async function importRecipeFromUrl(
   }
 
   // La lecture par Claude et le téléchargement de la photo se font en même temps
-  const known = await loadCatalogue(supabase, userId);
+  const known = await loadCatalogue(supabase);
   const [result, photo] = await Promise.all([
     extractRecipeFromText(pageToPromptText(page), sourceUrl, model, known.prompt),
     page.imageUrl ? fetchDishPhoto(page.imageUrl) : Promise.resolve(null),
