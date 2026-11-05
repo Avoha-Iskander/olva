@@ -1,11 +1,13 @@
 "use client";
 
 import { Camera, ImagePlus, LoaderCircle, PenLine, ScanText, X } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
 
 import { importRecipeFromPhoto } from "@/app/(app)/recettes/import/actions";
 import { RecipeForm } from "@/components/recipe-form/recipe-form";
 import { ModelPicker } from "@/components/recipe-import/model-picker";
+import { saveImportDirectly } from "@/components/recipe-import/save-import";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useFreshSession } from "@/hooks/use-fresh-session";
@@ -48,13 +50,14 @@ export function PhotoImport(props: Omit<Props, "recipeId">) {
 
 function PhotoImportFlow(props: Props) {
   const [pages, setPages] = useState<Page[]>([]);
-  const [step, setStep] = useState<"uploading" | "reading" | null>(null);
+  const [step, setStep] = useState<"uploading" | "reading" | "saving" | null>(null);
   const [error, setError] = useState<string>();
   const [draft, setDraft] = useState<Draft>();
   const [model, setModel] = useState(props.models[0]?.id);
   // Pages déjà envoyées : en cas d'échec, « Réessayer » ne les renvoie pas
   const [sent, setSent] = useState<{ paths: string[]; importId: string | null } | null>(null);
   const [pending, startTransition] = useTransition();
+  const router = useRouter();
   const cameraInput = useRef<HTMLInputElement>(null);
   const fileInput = useRef<HTMLInputElement>(null);
 
@@ -106,6 +109,17 @@ function PhotoImportFlow(props: Props) {
           model,
         });
         if (result.status === "done") {
+          // Rien à vérifier : la recette est enregistrée et sa fiche s'ouvre (décision 060)
+          setStep("saving");
+          const recipeUrl = await saveImportDirectly({
+            draft: result.draft,
+            recipeId: props.recipeId,
+            userId: props.userId,
+            defaultServings: props.defaultServings,
+            photoFile: null, // les pages photographiées sont rattachées par le serveur
+          });
+          if (recipeUrl) return router.push(recipeUrl);
+          // Sinon : le brouillon, avec seulement les points à regarder
           setDraft({
             mode: "import",
             ...draftToForm(result.draft, props.defaultServings),
@@ -287,9 +301,11 @@ function PhotoImportFlow(props: Props) {
               ? "Envoi des photos…"
               : step === "reading"
                 ? "Lecture de la recette…"
-                : sent
-                  ? "Réessayer"
-                  : "Lire la recette"}
+                : step === "saving"
+                  ? "Enregistrement de la recette…"
+                  : sent
+                    ? "Réessayer"
+                    : "Lire la recette"}
           </Button>
           {step === "reading" && (
             <p className="text-muted-foreground text-center text-sm" aria-live="polite">

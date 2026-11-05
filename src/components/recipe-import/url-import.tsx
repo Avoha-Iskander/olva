@@ -2,11 +2,13 @@
 
 import { Camera, ClipboardPaste, Link2, LoaderCircle } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState, useSyncExternalStore, useTransition } from "react";
 
 import { importRecipeFromUrl } from "@/app/(app)/recettes/import/actions";
 import { RecipeForm } from "@/components/recipe-form/recipe-form";
 import { ModelPicker } from "@/components/recipe-import/model-picker";
+import { saveImportDirectly } from "@/components/recipe-import/save-import";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -61,6 +63,8 @@ function UrlImportFlow(props: Props) {
   }>();
   const [draft, setDraft] = useState<Draft>();
   const [pending, startTransition] = useTransition();
+  const [saving, setSaving] = useState(false);
+  const router = useRouter();
   // « Coller » n'existe que si le navigateur permet de lire le presse-papiers. Le serveur ne
   // le sait pas : useSyncExternalStore donne « false » au rendu serveur, la vraie valeur ensuite.
   const canPaste = useSyncExternalStore(
@@ -73,14 +77,29 @@ function UrlImportFlow(props: Props) {
     setError(undefined);
     startTransition(async () => {
       const result = await importRecipeFromUrl({ url, importId, model });
+      // Lien déjà importé : on ouvre la recette existante plutôt qu'un doublon
+      if (result.status === "exists") return router.push(`/recettes/${result.recipeId}?deja=1`);
       if (result.status === "done") {
+        const photoFile = result.draft.photo ? photoToFile(result.draft.photo) : null;
+        // Rien à vérifier : la recette est enregistrée et sa fiche s'ouvre (décision 060)
+        setSaving(true);
+        const recipeUrl = await saveImportDirectly({
+          draft: result.draft,
+          recipeId: props.recipeId,
+          userId: props.userId,
+          defaultServings: props.defaultServings,
+          photoFile,
+        });
+        if (recipeUrl) return router.push(recipeUrl);
+        setSaving(false);
+        // Sinon : le brouillon, avec seulement les points à regarder
         setDraft({
           mode: "import",
           ...draftToForm(result.draft, props.defaultServings),
           importId: result.draft.importId,
           pageUrls: [],
           sourceUrl: result.draft.sourceUrl,
-          photoFile: result.draft.photo ? photoToFile(result.draft.photo) : null,
+          photoFile,
         });
         return;
       }
@@ -183,7 +202,11 @@ function UrlImportFlow(props: Props) {
 
       <Button type="submit" size="lg" disabled={pending || !url.trim()}>
         {pending ? <LoaderCircle className="animate-spin" /> : <Link2 />}
-        {pending ? "Lecture de la page…" : "Lire la recette"}
+        {saving
+          ? "Enregistrement de la recette…"
+          : pending
+            ? "Lecture de la page…"
+            : "Lire la recette"}
       </Button>
       {pending && (
         <p className="text-muted-foreground text-center text-sm" aria-live="polite">

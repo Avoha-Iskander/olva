@@ -182,3 +182,24 @@ export function learnedAliases(
   }
   return [...learned].map(([alias, itemId]) => ({ alias, itemId }));
 }
+
+/**
+ * Décision 060 : une recette importée peut-elle être enregistrée directement, sans
+ * passer par le brouillon ? Oui si rien n'est à vérifier :
+ * - titre et nombre de personnes lus avec certitude ;
+ * - au moins un ingrédient et une étape ;
+ * - aucune lecture douteuse, et chaque ingrédient a un article (ou un nouvel article
+ *   entièrement pré-rempli par l'IA, que l'app crée elle-même).
+ * Les articles « proposés » n'empêchent rien : ils restent signalés sur la fiche.
+ */
+export function canSaveDirectly(draft: ImportDraft): boolean {
+  if (draft.titleUncertain || !draft.title.trim()) return false;
+  if (draft.servingsUncertain || draft.servings === null) return false;
+  if (!draft.ingredients.length || !draft.steps.length) return false;
+  return draft.ingredients.every((i) => !i.uncertain && (i.itemId !== null || i.newItem !== null));
+}
+
+/** Articles « proposés » par l'IA dans un brouillon : signalés sur la fiche après l'import. */
+export function proposedItemIds(draft: ImportDraft): string[] {
+  return [...new Set(draft.ingredients.flatMap((i) => (i.proposed && i.itemId ? [i.itemId] : [])))];
+}
