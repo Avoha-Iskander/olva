@@ -1,3 +1,4 @@
+import { sortByTitle } from "@/lib/recipe-sort";
 import { createClient } from "@/lib/supabase/server";
 
 /** Durée de validité des liens vers les photos privées (1 heure). */
@@ -33,7 +34,8 @@ async function currentUserId(supabase: Awaited<ReturnType<typeof createClient>>)
 }
 
 /**
- * Mes recettes, filtrées par recherche (titre + ingrédients) et par collection.
+ * Mes recettes, par ordre alphabétique, filtrées par recherche (titre + ingrédients) et
+ * par collection.
  * La recherche est faite par la fonction SQL search_my_recipes (insensible aux accents).
  */
 export async function listMyRecipes({
@@ -74,7 +76,8 @@ export async function listMyRecipes({
     : [];
   const urlByPath = new Map((signed ?? []).map((s) => [s.path, s.signedUrl]));
 
-  return recipes.map((r) => ({
+  // Par ordre alphabétique (décision 063), aussi pendant une recherche
+  return sortByTitle(recipes).map((r) => ({
     id: r.id,
     title: r.title,
     servings: r.servings,

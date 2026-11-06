@@ -31,7 +31,7 @@ async function Picker() {
 
   return (
     <RecipePicker
-      recipes={[...recipes].sort((a, b) => a.title.localeCompare(b.title, "fr"))}
+      recipes={recipes} // déjà par ordre alphabétique (listMyRecipes)
       collections={collections}
       initialListId={null}
       initialSelected={[]}
