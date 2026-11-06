@@ -66,11 +66,12 @@ test("créer, afficher puis supprimer une recette", async ({ page }) => {
     await expect(page.getByLabel("Titre")).toHaveValue("");
   });
 
-  await test.step("recoller le même lien : la recette existante s'ouvre, sans doublon", async () => {
-    // Décision 060 : aucun appel à Claude, on reconnaît le lien avant de lire la page
-    await page.goto("/recettes/lien");
-    await page.getByLabel("Lien de la recette").fill(link);
-    await page.getByRole("button", { name: "Lire la recette" }).click();
+  await test.step("partager le même lien vers Olva : la recette existante s'ouvre", async () => {
+    // Décision 065 : comme le menu « Partager » ou le Raccourci iPhone, avec du texte
+    // autour du lien et un paramètre de suivi ; la lecture démarre seule.
+    // Décision 060 : lien déjà importé, reconnu avant tout appel à Claude
+    const shared = `Regarde cette recette ${link}?utm_source=partage !`;
+    await page.goto(`/recettes/partage?text=${encodeURIComponent(shared)}`);
     await expect(page).toHaveURL(new RegExp(`${recipeUrl}\\?deja=1$`));
     await expect(page.getByText("Vous aviez déjà importé cette recette")).toBeVisible();
   });

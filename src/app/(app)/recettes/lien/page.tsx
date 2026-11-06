@@ -6,6 +6,7 @@ import { selectableModels } from "@/lib/ai/models";
 import { getCatalogue } from "@/lib/catalogue";
 import { parseListReturn } from "@/lib/list-return";
 import { getCurrentProfile } from "@/lib/profile";
+import { readSharedInput } from "@/lib/url-import/shared-link";
 import { listMyCollections } from "@/lib/recipes";
 
 export const metadata = { title: "Recette depuis un lien — Olva" };
@@ -39,6 +40,8 @@ async function UrlImportScreen({
     <UrlImport
       // Venu de l'étape 1 d'une liste : on y reviendra, recette cochée (décision 064)
       returnToList={parseListReturn(query.liste)}
+      // Partage vers Olva (décision 065) : lien ou texte reçu, lu dès l'ouverture
+      shared={readSharedInput({ url: query.url, text: query.texte })}
       userId={profile.id}
       defaultServings={profile.default_servings}
       items={catalogue.items}

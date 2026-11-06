@@ -69,7 +69,7 @@ export async function extractRecipeFromImages(
  */
 export async function extractRecipeFromText(
   pageText: string,
-  pageUrl: string,
+  pageUrl: string | null, // null : texte collé par l'utilisateur (décision 065)
   model: AiModel,
   catalogue: PromptCatalogue,
 ): Promise<ExtractionResult> {
@@ -79,7 +79,7 @@ export async function extractRecipeFromText(
     [
       {
         type: "text",
-        text: `Contenu de la page web ${pageUrl} :\n<page>\n${safeText}\n</page>\n\nLis la recette de cette page et réponds en appelant l'outil extract_recipe.`,
+        text: `${pageUrl ? `Contenu de la page web ${pageUrl}` : "Texte collé par l'utilisateur (légende d'une publication, note…)"} :\n<page>\n${safeText}\n</page>\n\nLis la recette de cette page et réponds en appelant l'outil extract_recipe.`,
       },
     ],
     model,

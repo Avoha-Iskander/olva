@@ -20,6 +20,7 @@ import { loadMyCatalogue } from "@/lib/my-catalogue";
 import { createClient } from "@/lib/supabase/server";
 import { hasReadableContent, pageToPromptText, readRecipePage } from "@/lib/url-import/recipe-page";
 import { parsePublicUrl, safeFetch } from "@/lib/url-import/safe-fetch";
+import { cleanSharedUrl, isInstagram } from "@/lib/url-import/shared-link";
 
 const BUCKET = "recipe-photos";
 
@@ -70,7 +71,7 @@ type Known = Awaited<ReturnType<typeof loadCatalogue>>;
 async function startImport(
   supabase: Supabase,
   existingId: string | undefined,
-  source: { photo_paths: string[] } | { source_url: string },
+  source: { photo_paths: string[] } | { source_url: string } | { pasted_text: true },
   model: AiModel,
 ): Promise<string | null> {
   if (existingId) {
@@ -299,7 +300,12 @@ export async function importRecipeFromUrl(
   const { supabase, userId, model } = await prepare(parsed.data.model);
   if (!userId) return failed(null, "Connexion requise.", false);
 
-  const sourceUrl = url.toString();
+  // Sans paramètres de suivi (?igsh=…, utm_…) : un même lien partagé deux fois est reconnu
+  const sourceUrl = cleanSharedUrl(url.toString()) ?? url.toString();
+  // Instagram ne laisse souvent pas lire ses publications : on propose alors le texte
+  const instagramHint = isInstagram(sourceUrl)
+    ? " Pour Instagram : copiez la légende de la publication, puis utilisez « Coller le texte »."
+    : "";
 
   // Déjà importé (même adresse) : pas de doublon, ni de lecture payante inutile (décision 060)
   const { data: existing } = await supabase
@@ -330,7 +336,9 @@ export async function importRecipeFromUrl(
     const retryable = fetched.reason === "timeout" || fetched.reason === "network";
     return failed(
       importId,
-      `${FETCH_MESSAGES[fetched.reason]} ${retryable ? "Réessayez, ou essayez" : "Essayez"} l'import par photo.`,
+      instagramHint
+        ? `${FETCH_MESSAGES[fetched.reason]}${instagramHint}`
+        : `${FETCH_MESSAGES[fetched.reason]} ${retryable ? "Réessayez, ou essayez" : "Essayez"} l'import par photo.`,
       retryable,
     );
   }
@@ -349,7 +357,9 @@ export async function importRecipeFromUrl(
     await markFailed(supabase, importId, "Page sans contenu lisible");
     return failed(
       importId,
-      "Cette page ne contient pas de texte lisible (site qui demande une vérification, page vide…). Essayez l'import par photo.",
+      instagramHint
+        ? `Instagram ne laisse pas lire cette publication.${instagramHint}`
+        : "Cette page ne contient pas de texte lisible (site qui demande une vérification, page vide…). Essayez l'import par photo.",
       false,
     );
   }
@@ -369,7 +379,51 @@ export async function importRecipeFromUrl(
     {
       failed: "La lecture de la page n'a pas abouti. Réessayez, ou essayez l'import par photo.",
       unavailable: "L'import n'est pas disponible pour le moment. Essayez plus tard.",
-      notRecipe: "Cette page ne semble pas contenir de recette",
+      // (suivi de « : <raison> » : pas de point final ici)
+      notRecipe: instagramHint
+        ? "La recette n'apparaît pas dans ce qu'Instagram laisse lire (copiez la légende de la publication, puis « Coller le texte »)"
+        : "Cette page ne semble pas contenir de recette",
+    },
+    known,
+  );
+}
+
+const textInputSchema = z.object({
+  text: z.string().trim().min(40).max(20_000),
+  importId: z.uuid().optional(),
+  model: z.string().max(60).optional(),
+});
+
+/**
+ * Import d'un texte collé (décision 065) : la légende d'une publication Instagram, une
+ * note, un message… Même lecture qu'une page web, sans lien ni photo du plat.
+ */
+export async function importRecipeFromText(
+  input: z.infer<typeof textInputSchema>,
+): Promise<ImportResult> {
+  const parsed = textInputSchema.safeParse(input);
+  if (!parsed.success) {
+    return failed(null, "Collez le texte complet de la recette (ingrédients et étapes).", false);
+  }
+
+  const { supabase, userId, model } = await prepare(parsed.data.model);
+  if (!userId) return failed(null, "Connexion requise.", false);
+
+  const importId = await startImport(supabase, parsed.data.importId, { pasted_text: true }, model);
+  if (!importId) return failed(null, "L'import n'a pas pu démarrer.", true);
+
+  const known = await loadCatalogue(supabase);
+  const result = await extractRecipeFromText(parsed.data.text, null, model, known.prompt);
+
+  return finishImport(
+    supabase,
+    importId,
+    result,
+    { photoPaths: [], sourceUrl: null, photo: null },
+    {
+      failed: "La lecture du texte n'a pas abouti. Réessayez.",
+      unavailable: "L'import n'est pas disponible pour le moment. Essayez plus tard.",
+      notRecipe: "Ce texte ne semble pas contenir de recette",
     },
     known,
   );
