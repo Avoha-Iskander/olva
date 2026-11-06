@@ -36,10 +36,14 @@ import {
   type RecipeFormState,
   unitForChosenItem,
 } from "@/lib/recipe-form";
+import { urlAfterCreate } from "@/components/recipes/after-create";
+import type { ListReturn } from "@/lib/list-return";
 import type { RecipeForEdit } from "@/lib/recipes";
 
 type RecipeFormProps = {
   recipeId: string; // déjà connu, même pour une nouvelle recette (dossier des photos)
+  // Créée depuis l'étape 1 d'une liste : on y revient, recette cochée (décision 064)
+  returnToList?: ListReturn | null;
   userId: string;
   defaultServings: number;
   items: CatalogueItem[];
@@ -193,7 +197,7 @@ export function RecipeForm(props: RecipeFormProps) {
           if (uploaded.length) await discardPhotos(uploaded);
           return setMessage(saved.message);
         }
-        router.push(`/recettes/${saved.id}`);
+        router.push(await urlAfterCreate(saved.id, props.returnToList ?? null));
       } catch {
         setMessage("L'envoi de la photo a échoué. Vérifiez votre connexion et réessayez.");
       }

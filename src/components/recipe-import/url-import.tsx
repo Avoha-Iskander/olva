@@ -14,11 +14,14 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useFreshSession } from "@/hooks/use-fresh-session";
+import { urlAfterCreate } from "@/components/recipes/after-create";
+import type { ListReturn } from "@/lib/list-return";
 import type { Aisle, CatalogueItem } from "@/lib/catalogue";
 import { draftToForm, type ImportDraft } from "@/lib/import-draft";
 
 type Props = {
   recipeId: string;
+  returnToList: ListReturn | null; // venu de l'étape 1 d'une liste (décision 064)
   userId: string;
   defaultServings: number;
   items: CatalogueItem[];
@@ -78,7 +81,10 @@ function UrlImportFlow(props: Props) {
     startTransition(async () => {
       const result = await importRecipeFromUrl({ url, importId, model });
       // Lien déjà importé : on ouvre la recette existante plutôt qu'un doublon
-      if (result.status === "exists") return router.push(`/recettes/${result.recipeId}?deja=1`);
+      // (venu d'une liste : c'est elle qui est cochée dans la liste)
+      if (result.status === "exists") {
+        return router.push(await urlAfterCreate(result.recipeId, props.returnToList, "?deja=1"));
+      }
       if (result.status === "done") {
         const photoFile = result.draft.photo ? photoToFile(result.draft.photo) : null;
         // Rien à vérifier : la recette est enregistrée et sa fiche s'ouvre (décision 060)
@@ -89,6 +95,7 @@ function UrlImportFlow(props: Props) {
           userId: props.userId,
           defaultServings: props.defaultServings,
           photoFile,
+          returnToList: props.returnToList,
         });
         if (recipeUrl) return router.push(recipeUrl);
         setSaving(false);
@@ -131,6 +138,7 @@ function UrlImportFlow(props: Props) {
         collections={props.collections}
         initial={null}
         draft={draft}
+        returnToList={props.returnToList}
       />
     );
   }

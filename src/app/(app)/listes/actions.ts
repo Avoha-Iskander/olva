@@ -6,8 +6,11 @@ import { z } from "zod";
 
 import { undecidedCarryover } from "@/lib/carryover";
 
+import { parseId, parseListReturn } from "@/lib/list-return";
 import { consolidateLines, findMergeTarget, type LineOrigin } from "@/lib/list-lines";
+import { getList } from "@/lib/lists";
 import { currentUserId, loadConversions } from "@/lib/my-catalogue";
+import { getCurrentProfile } from "@/lib/profile";
 import { createClient } from "@/lib/supabase/server";
 import { roundQuantity } from "@/lib/units";
 
@@ -49,6 +52,32 @@ export async function saveListRecipes(
   // Next.js à recharger cette page (petit « clignotement » à chaque choix de recette).
   // Les pages Revue et Mes listes relisent de toute façon la base à chaque visite.
   return { ok: true, listId: id };
+}
+
+/**
+ * « Créer une recette » depuis l'étape 1 (décision 064) : une fois la recette enregistrée,
+ * elle est ajoutée (cochée) à la liste d'origine, pour le nombre de personnes par défaut.
+ * « nouvelle » : la liste n'existait pas encore, elle est créée avec cette recette.
+ * Une recette déjà dans la liste n'est pas ajoutée deux fois.
+ */
+export async function addRecipeToList(
+  list: string,
+  recipeId: string,
+): Promise<{ ok: true; listId: string } | { ok: false }> {
+  const target = parseListReturn(list);
+  const recipe = parseId(recipeId);
+  if (!target || !recipe) return { ok: false };
+
+  const profile = await getCurrentProfile();
+  if (!profile) return { ok: false };
+  const added = { recipeId: recipe, servings: profile.default_servings };
+
+  if (target === "nouvelle") return saveListRecipes(null, [added]);
+
+  const current = await getList(target);
+  if (!current || current.status !== "draft") return { ok: false }; // liste prête : fermée
+  if (current.recipes.some((r) => r.recipeId === recipe)) return { ok: true, listId: target };
+  return saveListRecipes(target, [...current.recipes, added]);
 }
 
 const lineSchema = z.object({
