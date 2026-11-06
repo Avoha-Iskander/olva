@@ -123,6 +123,36 @@ describe("readRecipePage", () => {
   });
 });
 
+describe("description de partage (Instagram)", () => {
+  const caption =
+    "1 200 J'aime - chef sur Instagram : &quot;Salade grecque 🥗 Pour 4 : 4 tomates, 1 concombre, " +
+    "200 g de feta, 1 oignon rouge, olives noires, huile d'olive. Couper, mélanger, servir frais. " +
+    "Origan à volonté !&quot;";
+  const html =
+    `<head><meta property="og:description" content="${caption}"><title>Instagram</title></head>` +
+    "<body>Connectez-vous</body>";
+
+  it("lit la légende, entités décodées", () => {
+    const page = readRecipePage(html, "https://www.instagram.com/p/AbC/");
+    expect(page.description).toContain('"Salade grecque');
+    expect(page.description).toContain("200 g de feta");
+  });
+
+  it("une page presque vide mais avec une longue légende est lisible, et la légende est lue", () => {
+    const page = readRecipePage(html, "https://www.instagram.com/p/AbC/");
+    expect(hasReadableContent(page)).toBe(true);
+    expect(pageToPromptText(page)).toContain("Description de la page :");
+  });
+
+  it('accepte aussi la balise dans l\'autre ordre, ou name="description"', () => {
+    const page = readRecipePage(
+      '<meta content="Tarte facile" name="description"><title>T</title>',
+      "https://exemple.fr/t",
+    );
+    expect(page.description).toBe("Tarte facile");
+  });
+});
+
 describe("pageToPromptText et hasReadableContent", () => {
   it("envoie la fiche bien rangée quand elle existe", () => {
     const result = readRecipePage(

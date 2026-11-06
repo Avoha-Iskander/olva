@@ -18,6 +18,13 @@ export default function manifest(): MetadataRoute.Manifest {
     orientation: "portrait",
     background_color: "#ffffff",
     theme_color: "#2f6fd6",
+    // Android : Olva apparaît dans le menu « Partager » (navigateur, Instagram…) une fois
+    // installée ; le lien partagé arrive sur /recettes/partage (décision 065)
+    share_target: {
+      action: "/recettes/partage",
+      method: "GET",
+      params: { title: "title", text: "text", url: "url" },
+    },
     icons: [
       { src: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
       { src: "/icons/icon-512.png", sizes: "512x512", type: "image/png" },

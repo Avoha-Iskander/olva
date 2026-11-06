@@ -22,7 +22,28 @@ export type RecipePage = {
   title: string | null; // balise <title>
   imageUrl: string | null; // fiche schema.org, sinon image de partage (og:image)
   text: string; // texte visible, utilisé si la fiche manque
+  // Description de partage (og:description) : chez Instagram, la légende de la publication
+  description: string | null;
 };
+
+/** Contenu d'une balise <meta> (property="og:…" ou name="…"), dans un ordre ou dans l'autre. */
+function metaContent(html: string, key: string): string | null {
+  const match =
+    html.match(
+      new RegExp(
+        `<meta[^>]+(?:property|name)\\s*=\\s*["']${key}["'][^>]*content\\s*=\\s*"([^"]*)"`,
+        "i",
+      ),
+    ) ??
+    html.match(
+      new RegExp(
+        `<meta[^>]+content\\s*=\\s*"([^"]*)"[^>]*(?:property|name)\\s*=\\s*["']${key}["']`,
+        "i",
+      ),
+    );
+  const text = match ? decodeEntities(match[1]).trim() : "";
+  return text || null;
+}
 
 const MAX_TEXT = 20_000; // caractères de texte envoyés à l'IA, au plus
 
@@ -180,12 +201,14 @@ export function readRecipePage(html: string, pageUrl: string): RecipePage {
     title: title ? clean(title[1]) || null : null,
     imageUrl,
     text: visibleText(html),
+    description: metaContent(html, "og:description") ?? metaContent(html, "description"),
   };
 }
 
 /** Vrai s'il y a de quoi lire une recette (fiche, ou assez de texte). */
 export function hasReadableContent(page: RecipePage): boolean {
-  return Boolean(page.recipe?.ingredients.length) || page.text.length >= 200;
+  const length = page.text.length + (page.description?.length ?? 0);
+  return Boolean(page.recipe?.ingredients.length) || length >= 200;
 }
 
 /**
@@ -212,7 +235,11 @@ export function pageToPromptText(page: RecipePage): string {
           ]),
     ].join("\n");
   }
-  return [`Titre de la page : ${page.title ?? "(absent)"}`, "Texte de la page :", page.text].join(
-    "\n",
-  );
+  return [
+    `Titre de la page : ${page.title ?? "(absent)"}`,
+    // Publication de réseau social : la recette est souvent dans cette description
+    ...(page.description ? ["Description de la page :", page.description, ""] : []),
+    "Texte de la page :",
+    page.text,
+  ].join("\n");
 }

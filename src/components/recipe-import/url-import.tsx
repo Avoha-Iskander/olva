@@ -1,27 +1,37 @@
 "use client";
 
-import { Camera, ClipboardPaste, Link2, LoaderCircle } from "lucide-react";
+import { Camera, ClipboardPaste, Link2, LoaderCircle, ScanText } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState, useSyncExternalStore, useTransition } from "react";
+import {
+  useEffect,
+  useEffectEvent,
+  useRef,
+  useState,
+  useSyncExternalStore,
+  useTransition,
+} from "react";
 
-import { importRecipeFromUrl } from "@/app/(app)/recettes/import/actions";
+import { importRecipeFromText, importRecipeFromUrl } from "@/app/(app)/recettes/import/actions";
 import { RecipeForm } from "@/components/recipe-form/recipe-form";
 import { ModelPicker } from "@/components/recipe-import/model-picker";
 import { saveImportDirectly } from "@/components/recipe-import/save-import";
+import { urlAfterCreate } from "@/components/recipes/after-create";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { useFreshSession } from "@/hooks/use-fresh-session";
-import { urlAfterCreate } from "@/components/recipes/after-create";
-import type { ListReturn } from "@/lib/list-return";
 import type { Aisle, CatalogueItem } from "@/lib/catalogue";
 import { draftToForm, type ImportDraft } from "@/lib/import-draft";
+import type { ListReturn } from "@/lib/list-return";
 
 type Props = {
   recipeId: string;
   returnToList: ListReturn | null; // venu de l'étape 1 d'une liste (décision 064)
+  /** Partage vers Olva (décision 065) : lien ou texte reçu, lu dès l'ouverture. */
+  shared: { url: string } | { text: string } | null;
   userId: string;
   defaultServings: number;
   items: CatalogueItem[];
@@ -34,6 +44,9 @@ type Props = {
 const noSubscription = () => () => {};
 
 type Draft = NonNullable<React.ComponentProps<typeof RecipeForm>["draft"]>;
+type Result =
+  | Awaited<ReturnType<typeof importRecipeFromUrl>>
+  | Awaited<ReturnType<typeof importRecipeFromText>>;
 
 /** Photo du site (base64 renvoyé par le serveur) → fichier, comme une photo choisie soi-même. */
 function photoToFile(photo: NonNullable<ImportDraft["photo"]>): File {
@@ -43,11 +56,6 @@ function photoToFile(photo: NonNullable<ImportDraft["photo"]>): File {
 }
 
 /**
- * Import d'une recette depuis un lien (US-REC-07) : je colle l'adresse d'une page,
- * le serveur la lit, Claude en tire la recette, et le même brouillon surligné que pour
- * l'import photo s'ouvre, avec la photo du plat et le lien d'origine.
- */
-/**
  * Point d'entrée : une session neuve (formulaire vierge, nouvel identifiant de recette)
  * à chaque retour sur l'écran (cf. useFreshSession).
  */
@@ -56,8 +64,20 @@ export function UrlImport(props: Omit<Props, "recipeId">) {
   return <UrlImportFlow key={key} {...props} recipeId={recipeId} />;
 }
 
+/**
+ * Import d'une recette depuis un lien (US-REC-07) : je colle l'adresse d'une page, le
+ * serveur la lit, Claude en tire la recette ; enregistrement direct si rien n'est à
+ * vérifier, sinon le brouillon surligné.
+ * Deux entrées de plus (décision 065) :
+ * - « Coller le texte » : la légende d'une publication Instagram, une note… ;
+ * - le partage vers Olva (menu « Partager », Raccourci iPhone) : le lien ou le texte
+ *   reçu est lu dès l'ouverture, sans rien toucher.
+ */
 function UrlImportFlow(props: Props) {
-  const [url, setUrl] = useState("");
+  const sharedText = props.shared && "text" in props.shared ? props.shared.text : "";
+  const [mode, setMode] = useState<"link" | "text">(sharedText ? "text" : "link");
+  const [url, setUrl] = useState(props.shared && "url" in props.shared ? props.shared.url : "");
+  const [text, setText] = useState(sharedText);
   const [model, setModel] = useState(props.models[0]?.id);
   const [error, setError] = useState<{
     message: string;
@@ -76,55 +96,81 @@ function UrlImportFlow(props: Props) {
     () => false,
   );
 
-  function read(importId?: string) {
-    setError(undefined);
-    startTransition(async () => {
-      const result = await importRecipeFromUrl({ url, importId, model });
-      // Lien déjà importé : on ouvre la recette existante plutôt qu'un doublon
-      // (venu d'une liste : c'est elle qui est cochée dans la liste)
-      if (result.status === "exists") {
-        return router.push(await urlAfterCreate(result.recipeId, props.returnToList, "?deja=1"));
-      }
-      if (result.status === "done") {
-        const photoFile = result.draft.photo ? photoToFile(result.draft.photo) : null;
-        // Rien à vérifier : la recette est enregistrée et sa fiche s'ouvre (décision 060)
-        setSaving(true);
-        const recipeUrl = await saveImportDirectly({
-          draft: result.draft,
-          recipeId: props.recipeId,
-          userId: props.userId,
-          defaultServings: props.defaultServings,
-          photoFile,
-          returnToList: props.returnToList,
-        });
-        if (recipeUrl) return router.push(recipeUrl);
-        setSaving(false);
-        // Sinon : le brouillon, avec seulement les points à regarder
-        setDraft({
-          mode: "import",
-          ...draftToForm(result.draft, props.defaultServings),
-          importId: result.draft.importId,
-          pageUrls: [],
-          sourceUrl: result.draft.sourceUrl,
-          photoFile,
-        });
-        return;
-      }
-      setError({
-        message: result.message,
-        importId: result.importId,
-        retry: result.status === "failed" && result.retryable,
+  /** Fin commune (lien ou texte) : recette existante, enregistrement direct, ou brouillon. */
+  async function handle(result: Result) {
+    // Lien déjà importé : on ouvre la recette existante plutôt qu'un doublon
+    // (venu d'une liste : c'est elle qui est cochée dans la liste)
+    if (result.status === "exists") {
+      return router.push(await urlAfterCreate(result.recipeId, props.returnToList, "?deja=1"));
+    }
+    if (result.status === "done") {
+      const photoFile = result.draft.photo ? photoToFile(result.draft.photo) : null;
+      // Rien à vérifier : la recette est enregistrée et sa fiche s'ouvre (décision 060)
+      setSaving(true);
+      const recipeUrl = await saveImportDirectly({
+        draft: result.draft,
+        recipeId: props.recipeId,
+        userId: props.userId,
+        defaultServings: props.defaultServings,
+        photoFile,
+        returnToList: props.returnToList,
       });
+      if (recipeUrl) return router.push(recipeUrl);
+      setSaving(false);
+      // Sinon : le brouillon, avec seulement les points à regarder
+      setDraft({
+        mode: "import",
+        ...draftToForm(result.draft, props.defaultServings),
+        importId: result.draft.importId,
+        pageUrls: [],
+        sourceUrl: result.draft.sourceUrl,
+        photoFile,
+      });
+      return;
+    }
+    setError({
+      message: result.message,
+      importId: result.importId,
+      retry: result.status === "failed" && result.retryable,
     });
   }
 
+  function read(importId?: string) {
+    setError(undefined);
+    startTransition(async () => {
+      await handle(
+        mode === "text"
+          ? await importRecipeFromText({ text, importId, model })
+          : await importRecipeFromUrl({ url, importId, model }),
+      );
+    });
+  }
+
+  // Partage vers Olva : la lecture démarre seule, une seule fois, à l'ouverture.
+  // useEffectEvent : la fonction lit toujours les valeurs à jour, sans relancer l'effet.
+  const started = useRef(false);
+  const readShared = useEffectEvent(() => read());
+  useEffect(() => {
+    if (props.shared && !started.current) {
+      started.current = true;
+      readShared();
+    }
+  }, [props.shared]);
+
   async function paste() {
     try {
-      const text = await navigator.clipboard.readText();
-      if (text) setUrl(text.trim());
+      const pasted = await navigator.clipboard.readText();
+      if (!pasted) return;
+      if (mode === "text") setText(pasted);
+      else setUrl(pasted.trim());
     } catch {
       // Accès refusé par le navigateur : on colle à la main, rien de grave
     }
+  }
+
+  function switchMode(next: "link" | "text") {
+    setMode(next);
+    setError(undefined);
   }
 
   if (draft) {
@@ -143,43 +189,90 @@ function UrlImportFlow(props: Props) {
     );
   }
 
+  const ready = mode === "text" ? text.trim().length >= 40 : Boolean(url.trim());
+
   return (
     <form
       className="grid gap-4"
       onSubmit={(e) => {
         e.preventDefault();
-        if (url.trim()) read();
+        if (ready) read();
       }}
     >
-      <p className="text-muted-foreground text-sm">
-        Collez le lien d&apos;une page de recette (Marmiton, 750g, un blog…). La recette sera lue
-        puis affichée en brouillon : rien n&apos;est enregistré sans votre validation.
-      </p>
+      {mode === "link" ? (
+        <>
+          <p className="text-muted-foreground text-sm">
+            Collez le lien d&apos;une page de recette (Marmiton, 750g, un blog, Instagram…). Si rien
+            n&apos;est à vérifier, la recette est enregistrée directement.
+          </p>
+          <div className="grid gap-2">
+            <Label htmlFor="recipe-url">Lien de la recette</Label>
+            <div className="flex gap-2">
+              <Input
+                id="recipe-url"
+                type="url"
+                inputMode="url"
+                autoComplete="off"
+                placeholder="https://…"
+                value={url}
+                disabled={pending}
+                onChange={(e) => {
+                  setUrl(e.target.value);
+                  setError(undefined);
+                }}
+              />
+              {canPaste && (
+                <Button type="button" variant="outline" disabled={pending} onClick={paste}>
+                  <ClipboardPaste />
+                  <span className="sr-only sm:not-sr-only">Coller</span>
+                </Button>
+              )}
+            </div>
+          </div>
+        </>
+      ) : (
+        <>
+          <p className="text-muted-foreground text-sm">
+            Collez le texte de la recette : la légende d&apos;une publication Instagram, une note,
+            un message… Il doit contenir les ingrédients et les étapes.
+          </p>
+          <div className="grid gap-2">
+            <Label htmlFor="recipe-text">Texte de la recette</Label>
+            <Textarea
+              id="recipe-text"
+              rows={8}
+              value={text}
+              disabled={pending}
+              onChange={(e) => {
+                setText(e.target.value);
+                setError(undefined);
+              }}
+            />
+            {canPaste && (
+              <Button
+                type="button"
+                variant="outline"
+                className="justify-self-start"
+                disabled={pending}
+                onClick={paste}
+              >
+                <ClipboardPaste />
+                Coller
+              </Button>
+            )}
+          </div>
+        </>
+      )}
 
-      <div className="grid gap-2">
-        <Label htmlFor="recipe-url">Lien de la recette</Label>
-        <div className="flex gap-2">
-          <Input
-            id="recipe-url"
-            type="url"
-            inputMode="url"
-            autoComplete="off"
-            placeholder="https://…"
-            value={url}
-            disabled={pending}
-            onChange={(e) => {
-              setUrl(e.target.value);
-              setError(undefined);
-            }}
-          />
-          {canPaste && (
-            <Button type="button" variant="outline" disabled={pending} onClick={paste}>
-              <ClipboardPaste />
-              <span className="sr-only sm:not-sr-only">Coller</span>
-            </Button>
-          )}
-        </div>
-      </div>
+      <Button
+        type="button"
+        variant="link"
+        className="justify-self-start px-0"
+        disabled={pending}
+        onClick={() => switchMode(mode === "link" ? "text" : "link")}
+      >
+        {mode === "link" ? "Pas de lien ? Coller le texte" : "J'ai un lien"}
+      </Button>
 
       <ModelPicker models={props.models} value={model} disabled={pending} onChange={setModel} />
 
@@ -197,6 +290,12 @@ function UrlImportFlow(props: Props) {
                   Réessayer
                 </Button>
               )}
+              {mode === "link" && (
+                <Button type="button" variant="outline" onClick={() => switchMode("text")}>
+                  <ScanText />
+                  Coller le texte
+                </Button>
+              )}
               <Button asChild variant="outline">
                 <Link href="/recettes/import">
                   <Camera />
@@ -208,12 +307,14 @@ function UrlImportFlow(props: Props) {
         </Card>
       )}
 
-      <Button type="submit" size="lg" disabled={pending || !url.trim()}>
+      <Button type="submit" size="lg" disabled={pending || !ready}>
         {pending ? <LoaderCircle className="animate-spin" /> : <Link2 />}
         {saving
           ? "Enregistrement de la recette…"
           : pending
-            ? "Lecture de la page…"
+            ? mode === "text"
+              ? "Lecture du texte…"
+              : "Lecture de la page…"
             : "Lire la recette"}
       </Button>
       {pending && (
