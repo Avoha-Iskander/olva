@@ -2,9 +2,10 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
-import { Check, ChefHat, ListChecks, Plus, Search, Share2, X } from "lucide-react";
+import { Check, CheckCircle2, ChefHat, ListChecks, Plus, Search, Share2, X } from "lucide-react";
 
 import { saveListRecipes } from "@/app/(app)/listes/actions";
+import { AddRecipeMenu } from "@/components/recipes/add-recipe-menu";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ServingsStepper } from "@/components/ui/servings-stepper";
@@ -24,12 +25,15 @@ export function RecipePicker({
   initialListId,
   initialSelected,
   defaultServings,
+  addedTitle = null,
 }: {
   recipes: RecipeSummary[];
   collections: { id: string; name: string }[]; // mes collections (catégories)
   initialListId: string | null;
   initialSelected: DraftRecipe[];
   defaultServings: number;
+  /** Recette tout juste créée depuis cette étape, déjà cochée (décision 064). */
+  addedTitle?: string | null;
 }) {
   const router = useRouter();
   const [selected, setSelected] = useState(initialSelected);
@@ -120,6 +124,17 @@ export function RecipePicker({
     update(selected.map((s) => (s.recipeId === recipeId ? { ...s, servings } : s)));
   }
 
+  /**
+   * « Créer une recette » (décision 064) : avant de partir, la sélection en cours est
+   * enregistrée (la liste est créée si besoin) ; on renvoie la liste à laquelle revenir.
+   */
+  async function beforeCreate(): Promise<string> {
+    if (timer.current) clearTimeout(timer.current);
+    if (dirty.current || (!listIdRef.current && latest.current.length)) await save();
+    else await queue.current;
+    return listIdRef.current ?? "nouvelle";
+  }
+
   function goToReview() {
     if (timer.current) clearTimeout(timer.current);
     startTransition(async () => {
@@ -131,6 +146,13 @@ export function RecipePicker({
 
   return (
     <div className="grid gap-6">
+      {addedTitle && (
+        <p role="status" className="bg-muted flex items-start gap-2 rounded-lg p-3 text-sm">
+          <CheckCircle2 className="text-primary mt-0.5 size-4 shrink-0" aria-hidden="true" />
+          Recette « {addedTitle} » créée et ajoutée à la liste.
+        </p>
+      )}
+
       {selected.length > 0 && (
         <section className="grid gap-2" aria-labelledby="selected-title">
           <h2 id="selected-title" className="font-medium">
@@ -174,9 +196,13 @@ export function RecipePicker({
       )}
 
       <section className="grid gap-3" aria-labelledby="add-title">
-        <h2 id="add-title" className="font-medium">
-          {selected.length ? "Ajouter d'autres recettes" : "Choisissez vos recettes"}
-        </h2>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 id="add-title" className="font-medium">
+            {selected.length ? "Ajouter d'autres recettes" : "Choisissez vos recettes"}
+          </h2>
+          {/* Recette absente : on la crée, puis on revient ici, recette cochée */}
+          <AddRecipeMenu label="Créer une recette" variant="outline" beforeLeave={beforeCreate} />
+        </div>
         <div className="relative">
           <Search
             className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2"
