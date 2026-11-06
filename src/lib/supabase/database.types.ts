@@ -419,6 +419,7 @@ export type Database = {
           id: string
           model: string | null
           owner_id: string
+          pasted_text: boolean
           photo_paths: string[] | null
           result: Json | null
           source_url: string | null
@@ -431,6 +432,7 @@ export type Database = {
           id?: string
           model?: string | null
           owner_id?: string
+          pasted_text?: boolean
           photo_paths?: string[] | null
           result?: Json | null
           source_url?: string | null
@@ -443,6 +445,7 @@ export type Database = {
           id?: string
           model?: string | null
           owner_id?: string
+          pasted_text?: boolean
           photo_paths?: string[] | null
           result?: Json | null
           source_url?: string | null
