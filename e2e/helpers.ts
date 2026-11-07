@@ -12,6 +12,39 @@ export async function createMenu(page: Page): Promise<string> {
   return new URL(page.url()).pathname.split("/")[2];
 }
 
+/**
+ * « Créer une recette » depuis la page d'un menu : une salade de tomates saisie à la main.
+ * On revient au menu, recette ajoutée (US-MEN-01).
+ */
+export async function createRecipeFromMenu(page: Page, menuId: string, title: string) {
+  await page.getByRole("button", { name: "Créer une recette" }).click();
+  await page.getByRole("button", { name: "Saisir à la main" }).click();
+  await expect(page).toHaveURL(new RegExp(`/recettes/nouvelle\\?menu=${menuId}$`));
+  await page.getByLabel("Titre").fill(title);
+  await page.getByRole("combobox").first().click();
+  await page.getByPlaceholder("Rechercher (ex. tomate)").fill("tomate");
+  await page
+    .getByRole("listbox")
+    .getByRole("option")
+    .filter({ hasNotText: /Créer/ })
+    .first()
+    .click();
+  await page.getByLabel("Ingrédient 1 : quantité (vide = au goût)").fill("2");
+  await page.getByRole("textbox", { name: "Étape 1", exact: true }).fill("Couper les tomates.");
+  await page.getByRole("button", { name: "Enregistrer" }).click();
+  await expect(page).toHaveURL(new RegExp(`/menus/${menuId}\\?ajout=[0-9a-f-]{36}$`));
+}
+
+/** Supprime une recette par son titre (depuis sa fiche). */
+export async function deleteRecipe(page: Page, title: string) {
+  await page.goto("/recettes");
+  await page.getByRole("link").filter({ hasText: title }).filter({ visible: true }).click();
+  await page.getByRole("link", { name: "Modifier", exact: true }).click();
+  await page.getByRole("button", { name: "Supprimer la recette…" }).click();
+  await page.getByRole("button", { name: "Oui, supprimer" }).click();
+  await expect(page).toHaveURL(/\/recettes$/);
+}
+
 /** Supprime un menu depuis sa page (sa liste éventuelle est gardée). */
 export async function deleteMenu(page: Page, menuId: string) {
   await page.goto(`/menus/${menuId}`);

@@ -1,5 +1,5 @@
 import { expect, test } from "./fixtures";
-import { createMenu, deleteList, deleteMenu } from "./helpers";
+import { createMenu, createRecipeFromMenu, deleteList, deleteMenu, deleteRecipe } from "./helpers";
 
 /** Menus et listes sans recette (décision 068). Tout ce qui est créé est supprimé. */
 
@@ -66,4 +66,43 @@ test("« Nouvelle » dans Mes listes : une liste sans recette, directement à la
 test("l'ancienne adresse « Créer une liste » mène aux menus", async ({ page }) => {
   await page.goto("/nouvelle-liste");
   await expect(page).toHaveURL(/\/menus$/);
+});
+
+test("recette ajoutée au menu après coup : « Ajouter à la liste » la fusionne dans la liste prête", async ({
+  page,
+}) => {
+  const title = `E2E Salade ${Date.now()}`;
+  const menuId = await createMenu(page);
+  let listId = "";
+
+  await test.step("menu avec les Crêpes → liste prête", async () => {
+    await page.getByRole("button", { name: /^Crêpes/ }).click();
+    await page.getByRole("button", { name: "Créer la liste" }).click();
+    await expect(page).toHaveURL(/\/revue$/);
+    listId = new URL(page.url()).pathname.split("/")[2];
+    await page.getByRole("button", { name: "Continuer : pré-liste et articles libres" }).click();
+    await page.getByRole("button", { name: "Terminer la liste" }).click();
+    await expect(page).toHaveURL(new RegExp(`/listes/${listId}$`));
+  });
+
+  await test.step("nouvelle recette au menu : signalée « Pas encore dans la liste »", async () => {
+    await page.goto(`/menus/${menuId}`);
+    await createRecipeFromMenu(page, menuId, title);
+    const row = page.getByRole("listitem").filter({ hasText: title });
+    await expect(row.getByText("Pas encore dans la liste")).toBeVisible();
+    await row.getByRole("button", { name: "Ajouter à la liste" }).click();
+    await expect(row.getByText("Pas encore dans la liste")).toHaveCount(0);
+  });
+
+  await test.step("la liste contient maintenant la recette", async () => {
+    await page.getByRole("link", { name: "Voir la liste" }).click();
+    await expect(page).toHaveURL(new RegExp(`/listes/${listId}$`));
+    await expect(page.getByText(title).first()).toBeVisible();
+  });
+
+  await test.step("ranger", async () => {
+    await deleteMenu(page, menuId);
+    await deleteList(page, listId);
+    await deleteRecipe(page, title);
+  });
 });

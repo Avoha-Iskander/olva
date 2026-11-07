@@ -2,9 +2,14 @@ import type { DraftRecipe, ListStatus } from "@/lib/lists";
 import { createClient } from "@/lib/supabase/server";
 
 /** La liste tirée d'un menu (la plus récente, s'il y en a eu plusieurs). */
-export type MenuList = { id: string; status: ListStatus; hasRecipes: boolean };
+export type MenuList = {
+  id: string;
+  status: ListStatus;
+  hasRecipes: boolean;
+  recipeIds: string[]; // recettes déjà dans la liste (« Pas encore dans la liste », US-MEN-03)
+};
 
-/** Une recette du menu, avec la date d'ajout (US-MEN-03 s'en servira). */
+/** Une recette du menu, avec sa date d'ajout. */
 export type MenuRecipe = DraftRecipe & { addedAt: string };
 
 export type Menu = {
@@ -24,7 +29,12 @@ export type MenuSummary = {
   list: MenuList | null;
 };
 
-type ListRow = { id: string; status: string; created_at: string; shopping_list_recipes: unknown[] };
+type ListRow = {
+  id: string;
+  status: string;
+  created_at: string;
+  shopping_list_recipes: { recipe_id: string }[];
+};
 
 /** Parmi les listes d'un menu, la plus récente. */
 function latestList(lists: ListRow[]): MenuList | null {
@@ -34,6 +44,7 @@ function latestList(lists: ListRow[]): MenuList | null {
         id: latest.id,
         status: latest.status as ListStatus,
         hasRecipes: latest.shopping_list_recipes.length > 0,
+        recipeIds: latest.shopping_list_recipes.map((r) => r.recipe_id),
       }
     : null;
 }

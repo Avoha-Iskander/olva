@@ -6,6 +6,7 @@ import {
   Check,
   CheckCircle2,
   ChefHat,
+  ListPlus,
   ListChecks,
   Plus,
   Search,
@@ -14,7 +15,11 @@ import {
   X,
 } from "lucide-react";
 
-import { createListFromMenu, saveMenuRecipes } from "@/app/(app)/menus/actions";
+import {
+  addMenuRecipeToList,
+  createListFromMenu,
+  saveMenuRecipes,
+} from "@/app/(app)/menus/actions";
 import { AddRecipeMenu } from "@/components/recipes/add-recipe-menu";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -148,6 +153,22 @@ export function MenuEditor({
   // Liste déjà tirée de ce menu et pas terminée : on propose de l'ouvrir
   const openList = list && list.status !== "done" ? list : null;
 
+  // --- « Ajouter à la liste » (US-MEN-03) --------------------------------------
+  // Recettes déjà dans la liste ; les autres sont signalées « Pas encore dans la liste »
+  const [inList, setInList] = useState(() => new Set(list?.recipeIds ?? []));
+  const [adding, setAdding] = useState<string | null>(null);
+  const [addFailed, setAddFailed] = useState(false);
+
+  async function addToList(recipeId: string) {
+    setAdding(recipeId);
+    setAddFailed(false);
+    // La recette doit d'abord être enregistrée dans le menu
+    const ok = (await flush()) && (await addMenuRecipeToList(menuId, recipeId)).ok;
+    if (ok) setInList((current) => new Set(current).add(recipeId));
+    else setAddFailed(true);
+    setAdding(null);
+  }
+
   return (
     <div className="grid gap-6">
       {addedTitle && (
@@ -165,6 +186,7 @@ export function MenuEditor({
           <ul className="divide-border bg-card divide-y rounded-xl border">
             {selected.map((s) => {
               const recipe = byId.get(s.recipeId);
+              const missing = openList !== null && !inList.has(s.recipeId);
               return (
                 <li key={s.recipeId} className="flex flex-wrap items-center gap-x-3 gap-y-2 p-3">
                   <div className="min-w-0 flex-1 basis-40">
@@ -175,6 +197,9 @@ export function MenuEditor({
                       <p className="text-muted-foreground text-xs">
                         Recette prévue pour {recipe.servings} pers.
                       </p>
+                    )}
+                    {missing && (
+                      <p className="text-primary text-xs font-medium">Pas encore dans la liste</p>
                     )}
                   </div>
                   <ServingsStepper
@@ -192,6 +217,19 @@ export function MenuEditor({
                   >
                     <X />
                   </Button>
+                  {missing && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="w-full"
+                      disabled={adding !== null}
+                      onClick={() => void addToList(s.recipeId)}
+                    >
+                      <ListPlus />
+                      {adding === s.recipeId ? "Ajout…" : "Ajouter à la liste"}
+                    </Button>
+                  )}
                 </li>
               );
             })}
@@ -308,6 +346,11 @@ export function MenuEditor({
         {saveFailed && (
           <p role="alert" className="text-destructive text-sm">
             L&apos;enregistrement a échoué. Vérifiez votre connexion.
+          </p>
+        )}
+        {addFailed && (
+          <p role="alert" className="text-destructive text-sm">
+            La recette n&apos;a pas pu être ajoutée à la liste. Réessayez.
           </p>
         )}
         {createFailed && (

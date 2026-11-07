@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 
-import { consolidateLines, type DraftLine, findMergeTarget } from "@/lib/list-lines";
+import {
+  consolidateLines,
+  type DraftLine,
+  type ExistingLine,
+  findMergeTarget,
+  planAddition,
+} from "@/lib/list-lines";
 
 const line = (overrides: Partial<DraftLine>): DraftLine => ({
   itemId: "lait",
@@ -95,5 +101,86 @@ describe("findMergeTarget — ajout d'un article sur la page de la liste", () =>
   it("propose une nouvelle ligne sinon", () => {
     expect(findMergeTarget(lines, "farine", 1, "paquet")).toBeNull();
     expect(findMergeTarget(lines, "sucre", 1, "kg")).toBeNull();
+  });
+});
+
+describe("planAddition (US-MEN-03 : ajouter une recette à une liste prête)", () => {
+  const line = (over: Partial<ExistingLine>): ExistingLine => ({
+    id: "l1",
+    itemId: "farine",
+    quantity: 500,
+    unit: "g",
+    included: true,
+    checked: false,
+    recipeIds: ["crepes"],
+    ...over,
+  });
+
+  it("additionne sur la ligne existante, même dans une autre unité convertible", () => {
+    const plan = planAddition(
+      [line({})],
+      [{ itemId: "farine", quantity: 0.25, unit: "kg", recipeIds: ["gateau"] }],
+    );
+    expect(plan.updates).toEqual([{ id: "l1", quantity: 750, recipeIds: ["crepes", "gateau"] }]);
+    expect(plan.inserts).toEqual([]);
+  });
+
+  it("n'augmente pas un article déjà coché (déjà dans le panier) : nouvelle ligne", () => {
+    const plan = planAddition(
+      [line({ checked: true })],
+      [{ itemId: "farine", quantity: 200, unit: "g", recipeIds: ["gateau"] }],
+    );
+    expect(plan.updates).toEqual([]);
+    expect(plan.inserts).toEqual([
+      { itemId: "farine", quantity: 200, unit: "g", recipeIds: ["gateau"] },
+    ]);
+  });
+
+  it("ignore les lignes retirées de la liste", () => {
+    const plan = planAddition(
+      [line({ included: false })],
+      [{ itemId: "farine", quantity: 200, unit: "g", recipeIds: ["gateau"] }],
+    );
+    expect(plan.updates).toEqual([]);
+    expect(plan.inserts).toHaveLength(1);
+  });
+
+  it("sans conversion possible : une nouvelle ligne (jamais d'addition fausse)", () => {
+    const plan = planAddition(
+      [line({ itemId: "tomate", unit: "g", quantity: 300 })],
+      [{ itemId: "tomate", quantity: 2, unit: "piece", recipeIds: ["salade"] }],
+    );
+    expect(plan.updates).toEqual([]);
+    expect(plan.inserts).toEqual([
+      { itemId: "tomate", quantity: 2, unit: "piece", recipeIds: ["salade"] },
+    ]);
+  });
+
+  it("utilise les conversions de l'article (1 boîte = 250 g)", () => {
+    const conversions = new Map([["tomate", [{ fromUnit: "boite", toUnit: "g", factor: 250 }]]]);
+    const plan = planAddition(
+      [line({ itemId: "tomate", unit: "g", quantity: 250 })],
+      [{ itemId: "tomate", quantity: 1, unit: "boite", recipeIds: ["sauce"] }],
+      conversions,
+    );
+    expect(plan.updates).toEqual([{ id: "l1", quantity: 500, recipeIds: ["crepes", "sauce"] }]);
+  });
+
+  it("article absent : nouvelle ligne, au format d'affichage (1 200 g → 1,2 kg)", () => {
+    const plan = planAddition(
+      [],
+      [{ itemId: "sucre", quantity: 1200, unit: "g", recipeIds: ["gateau"] }],
+    );
+    expect(plan.inserts).toEqual([
+      { itemId: "sucre", quantity: 1.2, unit: "kg", recipeIds: ["gateau"] },
+    ]);
+  });
+
+  it("arrondit les pièces au supérieur (1,5 œuf → 2)", () => {
+    const plan = planAddition(
+      [line({ itemId: "oeuf", unit: "piece", quantity: 3 })],
+      [{ itemId: "oeuf", quantity: 1.5, unit: "piece", recipeIds: ["gateau"] }],
+    );
+    expect(plan.updates).toEqual([{ id: "l1", quantity: 5, recipeIds: ["crepes", "gateau"] }]);
   });
 });
