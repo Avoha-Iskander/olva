@@ -1,12 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { ChefHat, Share2, Users } from "lucide-react";
+import { ChefHat, Pencil, Share2, Trash2, Users } from "lucide-react";
 import { useState } from "react";
 
 import { DeleteRecipeDialog } from "@/components/recipes/delete-recipe-dialog";
-import { RecipeActionsMenu } from "@/components/recipes/recipe-actions-menu";
-import { SwipeableRow } from "@/components/recipes/swipeable-row";
+import { CardActionsMenu } from "@/components/cards/card-actions-menu";
+import { SwipeableRow } from "@/components/cards/swipeable-row";
 import type { RecipeSummary } from "@/lib/recipes";
 
 /**
@@ -29,13 +29,23 @@ export function RecipeCard({ recipe }: { recipe: RecipeSummary }) {
 
   return (
     <>
-      <SwipeableRow editHref={editHref} onDelete={() => setConfirmDelete(true)}>
+      <SwipeableRow
+        primary={{ label: "Modifier", Icon: Pencil, href: editHref }}
+        onDelete={() => setConfirmDelete(true)}
+      >
         <div className="group bg-card hover:bg-accent flex items-center gap-1 rounded-xl border pr-2 shadow-sm transition-colors">
           <RecipeCardLink recipe={recipe} />
-          <RecipeActionsMenu
-            recipeId={recipe.id}
-            recipeTitle={recipe.title}
-            onDelete={() => setConfirmDelete(true)}
+          <CardActionsMenu
+            label={`Actions pour « ${recipe.title} »`}
+            actions={[
+              { label: "Modifier", Icon: Pencil, href: editHref },
+              {
+                label: "Supprimer",
+                Icon: Trash2,
+                onClick: () => setConfirmDelete(true),
+                destructive: true,
+              },
+            ]}
           />
         </div>
       </SwipeableRow>

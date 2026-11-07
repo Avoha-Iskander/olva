@@ -1,10 +1,15 @@
-/** En-tête des étapes de création d'une liste : titre + « Étape 2 sur 3 · … ». */
+/**
+ * En-tête des étapes de préparation d'une liste : titre + « Étape 1 sur 2 · … ».
+ * Liste sans recette (US-LST-08) : une seule étape, on n'affiche que le sous-titre.
+ */
 export function StepHeader({
   step,
+  total,
   title,
   subtitle,
 }: {
-  step: 1 | 2 | 3;
+  step: number;
+  total: number;
   title: string;
   subtitle: string;
 }) {
@@ -12,7 +17,7 @@ export function StepHeader({
     <div className="grid gap-1">
       <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
       <p className="text-muted-foreground text-sm">
-        Étape {step} sur 3 · {subtitle}
+        {total > 1 ? `Étape ${step} sur ${total} · ${subtitle}` : subtitle}
       </p>
     </div>
   );

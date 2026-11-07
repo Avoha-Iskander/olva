@@ -4,7 +4,7 @@ import { Suspense } from "react";
 import { UrlImport } from "@/components/recipe-import/url-import";
 import { selectableModels } from "@/lib/ai/models";
 import { getCatalogue } from "@/lib/catalogue";
-import { parseListReturn } from "@/lib/list-return";
+import { parseId } from "@/lib/menu-return";
 import { getCurrentProfile } from "@/lib/profile";
 import { readSharedInput } from "@/lib/url-import/shared-link";
 import { listMyCollections } from "@/lib/recipes";
@@ -38,8 +38,8 @@ async function UrlImportScreen({
 
   return (
     <UrlImport
-      // Venu de l'étape 1 d'une liste : on y reviendra, recette cochée (décision 064)
-      returnToList={parseListReturn(query.liste)}
+      // Venu d'un menu : on y reviendra, recette ajoutée (US-MEN-01, décision 064)
+      returnToMenu={parseId(query.menu)}
       // Partage vers Olva (décision 065) : lien ou texte reçu, lu dès l'ouverture
       shared={readSharedInput({ url: query.url, text: query.texte })}
       userId={profile.id}

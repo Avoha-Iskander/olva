@@ -71,7 +71,7 @@ export function ExtrasEditor({
   const [saveFailed, setSaveFailed] = useState(false);
   const [finishing, startFinish] = useTransition();
 
-  // --- Enregistrement automatique des lignes de la liste (comme aux étapes 1 et 2) ---
+  // --- Enregistrement automatique des lignes de la liste (comme dans le menu et la revue) ---
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const latest = useRef({ checked, free, carryover });
   const dirty = useRef(false);

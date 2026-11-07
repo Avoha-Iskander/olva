@@ -252,7 +252,7 @@ En tant que préparateur, je veux composer le menu de la semaine avec mes recett
 
 - [ ] Les menus sont affichés du plus récent au plus ancien, avec leurs recettes et l'état de leur liste
 - [ ] « Dupliquer » crée un nouveau menu (nom par défaut) avec les mêmes recettes et portions, sans liste
-- [ ] Supprimer un menu (menu ⋯ ou glissement à gauche, avec confirmation) ne supprime pas sa liste
+- [ ] Supprimer un menu (menu ⋯, glissement à gauche ou « Supprimer le menu… » en bas de sa page, avec confirmation) ne supprime pas sa liste
 - [ ] Les menus ne se partagent pas ; une recette supprimée disparaît des menus
 
 **US-LST-01 — Sélectionner les recettes et leurs portions** · ~~M~~ — remplacée par US-MEN-01 et US-MEN-02 (décision 068)

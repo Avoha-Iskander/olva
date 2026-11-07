@@ -1,46 +1,60 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
-import { Check, CheckCircle2, ChefHat, ListChecks, Plus, Search, Share2, X } from "lucide-react";
+import {
+  Check,
+  CheckCircle2,
+  ChefHat,
+  ListChecks,
+  Plus,
+  Search,
+  Share2,
+  ShoppingBasket,
+  X,
+} from "lucide-react";
 
-import { saveListRecipes } from "@/app/(app)/listes/actions";
+import { createListFromMenu, saveMenuRecipes } from "@/app/(app)/menus/actions";
 import { AddRecipeMenu } from "@/components/recipes/add-recipe-menu";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ServingsStepper } from "@/components/ui/servings-stepper";
+import { listHref } from "@/lib/list-href";
 import type { DraftRecipe } from "@/lib/lists";
+import type { MenuList } from "@/lib/menus";
 import type { RecipeSummary } from "@/lib/recipes";
 import { normalizeText } from "@/lib/text";
 import { cn } from "@/lib/utils";
 
 /**
- * Étape 1 de « Nouvelle liste » : choisir des recettes et leurs portions.
- * Chaque changement est enregistré automatiquement (brouillon), après une courte
- * pause : on n'envoie pas une requête à chaque clic sur « + ».
+ * Un menu de la semaine (US-MEN-01, US-MEN-02) : choisir des recettes et leurs portions,
+ * puis créer la liste de courses. Chaque changement est enregistré automatiquement,
+ * après une courte pause : on n'envoie pas une requête à chaque clic sur « + ».
  */
-export function RecipePicker({
+export function MenuEditor({
+  menuId,
   recipes,
   collections,
-  initialListId,
   initialSelected,
   defaultServings,
+  list,
   addedTitle = null,
 }: {
+  menuId: string;
   recipes: RecipeSummary[];
   collections: { id: string; name: string }[]; // mes collections (catégories)
-  initialListId: string | null;
   initialSelected: DraftRecipe[];
   defaultServings: number;
-  /** Recette tout juste créée depuis cette étape, déjà cochée (décision 064). */
+  /** La liste tirée de ce menu (la plus récente), s'il y en a une. */
+  list: MenuList | null;
+  /** Recette tout juste créée depuis ce menu, déjà ajoutée (décision 064). */
   addedTitle?: string | null;
 }) {
-  const router = useRouter();
   const [selected, setSelected] = useState(initialSelected);
-  const [listId, setListId] = useState(initialListId);
   const [query, setQuery] = useState("");
   const [collectionId, setCollectionId] = useState<string | null>(null);
   const [saveFailed, setSaveFailed] = useState(false);
+  const [createFailed, setCreateFailed] = useState(false);
   const [pending, startTransition] = useTransition();
 
   // Recettes par identifiant, pour afficher le titre des recettes choisies
@@ -61,10 +75,9 @@ export function RecipePicker({
   // ici, le minuteur en attente et la dernière sélection à enregistrer.
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const latest = useRef(selected);
-  const listIdRef = useRef(listId);
   const dirty = useRef(false);
-  // File d'attente des enregistrements : chacun attend la fin du précédent.
-  // Sans elle, deux enregistrements simultanés pourraient créer deux listes.
+  // File d'attente des enregistrements : chacun attend la fin du précédent, pour
+  // qu'un ancien enregistrement n'arrive jamais après un plus récent.
   const queue = useRef<Promise<boolean>>(Promise.resolve(true));
 
   /** Ajoute un enregistrement à la file ; il lira la sélection au moment de partir. */
@@ -75,20 +88,15 @@ export function RecipePicker({
 
   async function saveNow() {
     dirty.current = false;
-    const result = await saveListRecipes(listIdRef.current, latest.current);
-    if (result.ok) {
-      if (!listIdRef.current) {
-        // Liste tout juste créée : l'adresse devient la sienne, sans recharger la page
-        // (un rafraîchissement reprendra cette liste au lieu d'en créer une autre)
-        window.history.replaceState(null, "", `/listes/${result.listId}/recettes`);
-      }
-      listIdRef.current = result.listId;
-      setListId(result.listId);
-      setSaveFailed(false);
-    } else {
-      setSaveFailed(true);
-    }
-    return result.ok;
+    const { ok } = await saveMenuRecipes(menuId, latest.current);
+    setSaveFailed(!ok);
+    return ok;
+  }
+
+  /** Enregistre tout de suite ce qui attend encore (avant de quitter la page). */
+  function flush() {
+    if (timer.current) clearTimeout(timer.current);
+    return dirty.current ? save() : queue.current;
   }
 
   function update(next: DraftRecipe[]) {
@@ -96,8 +104,6 @@ export function RecipePicker({
     latest.current = next;
     dirty.current = true;
     if (timer.current) clearTimeout(timer.current);
-    // Enregistrement en arrière-plan, HORS transition : le bouton « Revoir les ingrédients »
-    // reste cliquable pendant ce temps (il attendra la fin de la file si besoin)
     timer.current = setTimeout(() => void save(), 600);
   }
 
@@ -105,12 +111,11 @@ export function RecipePicker({
   useEffect(() => {
     return () => {
       if (timer.current) clearTimeout(timer.current);
-      // (dans la file, pour attendre un éventuel premier enregistrement qui crée la liste)
       if (dirty.current) {
-        void queue.current.then(() => saveListRecipes(listIdRef.current, latest.current));
+        void queue.current.then(() => saveMenuRecipes(menuId, latest.current));
       }
     };
-  }, []);
+  }, [menuId]);
 
   function toggle(recipeId: string) {
     update(
@@ -124,39 +129,38 @@ export function RecipePicker({
     update(selected.map((s) => (s.recipeId === recipeId ? { ...s, servings } : s)));
   }
 
-  /**
-   * « Créer une recette » (décision 064) : avant de partir, la sélection en cours est
-   * enregistrée (la liste est créée si besoin) ; on renvoie la liste à laquelle revenir.
-   */
+  /** « Créer une recette » (décision 064) : on enregistre d'abord, puis on reviendra ici. */
   async function beforeCreate(): Promise<string> {
-    if (timer.current) clearTimeout(timer.current);
-    if (dirty.current || (!listIdRef.current && latest.current.length)) await save();
-    else await queue.current;
-    return listIdRef.current ?? "nouvelle";
+    await flush();
+    return menuId;
   }
 
-  function goToReview() {
-    if (timer.current) clearTimeout(timer.current);
+  /** « Créer la liste » (US-MEN-02) : la sélection est enregistrée, puis la liste créée. */
+  function createList() {
     startTransition(async () => {
-      // Modification pas encore partie : on l'enregistre ; sinon on attend la file en cours
-      const ok = dirty.current || !listIdRef.current ? await save() : await queue.current;
-      if (ok) router.push(`/listes/${listIdRef.current}/revue`);
+      if (!(await flush())) return;
+      // En cas de succès, l'action ouvre la revue (redirection) et ne revient pas
+      const result = await createListFromMenu(menuId);
+      if (!result.ok) setCreateFailed(true);
     });
   }
+
+  // Liste déjà tirée de ce menu et pas terminée : on propose de l'ouvrir
+  const openList = list && list.status !== "done" ? list : null;
 
   return (
     <div className="grid gap-6">
       {addedTitle && (
         <p role="status" className="bg-muted flex items-start gap-2 rounded-lg p-3 text-sm">
           <CheckCircle2 className="text-primary mt-0.5 size-4 shrink-0" aria-hidden="true" />
-          Recette « {addedTitle} » créée et ajoutée à la liste.
+          Recette « {addedTitle} » créée et ajoutée au menu.
         </p>
       )}
 
       {selected.length > 0 && (
         <section className="grid gap-2" aria-labelledby="selected-title">
           <h2 id="selected-title" className="font-medium">
-            Recettes choisies ({selected.length})
+            Au menu ({selected.length})
           </h2>
           <ul className="divide-border bg-card divide-y rounded-xl border">
             {selected.map((s) => {
@@ -198,9 +202,11 @@ export function RecipePicker({
       <section className="grid gap-3" aria-labelledby="add-title">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h2 id="add-title" className="font-medium">
-            {selected.length ? "Ajouter d'autres recettes" : "Choisissez vos recettes"}
+            {selected.length
+              ? "Ajouter d'autres recettes"
+              : "Choisissez les recettes de la semaine"}
           </h2>
-          {/* Recette absente : on la crée, puis on revient ici, recette cochée */}
+          {/* Recette absente : on la crée, puis on revient ici, recette ajoutée */}
           <AddRecipeMenu label="Créer une recette" variant="outline" beforeLeave={beforeCreate} />
         </div>
         <div className="relative">
@@ -304,17 +310,35 @@ export function RecipePicker({
             L&apos;enregistrement a échoué. Vérifiez votre connexion.
           </p>
         )}
-        <Button
-          type="button"
-          className="w-full"
-          disabled={selected.length === 0 || pending}
-          onClick={goToReview}
-        >
-          <ListChecks />
-          {selected.length === 0
-            ? "Choisissez au moins une recette"
-            : `Revoir les ingrédients (${selected.length} recette${selected.length > 1 ? "s" : ""})`}
-        </Button>
+        {createFailed && (
+          <p role="alert" className="text-destructive text-sm">
+            La liste n&apos;a pas pu être créée. Réessayez.
+          </p>
+        )}
+        {openList ? (
+          <Button asChild className="w-full">
+            <Link href={listHref(openList)}>
+              <ShoppingBasket />
+              Voir la liste
+            </Link>
+          </Button>
+        ) : (
+          <Button
+            type="button"
+            className="w-full"
+            disabled={selected.length === 0 || pending}
+            onClick={createList}
+          >
+            <ListChecks />
+            {selected.length === 0
+              ? "Choisissez au moins une recette"
+              : pending
+                ? "Création de la liste…"
+                : list
+                  ? "Créer une nouvelle liste"
+                  : "Créer la liste"}
+          </Button>
+        )}
       </div>
     </div>
   );

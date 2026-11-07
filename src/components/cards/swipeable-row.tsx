@@ -1,6 +1,6 @@
 "use client";
 
-import { Pencil, Trash2 } from "lucide-react";
+import { Trash2, type LucideIcon } from "lucide-react";
 import Link from "next/link";
 import { useRef, useState } from "react";
 
@@ -13,9 +13,16 @@ const UNDERLAP = 16;
 const OPEN_THRESHOLD = ACTIONS_WIDTH / 2; // au-delà de la moitié, la ligne reste ouverte
 const DIRECTION_THRESHOLD = 8; // px avant de décider : glissement horizontal ou défilement ?
 
+// Le bleu passe au-dessus du rouge, coins droits arrondis : même jonction
+// que la carte au-dessus du bleu (« relative » le place devant le rouge)
+const primaryClass =
+  "bg-primary text-primary-foreground relative flex flex-col items-center justify-center gap-1 rounded-r-xl text-sm";
+const primaryStyle = { width: ACTIONS_WIDTH / 2 + UNDERLAP, paddingLeft: UNDERLAP };
+
 /**
- * Ligne qu'on fait glisser vers la gauche (au doigt) pour révéler
- * « Modifier » et « Supprimer », comme les emails dans Outlook.
+ * Ligne qu'on fait glisser vers la gauche (au doigt) pour révéler deux actions :
+ * une action principale en bleu (« Modifier » pour une recette, « Dupliquer » pour un
+ * menu…) et « Supprimer » en rouge, comme les emails dans Outlook.
  *
  * Principe :
  * - au début du geste, on attend quelques pixels pour savoir si le doigt va
@@ -25,11 +32,12 @@ const DIRECTION_THRESHOLD = 8; // px avant de décider : glissement horizontal o
  * Seuls les gestes au doigt sont pris en compte : la souris n'est pas concernée.
  */
 export function SwipeableRow({
-  editHref,
+  primary,
   onDelete,
   children,
 }: {
-  editHref: string;
+  /** Action bleue : un lien (href) ou un bouton (onClick). */
+  primary: { label: string; Icon: LucideIcon; href?: string; onClick?: () => void };
   onDelete: () => void;
   children: React.ReactNode;
 }) {
@@ -86,7 +94,7 @@ export function SwipeableRow({
     }
   }
 
-  // Après un glissement, le « clic » de fin de geste ne doit pas ouvrir la recette
+  // Après un glissement, le « clic » de fin de geste ne doit pas ouvrir la carte
   const suppressNextClick = useRef(false);
   function onClickCapture(e: React.MouseEvent) {
     if (suppressNextClick.current) {
@@ -110,17 +118,31 @@ export function SwipeableRow({
         style={{ width: ACTIONS_WIDTH + UNDERLAP }}
         aria-hidden={!isOpen}
       >
-        <Link
-          href={editHref}
-          tabIndex={isOpen ? 0 : -1}
-          // Le bleu passe au-dessus du rouge, coins droits arrondis : même jonction
-          // que la carte au-dessus du bleu (« relative » le place devant le rouge)
-          className="bg-primary text-primary-foreground relative flex flex-col items-center justify-center gap-1 rounded-r-xl text-sm"
-          style={{ width: ACTIONS_WIDTH / 2 + UNDERLAP, paddingLeft: UNDERLAP }}
-        >
-          <Pencil className="size-5" />
-          Modifier
-        </Link>
+        {primary.href ? (
+          <Link
+            href={primary.href}
+            tabIndex={isOpen ? 0 : -1}
+            className={primaryClass}
+            style={primaryStyle}
+          >
+            <primary.Icon className="size-5" />
+            {primary.label}
+          </Link>
+        ) : (
+          <button
+            type="button"
+            tabIndex={isOpen ? 0 : -1}
+            onClick={() => {
+              setOffset(0);
+              primary.onClick?.();
+            }}
+            className={primaryClass}
+            style={primaryStyle}
+          >
+            <primary.Icon className="size-5" />
+            {primary.label}
+          </button>
+        )}
         <button
           type="button"
           tabIndex={isOpen ? 0 : -1}

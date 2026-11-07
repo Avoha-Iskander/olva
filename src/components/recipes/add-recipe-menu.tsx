@@ -7,7 +7,7 @@ import { useState, useTransition } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { type ListReturn, withListReturn } from "@/lib/list-return";
+import { withMenuReturn } from "@/lib/menu-return";
 
 const CHOICES = [
   { path: "/recettes/nouvelle", label: "Saisir à la main", Icon: PenLine },
@@ -18,8 +18,8 @@ const CHOICES = [
 /**
  * Bouton « Ajouter » : saisie à la main, depuis une photo ou depuis un lien.
  * - Dans Mes recettes : de simples liens.
- * - À l'étape 1 d'une liste (décision 064) : `beforeLeave` enregistre d'abord la
- *   sélection en cours et renvoie la liste à laquelle revenir avec la nouvelle recette.
+ * - Dans un menu (US-MEN-01, décision 064) : `beforeLeave` enregistre d'abord la
+ *   sélection en cours et renvoie le menu auquel revenir avec la nouvelle recette.
  */
 export function AddRecipeMenu({
   label = "Ajouter",
@@ -28,7 +28,7 @@ export function AddRecipeMenu({
 }: {
   label?: string;
   variant?: "default" | "outline";
-  beforeLeave?: () => Promise<ListReturn | null>;
+  beforeLeave?: () => Promise<string | null>;
 }) {
   const [open, setOpen] = useState(false);
   const [pending, startTransition] = useTransition();
@@ -36,9 +36,9 @@ export function AddRecipeMenu({
 
   function go(path: string) {
     startTransition(async () => {
-      const list = beforeLeave ? await beforeLeave() : null;
+      const menuId = beforeLeave ? await beforeLeave() : null;
       setOpen(false);
-      router.push(withListReturn(path, list));
+      router.push(withMenuReturn(path, menuId));
     });
   }
 
