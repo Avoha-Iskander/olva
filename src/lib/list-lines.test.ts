@@ -184,3 +184,15 @@ describe("planAddition (US-MEN-03 : ajouter une recette à une liste prête)", (
     expect(plan.updates).toEqual([{ id: "l1", quantity: 5, recipeIds: ["crepes", "gateau"] }]);
   });
 });
+
+describe("planAddition (US-LST-10 : verser une liste)", () => {
+  it("une ligne versée garde son origine (article libre, pré-liste…)", () => {
+    const plan = planAddition(
+      [],
+      [{ itemId: "savon", quantity: 1, unit: "piece", recipeIds: [], origin: "free" }],
+    );
+    expect(plan.inserts).toEqual([
+      { itemId: "savon", quantity: 1, unit: "piece", recipeIds: [], origin: "free" },
+    ]);
+  });
+});

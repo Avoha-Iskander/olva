@@ -106,12 +106,21 @@ export type ExistingLine = {
   recipeIds: string[];
 };
 
-/** Une ligne à ajouter (ingrédient d'une recette, déjà recalculé pour les portions). */
-export type AddedLine = { itemId: string; quantity: number; unit: string; recipeIds: string[] };
+/**
+ * Une ligne à ajouter : ingrédient d'une recette (déjà recalculé pour les portions) ou
+ * ligne d'une autre liste (« Verser », US-LST-10), qui garde alors son origine.
+ */
+export type AddedLine = {
+  itemId: string;
+  quantity: number;
+  unit: string;
+  recipeIds: string[];
+  origin?: LineOrigin;
+};
 
 /**
- * « Ajouter à la liste » depuis un menu (US-MEN-03) : les ingrédients d'une recette
- * rejoignent une liste déjà prête. Un article déjà présent, pas encore coché et dans une
+ * « Ajouter à la liste » depuis un menu (US-MEN-03) ou « Verser » une liste dans une autre
+ * (US-LST-10) : des lignes rejoignent une liste déjà prête. Un article déjà présent, pas encore coché et dans une
  * unité compatible voit sa quantité augmenter ; sinon une nouvelle ligne est créée
  * (comme pour un article ajouté à la main sur la page de la liste).
  * Fonction pure : elle dit quoi modifier, l'action serveur l'écrit en base.

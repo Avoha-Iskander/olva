@@ -6,7 +6,7 @@ import { z } from "zod";
 
 import { undecidedCarryover } from "@/lib/carryover";
 
-import { consolidateLines, findMergeTarget, type LineOrigin } from "@/lib/list-lines";
+import { consolidateLines, findMergeTarget, planAddition, type LineOrigin } from "@/lib/list-lines";
 import { currentUserId, loadConversions } from "@/lib/my-catalogue";
 import { createClient } from "@/lib/supabase/server";
 import { roundQuantity } from "@/lib/units";
@@ -312,4 +312,109 @@ export async function addListLine(
   revalidatePath(`/listes/${list.data}`);
   revalidatePath(`/courses/${list.data}`);
   return { ok: !error };
+}
+
+/**
+ * « Verser » une liste dans une autre (US-LST-10, décision 070) : les articles NON cochés
+ * de la liste de départ rejoignent la liste d'arrivée (même article pas encore coché,
+ * unité compatible → quantités additionnées ; sinon nouvelle ligne), puis la liste de
+ * départ est supprimée. Réservé à son créateur ; ni l'une ni l'autre n'est un brouillon.
+ */
+export async function mergeListInto(
+  sourceId: string,
+  targetId: string,
+): Promise<{ ok: false } | never> {
+  const source = z.uuid().safeParse(sourceId);
+  const target = z.uuid().safeParse(targetId);
+  if (!source.success || !target.success || source.data === target.data) return { ok: false };
+  const supabase = await createClient();
+  const userId = await currentUserId(supabase);
+
+  // Les deux listes, avec leurs lignes (les règles d'accès ne montrent que les miennes et
+  // celles qu'on me partage)
+  const { data: lists } = await supabase
+    .from("shopping_lists")
+    .select(
+      "id, owner_id, status, shopping_list_recipes(recipe_id, servings), shopping_list_items(id, item_id, origin, quantity, unit, included, checked, recipe_ids)",
+    )
+    .in("id", [source.data, target.data]);
+  const from = lists?.find((l) => l.id === source.data);
+  const to = lists?.find((l) => l.id === target.data);
+  const open = (status: string) => status === "ready" || status === "shopping";
+  if (!from || !to || from.owner_id !== userId || !open(from.status) || !open(to.status)) {
+    return { ok: false };
+  }
+
+  // Lignes à verser : gardées et pas encore dans le panier
+  const moving = from.shopping_list_items.filter((l) => l.included && !l.checked);
+  const conversions = await loadConversions(supabase, userId, [
+    ...new Set(moving.map((l) => l.item_id)),
+  ]);
+  const plan = planAddition(
+    to.shopping_list_items.map((l) => ({
+      id: l.id,
+      itemId: l.item_id,
+      quantity: Number(l.quantity),
+      unit: l.unit,
+      included: l.included,
+      checked: l.checked,
+      recipeIds: l.recipe_ids,
+    })),
+    moving.map((l) => ({
+      itemId: l.item_id,
+      quantity: Number(l.quantity),
+      unit: l.unit,
+      recipeIds: l.recipe_ids,
+      origin: l.origin as LineOrigin,
+    })),
+    conversions,
+  );
+
+  const results = await Promise.all([
+    ...plan.updates.map((u) =>
+      supabase
+        .from("shopping_list_items")
+        .update({ quantity: u.quantity, recipe_ids: u.recipeIds })
+        .eq("id", u.id),
+    ),
+    plan.inserts.length
+      ? supabase.from("shopping_list_items").insert(
+          plan.inserts.map((l) => ({
+            list_id: to.id,
+            item_id: l.itemId,
+            line_key: `verse:${crypto.randomUUID()}`,
+            origin: l.origin ?? "free",
+            quantity: l.quantity,
+            unit: l.unit,
+            recipe_ids: l.recipeIds,
+          })),
+        )
+      : Promise.resolve({ error: null }),
+  ]);
+  if (results.some((r) => r.error)) return { ok: false };
+
+  // Les recettes suivent, pour afficher leurs titres (seulement si la liste d'arrivée est
+  // à moi : les règles d'accès réservent ses recettes à son créateur)
+  if (to.owner_id === userId) {
+    const known = new Set(to.shopping_list_recipes.map((r) => r.recipe_id));
+    const recipes = from.shopping_list_recipes.filter((r) => !known.has(r.recipe_id));
+    if (recipes.length) {
+      await supabase.from("shopping_list_recipes").insert(
+        recipes.map((r, i) => ({
+          list_id: to.id,
+          recipe_id: r.recipe_id,
+          servings: r.servings,
+          position: to.shopping_list_recipes.length + i + 1,
+        })),
+      );
+    }
+  }
+
+  // Enfin, la liste de départ disparaît
+  const { error } = await supabase.from("shopping_lists").delete().eq("id", from.id);
+  if (error) return { ok: false };
+  revalidatePath("/listes");
+  revalidatePath(`/listes/${to.id}`);
+  revalidatePath(`/courses/${to.id}`);
+  redirect(`/listes/${to.id}`);
 }
