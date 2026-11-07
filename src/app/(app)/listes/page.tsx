@@ -98,12 +98,22 @@ async function OpenLists() {
     );
   }
 
+  // Listes qui peuvent recevoir une autre liste (« Verser », US-LST-10) : prêtes ou en courses
+  const open = lists.filter((l) => l.status === "ready" || l.status === "shopping");
+
   return (
     <ul className="grid gap-3">
       {lists.map((list) => (
         <li key={list.id}>
           <ListCard
             listId={list.id}
+            mergeTargets={
+              !list.sharedBy && open.some((l) => l.id === list.id)
+                ? open
+                    .filter((l) => l.id !== list.id)
+                    .map(({ id, createdAt, sharedBy }) => ({ id, createdAt, sharedBy }))
+                : undefined
+            }
             href={listHref({
               id: list.id,
               status: list.status,

@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 import { useState, useTransition } from "react";
-import { ChevronRight, LogOut, Share2, ShoppingBasket, Trash2 } from "lucide-react";
+import { ChevronRight, Combine, LogOut, Share2, ShoppingBasket, Trash2 } from "lucide-react";
 
 import { deleteList, leaveList } from "@/app/(app)/listes/actions";
 import { CardActionsMenu } from "@/components/cards/card-actions-menu";
 import { SwipeableRow } from "@/components/cards/swipeable-row";
+import { MergeListDialog, type MergeTarget } from "@/components/lists/merge-list-dialog";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -29,7 +30,8 @@ const STATUS_LABEL: Record<ListStatus, string> = {
 
 /**
  * Carte de « Mes listes » : ouvrir la liste ; la supprimer (ma liste) ou y renoncer
- * (liste qu'on me partage), avec confirmation (US-LST-09).
+ * (liste qu'on me partage), avec confirmation (US-LST-09) ; la verser dans une autre
+ * (ma liste prête ou en courses, US-LST-10).
  * Ordinateur : menu ⋯ ; mobile : glissement à gauche, comme Mes recettes.
  */
 export function ListCard({
@@ -41,6 +43,7 @@ export function ListCard({
   listId,
   sharedBy,
   detail,
+  mergeTargets,
 }: {
   href: string;
   status: ListStatus;
@@ -50,7 +53,10 @@ export function ListCard({
   listId: string;
   sharedBy: string | null; // liste qu'on me partage : je peux seulement y renoncer
   detail?: string; // remplace la ligne « recettes · articles » (ex. historique)
+  /** Listes où verser celle-ci ; absent : pas de « Verser » (brouillon, terminée, partagée). */
+  mergeTargets?: MergeTarget[];
 }) {
+  const [merging, setMerging] = useState(false);
   const [confirm, setConfirm] = useState(false);
   const [failed, setFailed] = useState(false);
   const [pending, startTransition] = useTransition();
@@ -59,10 +65,16 @@ export function ListCard({
   // Ma liste : Supprimer ; liste partagée avec moi : Renoncer
   const leave = sharedBy !== null;
   const actionLabel = leave ? "Renoncer" : "Supprimer";
+  const canMerge = !leave && mergeTargets !== undefined;
+  const mergeAction = { label: "Verser", Icon: Combine, onClick: () => setMerging(true) };
 
   return (
     <>
-      <SwipeableRow deleteLabel={actionLabel} onDelete={() => setConfirm(true)}>
+      <SwipeableRow
+        primary={canMerge ? mergeAction : undefined}
+        deleteLabel={actionLabel}
+        onDelete={() => setConfirm(true)}
+      >
         <div className="group bg-card hover:bg-accent flex items-center gap-1 rounded-xl border pr-2 shadow-sm transition-colors">
           <Link href={href} className="flex min-w-0 flex-1 items-center gap-3 p-3">
             <span className="bg-secondary flex size-12 shrink-0 items-center justify-center rounded-lg">
@@ -102,6 +114,7 @@ export function ListCard({
           <CardActionsMenu
             label={`Actions pour la ${lowerTitle}`}
             actions={[
+              ...(canMerge ? [{ ...mergeAction, label: "Verser…" }] : []),
               {
                 label: actionLabel,
                 Icon: leave ? LogOut : Trash2,
@@ -112,6 +125,15 @@ export function ListCard({
           />
         </div>
       </SwipeableRow>
+
+      {canMerge && (
+        <MergeListDialog
+          sourceId={listId}
+          targets={mergeTargets}
+          open={merging}
+          onOpenChange={setMerging}
+        />
+      )}
 
       <Dialog open={confirm} onOpenChange={setConfirm}>
         <DialogContent>
