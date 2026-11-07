@@ -281,6 +281,66 @@ export type Database = {
           },
         ]
       }
+      menu_recipes: {
+        Row: {
+          added_at: string
+          menu_id: string
+          recipe_id: string
+          servings: number
+        }
+        Insert: {
+          added_at?: string
+          menu_id: string
+          recipe_id: string
+          servings: number
+        }
+        Update: {
+          added_at?: string
+          menu_id?: string
+          recipe_id?: string
+          servings?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "menu_recipes_menu_id_fkey"
+            columns: ["menu_id"]
+            isOneToOne: false
+            referencedRelation: "menus"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "menu_recipes_recipe_id_fkey"
+            columns: ["recipe_id"]
+            isOneToOne: false
+            referencedRelation: "recipes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      menus: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          owner_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          owner_id?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          owner_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       my_item_aliases: {
         Row: {
           alias: string
@@ -768,6 +828,7 @@ export type Database = {
           created_at: string
           finished_at: string | null
           id: string
+          menu_id: string | null
           owner_id: string
           status: string
           updated_at: string
@@ -776,6 +837,7 @@ export type Database = {
           created_at?: string
           finished_at?: string | null
           id?: string
+          menu_id?: string | null
           owner_id?: string
           status?: string
           updated_at?: string
@@ -784,11 +846,20 @@ export type Database = {
           created_at?: string
           finished_at?: string | null
           id?: string
+          menu_id?: string | null
           owner_id?: string
           status?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "shopping_lists_menu_id_fkey"
+            columns: ["menu_id"]
+            isOneToOne: false
+            referencedRelation: "menus"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       unit_conversions: {
         Row: {
