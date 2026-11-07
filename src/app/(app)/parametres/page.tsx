@@ -6,10 +6,12 @@ import { SignOutButton } from "@/components/profile/sign-out-button";
 import { DeleteAccount } from "@/components/profile/delete-account";
 import { ProfileForm } from "@/components/profile/profile-form";
 import { MyShares } from "@/components/sharing/my-shares";
+import { ThemeChoice } from "@/components/theme/theme-choice";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { getCurrentProfile } from "@/lib/profile";
 import { getMyShares } from "@/lib/sharing";
+import { isTheme } from "@/lib/theme";
 
 export const metadata = { title: "Paramètres — Olva" };
 
@@ -28,6 +30,21 @@ export default function SettingsPage() {
         <CardContent>
           <Suspense fallback={<p className="text-muted-foreground h-40 text-sm">Chargement…</p>}>
             <ProfileSection />
+          </Suspense>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Apparence</CardTitle>
+          <CardDescription>
+            Automatique suit le réglage de votre téléphone. Votre choix vous suit sur tous vos
+            appareils.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Suspense fallback={<p className="text-muted-foreground h-11 text-sm">Chargement…</p>}>
+            <ThemeSection />
           </Suspense>
         </CardContent>
       </Card>
@@ -95,4 +112,9 @@ async function DeleteAccountSection() {
   const { sent } = await getMyShares();
   const names = [...new Set(sent.map((share) => share.personName))];
   return <DeleteAccount sharedWith={names} />;
+}
+
+async function ThemeSection() {
+  const profile = await getCurrentProfile();
+  return <ThemeChoice initialTheme={isTheme(profile?.theme) ? profile.theme : "system"} />;
 }

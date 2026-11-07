@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 
 import type { ProfileFormState } from "@/app/bienvenue/actions";
 import { createClient } from "@/lib/supabase/server";
+import { isTheme } from "@/lib/theme";
 import { toFieldErrors } from "@/lib/validation/auth";
 import { profileSchema } from "@/lib/validation/profile";
 
@@ -35,6 +36,18 @@ export async function updateProfile(
   // Les pages qui affichent le profil (accueil) seront recalculées
   revalidatePath("/", "layout");
   return { success: "Modifications enregistrées.", displayName: parsed.data.displayName };
+}
+
+/** Apparence (US-CPT-05) : Automatique, Clair ou Sombre, rangé dans le profil. */
+export async function updateTheme(theme: string): Promise<{ ok: boolean }> {
+  if (!isTheme(theme)) return { ok: false };
+  const supabase = await createClient();
+  const { data: claims } = await supabase.auth.getClaims();
+  const userId = claims?.claims?.sub;
+  if (!userId) return { ok: false };
+  const { error } = await supabase.from("profiles").update({ theme }).eq("id", userId);
+  revalidatePath("/", "layout");
+  return { ok: !error };
 }
 
 export type DeleteAccountState = { message?: string };
