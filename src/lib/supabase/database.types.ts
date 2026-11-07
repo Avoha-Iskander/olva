@@ -381,6 +381,7 @@ export type Database = {
           id: string
           onboarded: boolean
           prelist_initialized: boolean
+          theme: string
           updated_at: string
         }
         Insert: {
@@ -390,6 +391,7 @@ export type Database = {
           id: string
           onboarded?: boolean
           prelist_initialized?: boolean
+          theme?: string
           updated_at?: string
         }
         Update: {
@@ -399,6 +401,7 @@ export type Database = {
           id?: string
           onboarded?: boolean
           prelist_initialized?: boolean
+          theme?: string
           updated_at?: string
         }
         Relationships: []

@@ -1,8 +1,22 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
-/* Le mode sombre suit le réglage du téléphone (prefers-color-scheme). */
-@custom-variant dark (@media (prefers-color-scheme: dark));
+/*
+ * Mode sombre (US-CPT-05, décision 070). L'attribut data-theme de <html> porte le choix :
+ * - data-theme="dark" : toujours sombre ; data-theme="light" : toujours clair ;
+ * - sans attribut (Automatique) : on suit le réglage du téléphone (prefers-color-scheme).
+ * La variante « dark: » de Tailwind (ex. dark:bg-…) suit les mêmes règles.
+ */
+@custom-variant dark {
+  &:where(:root[data-theme="dark"], :root[data-theme="dark"] *) {
+    @slot;
+  }
+  @media (prefers-color-scheme: dark) {
+    &:where(:root:not([data-theme="light"]), :root:not([data-theme="light"]) *) {
+      @slot;
+    }
+  }
+}
 
 /*
  * Thème Olva — inspiration Notion : beaucoup de blanc, bleu pour les actions.
@@ -12,6 +26,7 @@
  */
 :root {
   --radius: 0.5rem;
+  color-scheme: light; /* contrôles natifs (cases, barres de défilement) en clair */
 
   --background: oklch(1 0 0); /* blanc */
   --foreground: oklch(0.27 0.02 255); /* texte : gris bleuté très foncé */
@@ -40,9 +55,43 @@
   --ring: oklch(0.6 0.15 255);
 }
 
+/*
+ * Déclinaison bleu nuit. Écrite deux fois (le CSS ne sait pas partager un bloc) :
+ * 1. Sombre choisi dans les paramètres ;
+ * 2. Automatique, quand le téléphone est en mode sombre (sauf si Clair est choisi).
+ */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --background: oklch(0.19 0.03 260);
+  --foreground: oklch(0.95 0.01 255);
+
+  --card: oklch(0.23 0.035 260);
+  --card-foreground: oklch(0.95 0.01 255);
+  --popover: oklch(0.23 0.035 260);
+  --popover-foreground: oklch(0.95 0.01 255);
+
+  --primary: oklch(0.7 0.14 250);
+  --primary-foreground: oklch(0.18 0.03 260);
+
+  --secondary: oklch(0.28 0.045 260);
+  --secondary-foreground: oklch(0.92 0.02 255);
+
+  --muted: oklch(0.26 0.03 260);
+  --muted-foreground: oklch(0.72 0.03 255);
+
+  --accent: oklch(0.3 0.05 260);
+  --accent-foreground: oklch(0.95 0.01 255);
+
+  --destructive: oklch(0.65 0.2 25);
+
+  --border: oklch(0.32 0.035 260);
+  --input: oklch(0.34 0.035 260);
+  --ring: oklch(0.65 0.12 250);
+}
+
 @media (prefers-color-scheme: dark) {
-  /* Déclinaison bleu nuit */
-  :root {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
     --background: oklch(0.19 0.03 260);
     --foreground: oklch(0.95 0.01 255);
 
