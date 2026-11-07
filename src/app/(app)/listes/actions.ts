@@ -4,8 +4,6 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 
-import { undecidedCarryover } from "@/lib/carryover";
-
 import { consolidateLines, findMergeTarget, planAddition, type LineOrigin } from "@/lib/list-lines";
 import { currentUserId, loadConversions } from "@/lib/my-catalogue";
 import { createClient } from "@/lib/supabase/server";
@@ -95,10 +93,10 @@ export async function leaveList(listId: string): Promise<{ ok: boolean }> {
 
 const extraSchema = z.object({
   itemId: z.uuid(),
-  origin: z.enum(["prelist", "free", "carryover"]),
+  origin: z.enum(["prelist", "free"]),
   quantity: z.number().positive().max(100000),
   unit: z.string().min(1).max(20),
-  included: z.boolean().default(true), // report retiré : enregistré « non retenu »
+  included: z.boolean().default(true),
 });
 
 /** Étape 3 : enregistre les articles de la pré-liste cochés et les articles libres. */
@@ -115,9 +113,7 @@ export async function saveExtras(
     target_list: parsedId.data,
     lines: parsed.data.map((l) => ({
       item_id: l.itemId,
-      // Un report garde son unité dans la clé (un article peut être reporté en deux unités)
-      line_key:
-        l.origin === "carryover" ? `carryover:${l.itemId}:${l.unit}` : `${l.origin}:${l.itemId}`,
+      line_key: `${l.origin}:${l.itemId}`,
       origin: l.origin,
       quantity: l.quantity,
       unit: l.unit,
@@ -172,31 +168,11 @@ export async function finishList(listId: string): Promise<{ ok: false } | never>
   if (!id.success) return { ok: false };
   const supabase = await createClient();
 
-  const [{ data: saved }, { data: pool }] = await Promise.all([
-    supabase
-      .from("shopping_list_items")
-      .select("item_id, origin, quantity, unit, included, recipe_ids")
-      .eq("list_id", id.data),
-    supabase.from("carryover_items").select("item_id, quantity, unit"),
-  ]);
-  // Reports jamais décidés à l'étape 3 (étape passée sans rien toucher) : gardés par défaut
-  const undecided = undecidedCarryover(
-    (pool ?? []).map((p) => ({ itemId: p.item_id, unit: p.unit, quantity: Number(p.quantity) })),
-    (saved ?? [])
-      .filter((l) => l.origin === "carryover")
-      .map((l) => ({ itemId: l.item_id, unit: l.unit })),
-  );
-  const lines = [
-    ...(saved ?? []),
-    ...undecided.map((c) => ({
-      item_id: c.itemId,
-      origin: "carryover",
-      quantity: c.quantity,
-      unit: c.unit,
-      included: true,
-      recipe_ids: [] as string[],
-    })),
-  ];
+  const { data: saved } = await supabase
+    .from("shopping_list_items")
+    .select("item_id, origin, quantity, unit, included, recipe_ids")
+    .eq("list_id", id.data);
+  const lines = saved ?? [];
   const itemIds = [...new Set(lines.map((l) => l.item_id))];
   // Mes conversions d'abord (comme dans la revue) : le regroupement final les respecte
   const conversionsByItem = await loadConversions(supabase, await currentUserId(supabase), itemIds);

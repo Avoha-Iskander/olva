@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useTransition } from "react";
-import { Check, Pencil, Undo2, X } from "lucide-react";
+import { Check, Pencil, X } from "lucide-react";
 
 import {
   finishList,
@@ -15,7 +15,6 @@ import { ItemCombobox } from "@/components/recipe-form/item-combobox";
 import { NewItemDialog } from "@/components/recipe-form/new-item-dialog";
 import { Button } from "@/components/ui/button";
 import { groupByAisle } from "@/lib/aisles";
-import { type CarryoverChoice, carryoverLines } from "@/lib/carryover";
 import type { Aisle, CatalogueItem } from "@/lib/catalogue";
 import type { ExtraItem } from "@/lib/lists";
 import { normalizeUnit } from "@/lib/review";
@@ -47,7 +46,6 @@ export function ExtrasEditor({
   initialPrelist,
   initialChecked,
   initialFree,
-  initialCarryover,
 }: {
   listId: string;
   catalogue: CatalogueItem[];
@@ -55,7 +53,6 @@ export function ExtrasEditor({
   initialPrelist: ExtraItem[];
   initialChecked: ExtraItem[];
   initialFree: ExtraItem[];
-  initialCarryover: CarryoverChoice[];
 }) {
   const [items, setItems] = useState(catalogue);
   const [prelist, setPrelist] = useState(initialPrelist);
@@ -64,8 +61,6 @@ export function ExtrasEditor({
     () => new Map(initialChecked.map((c) => [c.itemId, { quantity: c.quantity, unit: c.unit }])),
   );
   const [free, setFree] = useState(initialFree);
-  // Reports de mes dernières courses (US-CRS-03) : gardés par défaut
-  const [carryover, setCarryover] = useState(initialCarryover);
   const [editing, setEditing] = useState(false);
   const [newItem, setNewItem] = useState<{ name: string; target: "free" | "prelist" } | null>(null);
   const [saveFailed, setSaveFailed] = useState(false);
@@ -73,16 +68,11 @@ export function ExtrasEditor({
 
   // --- Enregistrement automatique des lignes de la liste (comme dans le menu et la revue) ---
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const latest = useRef({ checked, free, carryover });
+  const latest = useRef({ checked, free });
   const dirty = useRef(false);
 
-  function toLines(state: {
-    checked: Map<string, Amount>;
-    free: ExtraItem[];
-    carryover: CarryoverChoice[];
-  }) {
+  function toLines(state: { checked: Map<string, Amount>; free: ExtraItem[] }) {
     return [
-      ...carryoverLines(state.carryover),
       ...[...state.checked].map(([itemId, a]) => ({ itemId, origin: "prelist" as const, ...a })),
       ...state.free.map((f) => ({
         itemId: f.itemId,
@@ -100,11 +90,7 @@ export function ExtrasEditor({
     return ok;
   }
 
-  function schedule(next: {
-    checked?: Map<string, Amount>;
-    free?: ExtraItem[];
-    carryover?: CarryoverChoice[];
-  }) {
+  function schedule(next: { checked?: Map<string, Amount>; free?: ExtraItem[] }) {
     latest.current = { ...latest.current, ...next };
     dirty.current = true;
     if (timer.current) clearTimeout(timer.current);
@@ -127,13 +113,6 @@ export function ExtrasEditor({
   function updateFree(next: ExtraItem[]) {
     setFree(next);
     schedule({ free: next });
-  }
-
-  // --- Reports ------------------------------------------------------------------
-  function toggleCarryover(key: string) {
-    const next = carryover.map((c) => (c.key === key ? { ...c, kept: !c.kept } : c));
-    setCarryover(next);
-    schedule({ carryover: next });
   }
 
   // --- Pré-liste ----------------------------------------------------------------
@@ -201,53 +180,6 @@ export function ExtrasEditor({
 
   return (
     <div className="grid gap-6">
-      {carryover.length > 0 && (
-        <section className="grid gap-2" aria-labelledby="carryover-title">
-          <div className="grid gap-0.5">
-            <h2 id="carryover-title" className="font-medium">
-              Reportés de vos dernières courses
-            </h2>
-            <p className="text-muted-foreground text-sm">
-              Pas trouvés la dernière fois : décochez ceux dont vous n&apos;avez plus besoin.
-            </p>
-          </div>
-          <ul className="divide-border bg-card divide-y rounded-xl border">
-            {carryover.map((c) => (
-              <li key={c.key}>
-                <label className="flex min-h-12 cursor-pointer items-center gap-3 px-3 py-2">
-                  <input
-                    type="checkbox"
-                    className="peer sr-only"
-                    checked={c.kept}
-                    onChange={() => toggleCarryover(c.key)}
-                  />
-                  <span
-                    aria-hidden="true"
-                    className={cn(
-                      "flex size-6 shrink-0 items-center justify-center rounded-md border-2",
-                      "peer-focus-visible:ring-ring/50 peer-focus-visible:ring-[3px]",
-                      c.kept
-                        ? "border-primary bg-primary text-primary-foreground"
-                        : "border-muted-foreground/40",
-                    )}
-                  >
-                    {c.kept && <Check className="size-4" strokeWidth={3} />}
-                  </span>
-                  <span className={cn("flex-1", !c.kept && "text-muted-foreground line-through")}>
-                    {c.name}
-                  </span>
-                  <span className="bg-muted text-muted-foreground flex items-center gap-1 rounded px-1.5 py-0.5 text-xs">
-                    <Undo2 className="size-3" aria-hidden="true" />
-                    Reporté
-                  </span>
-                  <span className="text-sm tabular-nums">{formatQuantity(c.quantity, c.unit)}</span>
-                </label>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
-
       <section className="grid gap-2" aria-labelledby="prelist-title">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="grid gap-0.5">

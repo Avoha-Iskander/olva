@@ -1,6 +1,5 @@
 import { computeReview, mergeReview, type ReviewLine, type SelectedRecipe } from "@/lib/review";
 import { applyOverride } from "@/lib/catalogue-overrides";
-import { carryoverChoices, type CarryoverChoice } from "@/lib/carryover";
 import { currentUserId, loadItemsDetails, loadOverrides } from "@/lib/my-catalogue";
 import { createClient } from "@/lib/supabase/server";
 
@@ -222,12 +221,11 @@ export async function getExtras(listId: string): Promise<{
   prelist: ExtraItem[];
   checked: ExtraItem[]; // articles de la pré-liste cochés pour cette liste
   free: ExtraItem[]; // articles libres ajoutés à cette liste
-  carryover: CarryoverChoice[]; // reports de mes dernières courses (gardés ou non)
 }> {
   const supabase = await createClient();
   await supabase.rpc("ensure_my_prelist");
 
-  const [{ data: prelist }, { data: lines }, { data: pool }] = await Promise.all([
+  const [{ data: prelist }, { data: lines }] = await Promise.all([
     supabase
       .from("prelist_items")
       .select("item_id, quantity, unit, position, items(name, aisle_id, aisles(name, position))")
@@ -238,18 +236,12 @@ export async function getExtras(listId: string): Promise<{
         "item_id, origin, quantity, unit, included, items(name, aisle_id, aisles(name, position))",
       )
       .eq("list_id", listId)
-      .in("origin", ["prelist", "free", "carryover"])
-      .order("created_at"),
-    supabase
-      .from("carryover_items")
-      .select("item_id, quantity, unit, items(name, aisle_id, aisles(name, position))")
+      .in("origin", ["prelist", "free"])
       .order("created_at"),
   ]);
 
   // Mes rayons personnalisés s'appliquent aussi au regroupement de l'étape 3
-  const itemIds = [
-    ...new Set([...(prelist ?? []), ...(lines ?? []), ...(pool ?? [])].map((row) => row.item_id)),
-  ];
+  const itemIds = [...new Set([...(prelist ?? []), ...(lines ?? [])].map((row) => row.item_id))];
   const { overrides, aisles } = await loadOverrides(
     supabase,
     await currentUserId(supabase),
@@ -292,12 +284,6 @@ export async function getExtras(listId: string): Promise<{
     prelist: (prelist ?? []).map(toExtra),
     checked: (lines ?? []).filter((l) => l.origin === "prelist").map(toExtra),
     free: (lines ?? []).filter((l) => l.origin === "free").map(toExtra),
-    carryover: carryoverChoices(
-      (pool ?? []).map(toExtra),
-      (lines ?? [])
-        .filter((l) => l.origin === "carryover")
-        .map((l) => ({ itemId: l.item_id, unit: l.unit, included: l.included })),
-    ),
   };
 }
 
