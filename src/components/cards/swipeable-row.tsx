@@ -6,23 +6,23 @@ import { useRef, useState } from "react";
 
 import { cn } from "@/lib/utils";
 
-const ACTIONS_WIDTH = 160; // deux boutons de 80 px
-// Le fond bleu démarre un peu SOUS la carte : ainsi ses coins arrondis se détachent
-// sur du bleu, sans laisser apparaître de blanc à la jonction.
+const ACTION_WIDTH = 80; // largeur d'un bouton révélé
+// Le fond coloré démarre un peu SOUS la carte : ainsi ses coins arrondis se détachent
+// sur la couleur, sans laisser apparaître de blanc à la jonction.
 const UNDERLAP = 16;
-const OPEN_THRESHOLD = ACTIONS_WIDTH / 2; // au-delà de la moitié, la ligne reste ouverte
 const DIRECTION_THRESHOLD = 8; // px avant de décider : glissement horizontal ou défilement ?
 
 // Le bleu passe au-dessus du rouge, coins droits arrondis : même jonction
 // que la carte au-dessus du bleu (« relative » le place devant le rouge)
 const primaryClass =
   "bg-primary text-primary-foreground relative flex flex-col items-center justify-center gap-1 rounded-r-xl text-sm";
-const primaryStyle = { width: ACTIONS_WIDTH / 2 + UNDERLAP, paddingLeft: UNDERLAP };
+const primaryStyle = { width: ACTION_WIDTH + UNDERLAP, paddingLeft: UNDERLAP };
 
 /**
- * Ligne qu'on fait glisser vers la gauche (au doigt) pour révéler deux actions :
- * une action principale en bleu (« Modifier » pour une recette, « Dupliquer » pour un
- * menu…) et « Supprimer » en rouge, comme les emails dans Outlook.
+ * Ligne qu'on fait glisser vers la gauche (au doigt) pour révéler ses actions :
+ * une action principale en bleu, facultative (« Modifier » pour une recette, « Dupliquer »
+ * pour un menu…), et une action rouge (« Supprimer », « Renoncer »…), comme les emails
+ * dans Outlook.
  *
  * Principe :
  * - au début du geste, on attend quelques pixels pour savoir si le doigt va
@@ -34,10 +34,13 @@ const primaryStyle = { width: ACTIONS_WIDTH / 2 + UNDERLAP, paddingLeft: UNDERLA
 export function SwipeableRow({
   primary,
   onDelete,
+  deleteLabel = "Supprimer",
   children,
 }: {
-  /** Action bleue : un lien (href) ou un bouton (onClick). */
-  primary: { label: string; Icon: LucideIcon; href?: string; onClick?: () => void };
+  /** Action bleue (facultative) : un lien (href) ou un bouton (onClick). */
+  primary?: { label: string; Icon: LucideIcon; href?: string; onClick?: () => void };
+  /** Libellé de l'action rouge. */
+  deleteLabel?: string;
   onDelete: () => void;
   children: React.ReactNode;
 }) {
@@ -50,6 +53,9 @@ export function SwipeableRow({
     direction: "undecided" | "horizontal" | "vertical";
     moved: boolean;
   } | null>(null);
+  // Un ou deux boutons révélés ; au-delà de la moitié, la ligne reste ouverte
+  const ACTIONS_WIDTH = primary ? 2 * ACTION_WIDTH : ACTION_WIDTH;
+  const OPEN_THRESHOLD = ACTIONS_WIDTH / 2;
   const isOpen = offset <= -ACTIONS_WIDTH;
 
   function onPointerDown(e: React.PointerEvent) {
@@ -118,7 +124,7 @@ export function SwipeableRow({
         style={{ width: ACTIONS_WIDTH + UNDERLAP }}
         aria-hidden={!isOpen}
       >
-        {primary.href ? (
+        {primary?.href ? (
           <Link
             href={primary.href}
             tabIndex={isOpen ? 0 : -1}
@@ -128,7 +134,7 @@ export function SwipeableRow({
             <primary.Icon className="size-5" />
             {primary.label}
           </Link>
-        ) : (
+        ) : primary ? (
           <button
             type="button"
             tabIndex={isOpen ? 0 : -1}
@@ -142,7 +148,7 @@ export function SwipeableRow({
             <primary.Icon className="size-5" />
             {primary.label}
           </button>
-        )}
+        ) : null}
         <button
           type="button"
           tabIndex={isOpen ? 0 : -1}
@@ -150,16 +156,17 @@ export function SwipeableRow({
             setOffset(0);
             onDelete();
           }}
-          // Le rouge glisse sous le bleu (marge négative) : il remplit le creux des coins
+          // Avec un bleu : le rouge glisse dessous (marge négative) et remplit le creux des
+          // coins. Seul : il démarre sous la carte, comme le bleu.
           className="bg-destructive flex flex-col items-center justify-center gap-1 text-sm text-white"
           style={{
-            width: ACTIONS_WIDTH / 2 + UNDERLAP,
-            marginLeft: -UNDERLAP,
+            width: ACTION_WIDTH + UNDERLAP,
+            marginLeft: primary ? -UNDERLAP : 0,
             paddingLeft: UNDERLAP,
           }}
         >
           <Trash2 className="size-5" />
-          Supprimer
+          {deleteLabel}
         </button>
       </div>
 

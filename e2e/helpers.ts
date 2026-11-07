@@ -111,8 +111,10 @@ export async function deleteList(page: Page, listId: string, finished = false) {
   await page.goto(finished ? "/listes?onglet=terminees" : "/listes");
   // Un brouillon mène à son étape en cours (/listes/<id>/revue…) : on compare le début
   const link = page.locator(`a[href^="/listes/${listId}"]`);
-  const card = page.locator("div", { has: link }).last();
-  await card.getByRole("button", { name: /^Supprimer la / }).click();
+  const card = page.locator("li", { has: link });
+  // Sur mobile, « Supprimer » est sous la carte (révélé par le glissement, US-LST-09) :
+  // on le déclenche directement, Playwright ne sachant pas faire glisser au doigt
+  await card.locator("button", { hasText: "Supprimer" }).first().dispatchEvent("click");
   await page.getByRole("dialog").getByRole("button", { name: "Supprimer", exact: true }).click();
   await expect(link).toHaveCount(0);
 }
