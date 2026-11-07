@@ -4,11 +4,14 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 
-import { listHref } from "@/lib/lists";
+import { planAddition } from "@/lib/list-lines";
+import { getList, listHref } from "@/lib/lists";
 import { defaultMenuName } from "@/lib/menu-name";
 import { getMenu } from "@/lib/menus";
 import { parseId } from "@/lib/menu-return";
+import { loadItemsDetails } from "@/lib/my-catalogue";
 import { getCurrentProfile } from "@/lib/profile";
+import { computeReview } from "@/lib/review";
 import { createClient } from "@/lib/supabase/server";
 
 /*
@@ -164,4 +167,132 @@ export async function createListFromMenu(menuId: string): Promise<{ ok: false } 
   revalidatePath("/menus");
   revalidatePath("/listes");
   redirect(`/listes/${list.id}/revue`);
+}
+
+/**
+ * « Ajouter à la liste » (US-MEN-03) : une recette ajoutée au menu après la création de
+ * la liste la rejoint.
+ * - Liste en brouillon : la recette rejoint la revue, qui se recalcule en gardant mes
+ *   ajustements.
+ * - Liste prête ou en courses : ses ingrédients sont fusionnés dans la liste (même article →
+ *   quantités additionnées ; ingrédients de base non ajoutés). Le temps réel prévient les
+ *   personnes avec qui la liste est partagée.
+ */
+export async function addMenuRecipeToList(
+  menuId: string,
+  recipeId: string,
+): Promise<{ ok: boolean }> {
+  const id = parseId(menuId);
+  const recipe = parseId(recipeId);
+  const menu = id ? await getMenu(id) : null;
+  const choice = menu?.recipes.find((r) => r.recipeId === recipe);
+  if (!menu || !choice || !menu.list || menu.list.status === "done") return { ok: false };
+  const list = await getList(menu.list.id);
+  if (!list || list.status === "done") return { ok: false };
+  if (list.recipes.some((r) => r.recipeId === choice.recipeId)) return { ok: true }; // déjà là
+
+  const supabase = await createClient();
+  const refresh = () => {
+    revalidatePath(`/menus/${menu.id}`);
+    revalidatePath(`/listes/${list.id}`);
+    revalidatePath(`/courses/${list.id}`);
+  };
+
+  // Brouillon : la revue (étape 1) refera le calcul à partir des recettes de la liste
+  if (list.status === "draft") {
+    const { error } = await supabase.rpc("set_list_recipes", {
+      target_list: list.id,
+      recipes: [...list.recipes, choice].map((r) => ({
+        recipe_id: r.recipeId,
+        servings: r.servings,
+      })),
+    });
+    refresh();
+    return { ok: !error };
+  }
+
+  // Liste prête ou en courses : on calcule les ingrédients de la recette pour ses portions…
+  const { data: source } = await supabase
+    .from("recipes")
+    .select("id, servings, recipe_ingredients(item_id, quantity, unit)")
+    .eq("id", choice.recipeId)
+    .maybeSingle();
+  if (!source) return { ok: false };
+  const catalogue = await loadItemsDetails(
+    supabase,
+    source.recipe_ingredients.map((i) => i.item_id),
+  );
+  const computed = computeReview(
+    [
+      {
+        recipeId: source.id,
+        baseServings: source.servings,
+        servings: choice.servings,
+        ingredients: source.recipe_ingredients.map((i) => ({
+          itemId: i.item_id,
+          quantity: i.quantity === null ? null : Number(i.quantity),
+          unit: i.unit,
+        })),
+      },
+    ],
+    catalogue,
+  ).filter((l) => l.section === "main"); // les ingrédients de base ne sont pas ajoutés
+
+  // … puis on les fusionne avec les lignes déjà dans la liste
+  const { data: existing, error: readError } = await supabase
+    .from("shopping_list_items")
+    .select("id, item_id, quantity, unit, included, checked, recipe_ids")
+    .eq("list_id", list.id);
+  if (readError) return { ok: false };
+  const plan = planAddition(
+    (existing ?? []).map((l) => ({
+      id: l.id,
+      itemId: l.item_id,
+      quantity: Number(l.quantity),
+      unit: l.unit,
+      included: l.included,
+      checked: l.checked,
+      recipeIds: l.recipe_ids,
+    })),
+    computed.map((l) => ({
+      itemId: l.itemId,
+      quantity: l.quantity,
+      unit: l.unit,
+      recipeIds: l.recipeIds,
+    })),
+    new Map([...catalogue].map(([itemId, item]) => [itemId, item.conversions])),
+  );
+
+  // La recette apparaît dans la liste (titre sur la carte, origine des lignes)
+  const { error: recipeError } = await supabase.from("shopping_list_recipes").insert({
+    list_id: list.id,
+    recipe_id: choice.recipeId,
+    servings: choice.servings,
+    position: list.recipes.length + 1,
+  });
+  if (recipeError) return { ok: false };
+
+  const results = await Promise.all([
+    ...plan.updates.map((u) =>
+      supabase
+        .from("shopping_list_items")
+        .update({ quantity: u.quantity, recipe_ids: u.recipeIds })
+        .eq("id", u.id),
+    ),
+    plan.inserts.length
+      ? supabase.from("shopping_list_items").insert(
+          plan.inserts.map((l) => ({
+            list_id: list.id,
+            item_id: l.itemId,
+            line_key: `menu:${crypto.randomUUID()}`,
+            origin: "recipe",
+            quantity: l.quantity,
+            unit: l.unit,
+            recipe_ids: l.recipeIds,
+          })),
+        )
+      : Promise.resolve({ error: null }),
+  ]);
+  refresh();
+  return { ok: results.every((r) => !r.error) };
 }

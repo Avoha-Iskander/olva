@@ -94,3 +94,85 @@ export function findMergeTarget(
   if (index === -1) return null;
   return { index, added: convertQuantity(quantity, unit, lines[index].unit, conversions)! };
 }
+
+/** Une ligne déjà dans la liste, telle que lue en base. */
+export type ExistingLine = {
+  id: string;
+  itemId: string;
+  quantity: number;
+  unit: string;
+  included: boolean;
+  checked: boolean;
+  recipeIds: string[];
+};
+
+/** Une ligne à ajouter (ingrédient d'une recette, déjà recalculé pour les portions). */
+export type AddedLine = { itemId: string; quantity: number; unit: string; recipeIds: string[] };
+
+/**
+ * « Ajouter à la liste » depuis un menu (US-MEN-03) : les ingrédients d'une recette
+ * rejoignent une liste déjà prête. Un article déjà présent, pas encore coché et dans une
+ * unité compatible voit sa quantité augmenter ; sinon une nouvelle ligne est créée
+ * (comme pour un article ajouté à la main sur la page de la liste).
+ * Fonction pure : elle dit quoi modifier, l'action serveur l'écrit en base.
+ */
+export function planAddition(
+  existing: ExistingLine[],
+  added: AddedLine[],
+  conversionsByItem: Map<string, ItemConversion[]> = new Map(),
+): {
+  updates: { id: string; quantity: number; recipeIds: string[] }[];
+  inserts: AddedLine[];
+} {
+  // Lignes qu'on peut augmenter : gardées et pas encore dans le panier
+  const open = existing
+    .filter((l) => l.included && !l.checked)
+    .map((l) => ({ ...l, recipeIds: [...l.recipeIds] }));
+  const touched = new Set<string>();
+  const inserts: AddedLine[] = [];
+
+  for (const line of added) {
+    const target = findMergeTarget(
+      open,
+      line.itemId,
+      line.quantity,
+      line.unit,
+      conversionsByItem.get(line.itemId) ?? [],
+    );
+    if (!target) {
+      // Deux lignes du même article dans la recette (unités compatibles) : une seule ligne
+      const pending = findMergeTarget(
+        inserts,
+        line.itemId,
+        line.quantity,
+        line.unit,
+        conversionsByItem.get(line.itemId) ?? [],
+      );
+      if (pending) inserts[pending.index].quantity += pending.added;
+      else inserts.push({ ...line, recipeIds: [...line.recipeIds] });
+      continue;
+    }
+    const row = open[target.index];
+    row.quantity += target.added;
+    for (const id of line.recipeIds) if (!row.recipeIds.includes(id)) row.recipeIds.push(id);
+    touched.add(row.id);
+  }
+
+  return {
+    updates: open
+      .filter((l) => touched.has(l.id))
+      .map((l) => ({
+        id: l.id,
+        quantity: roundForList(l.quantity, l.unit),
+        recipeIds: l.recipeIds,
+      })),
+    inserts: inserts.map((l) => {
+      const display = toDisplayUnit(l.quantity, l.unit);
+      return {
+        ...l,
+        unit: display.unit,
+        quantity: roundForList(display.quantity, display.unit),
+      };
+    }),
+  };
+}
