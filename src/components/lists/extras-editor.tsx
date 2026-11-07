@@ -46,6 +46,7 @@ export function ExtrasEditor({
   initialPrelist,
   initialChecked,
   initialFree,
+  planned,
 }: {
   listId: string;
   catalogue: CatalogueItem[];
@@ -53,6 +54,8 @@ export function ExtrasEditor({
   initialPrelist: ExtraItem[];
   initialChecked: ExtraItem[];
   initialFree: ExtraItem[];
+  /** « Déjà prévu » par les recettes : libellé par article (US-LST-03, décision 070). */
+  planned: Record<string, string>;
 }) {
   const [items, setItems] = useState(catalogue);
   const [prelist, setPrelist] = useState(initialPrelist);
@@ -243,8 +246,15 @@ export function ExtrasEditor({
                                 onChange={() => togglePrelist(entry)}
                                 className="accent-primary size-5 shrink-0"
                               />
-                              <span className={cn(!amount && "text-muted-foreground")}>
-                                {entry.name}
+                              <span className="grid">
+                                <span className={cn(!amount && "text-muted-foreground")}>
+                                  {entry.name}
+                                </span>
+                                {planned[entry.itemId] && (
+                                  <span className="text-primary text-xs font-medium">
+                                    Déjà prévu : {planned[entry.itemId]}
+                                  </span>
+                                )}
                               </span>
                             </label>
                             {amount ? (
@@ -302,6 +312,7 @@ export function ExtrasEditor({
           selectedId={null}
           selectedName=""
           placeholder="Ajouter un article…"
+          hints={planned}
           onSelect={addFree}
           onCreate={(name) => setNewItem({ name, target: "free" })}
         />

@@ -43,6 +43,7 @@ async function Extras({ params }: { params: PageProps<"/listes/[id]/pre-liste">[
         initialPrelist={extras.prelist}
         initialChecked={extras.checked}
         initialFree={extras.free}
+        planned={extras.planned}
       />
     </>
   );
