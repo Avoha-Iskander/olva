@@ -228,15 +228,23 @@ Champs : titre (obligatoire), nombre de personnes (obligatoire), ingrédients (q
 
 En tant que préparateur, je veux composer le menu de la semaine avec mes recettes, afin de savoir quoi cuisiner et de préparer la liste à partir de lui.
 
-- [ ] « Nouveau menu » crée un menu nommé « Semaine du [lundi de la semaine en cours] », nom modifiable
+- [ ] « Nouveau » ouvre le **formulaire du menu** : nom proposé « Semaine du [lundi de la semaine en cours] », modifiable ; rien n'est enregistré avant de valider (décision 069)
 - [ ] Je choisis des recettes (les miennes et celles qu'on me partage) ; chacune reprend le nombre de personnes par défaut (paramètres), modifiable individuellement
 - [ ] Les recettes sont proposées par ordre alphabétique (décision 063), avec recherche et filtre par collection
-- [ ] « Créer une recette » (à la main, photo, lien ou texte collé) depuis le menu : une fois enregistrée, je reviens au menu avec la nouvelle recette **déjà ajoutée** (reprend la décision 064)
+- [ ] « Créer une recette » (à la main, photo, lien ou texte collé) depuis le formulaire : le menu est d'abord enregistré ; une fois la recette enregistrée, je reviens au formulaire avec la nouvelle recette **déjà ajoutée** (reprend la décision 064)
+- [ ] Le bas du formulaire propose **« Enregistrer le menu »** (ouvre la fiche du menu) et **« Enregistrer et créer la liste »** (ouvre la revue ; « … et voir la liste » si le menu a déjà une liste en cours)
 - [ ] Pas de jours de la semaine (le planning par jour reste après le MVP)
+
+**US-MEN-05 — Fiche d'un menu** · M
+
+- [ ] La fiche n'affiche **que les recettes du menu** (miniature, titre, personnes) ; toucher une recette ouvre sa fiche
+- [ ] Pour chaque recette : **changer les portions** ou la **retirer du menu** (menu ⋯ sur ordinateur, glissement à gauche sur mobile, comme Mes recettes)
+- [ ] « Modifier » ouvre le formulaire du menu ; « Supprimer le menu… » (avec confirmation) le supprime et revient à Mes menus
+- [ ] « Créer la liste » / « Voir la liste » / « Créer une nouvelle liste » (US-MEN-02, US-MEN-03)
 
 **US-MEN-02 — Créer la liste depuis un menu** · M
 
-- [ ] « Créer la liste » crée une liste avec les recettes et portions du menu, et ouvre directement la **revue des ingrédients** (US-LST-02), puis la pré-liste (US-LST-03)
+- [ ] « Créer la liste » (fiche) ou « Enregistrer et créer la liste » (formulaire) crée une liste avec les recettes et portions du menu, et ouvre directement la **revue des ingrédients** (US-LST-02), puis la pré-liste (US-LST-03)
 - [ ] La liste garde le lien vers son menu ; le menu affiche sa liste (« Voir la liste ») au lieu de « Créer la liste »
 - [ ] Un menu sans recette ne peut pas créer de liste
 
@@ -252,7 +260,7 @@ En tant que préparateur, je veux composer le menu de la semaine avec mes recett
 
 - [ ] Les menus sont affichés du plus récent au plus ancien, avec leurs recettes et l'état de leur liste
 - [ ] « Dupliquer » crée un nouveau menu (nom par défaut) avec les mêmes recettes et portions, sans liste
-- [ ] Supprimer un menu (menu ⋯, glissement à gauche ou « Supprimer le menu… » en bas de sa page, avec confirmation) ne supprime pas sa liste
+- [ ] Supprimer un menu (menu ⋯, glissement à gauche, ou depuis sa fiche ; avec confirmation) ne supprime pas sa liste
 - [ ] Les menus ne se partagent pas ; une recette supprimée disparaît des menus
 
 **US-LST-01 — Sélectionner les recettes et leurs portions** · ~~M~~ — remplacée par US-MEN-01 et US-MEN-02 (décision 068)
@@ -393,7 +401,8 @@ Toutes les tables sont protégées par Row Level Security : je vois mes données
 | Détail / édition recette    | Ingrédients, étapes, livre/page, collections                                                                                                          | Mobile + desktop     |
 | Import photo                | Capture, analyse, relecture avec champs surlignés                                                                                                     | Mobile               |
 | Mes menus                   | Du plus récent au plus ancien ; dupliquer, supprimer (menu ⋯ / glissement)                                                                            | Mobile + desktop     |
-| Menu                        | Recettes + portions, ajout de recettes, « Créer la liste » / « Voir la liste » / « Ajouter à la liste »                                               | Mobile + desktop     |
+| Fiche d'un menu             | Recettes du menu seulement (portions, retirer) ; Modifier, Supprimer ; « Créer la liste » / « Voir la liste » / « Ajouter à la liste »                | Mobile + desktop     |
+| Formulaire d'un menu        | Nom, choix des recettes + portions, créer une recette ; « Enregistrer le menu » / « Enregistrer et créer la liste »                                   | Mobile + desktop     |
 | Préparer la liste — étape 1 | Revue des ingrédients : ajuster, retirer ; ingrédients de base décochés                                                                               | Mobile + desktop     |
 | Préparer la liste — étape 2 | Pré-liste + champ auto-complétion                                                                                                                     | Mobile               |
 | Mes listes en cours         | Brouillons et listes prêtes                                                                                                                           | Mobile               |
@@ -499,7 +508,7 @@ Toutes les tables sont protégées par Row Level Security : je vois mes données
 | 5    | Import photo IA + test Haiku/Sonnet ; import par lien                                                                                                                                                                                            | US-REC-02, US-REC-07                                                    | async/await, appels d'API côté serveur                                | ✅ 3 nov.                      |
 | 6    | Faire ses courses : liste par rayon, temps réel entre co-acheteurs, PWA hors ligne, report, historique ; achat du domaine                                                                                                                        | US-CRS-*                                                                | Temps réel, service workers, stockage hors ligne                      | début déc. · Playwright        |
 | 7    | ~~Import des ~100 recettes du Sheets (CSV → base, correspondance des ingrédients assistée par IA, liste des cas non résolus)~~ — **abandonné** (décision 067)                                                                                    | —                                                                       | Scripts de migration de données                                       | mi-déc.                        |
-| 7bis | **Menus** (décision 068) : menus de la semaine, liste créée depuis un menu, liste sans recette, « Ajouter à la liste »                                                                                                                           | US-MEN-01 à 04, US-LST-08                                               | Migrations, réutiliser un composant, fusion de listes (fonction pure) | nov.                           |
+| 7bis | **Menus** (décision 068) : menus de la semaine, liste créée depuis un menu, liste sans recette, « Ajouter à la liste »                                                                                                                           | US-MEN-01 à 05, US-LST-08                                               | Migrations, réutiliser un composant, fusion de listes (fonction pure) | nov.                           |
 | 8    | Période d'usage : 4 semaines, corrections uniquement                                                                                                                                                                                             | —                                                                       | —                                                                     | mi-déc. → mi-janv.             |
 
 **Fin du MVP** = lots 0 à 6 et 7bis livrés (le lot 7 est abandonné, décision 067 ; le lot 8, commencé le 07/11, est mis en pause pour le lot 7bis et ses 4 semaines repartent de zéro ensuite, décision 068) **et** 4 semaines de courses avec l'app sans le Sheets (lot 8). Pendant le lot 8, aucune nouvelle fonctionnalité : les idées vont en issues étiquetées `post-mvp`.
@@ -595,6 +604,7 @@ Toutes les tables sont protégées par Row Level Security : je vois mes données
 | 066 | 2026-11-07 | **Emails** : envoi par **Resend** (SMTP, région Irlande) depuis `Olva <bonjour@myolva.app>` sur la prod (DKIM et SPF via CNAME chez OVH, DMARC `p=none`, réception désactivée). **Modèles en français** dans `supabase/templates/` (confirmation d'inscription, réinitialisation, notification « mot de passe modifié »), liens au format `token_hash` (valables depuis n'importe quel navigateur), collés à la main dans Supabase prod. Le projet dev garde l'envoi par défaut de Supabase                                                                                                                                                                                                                                               | Envoi par défaut de Supabase (anglais, limité, liens liés au navigateur)                               |
 | 067 | 2026-11-07 | **Lot 7 abandonné** : pas d'import des recettes du Sheets ; les recettes seront ajoutées au fil de l'eau (import par lien, photo, texte collé, saisie). Les lots 0 à 6 sont livrés : début du **lot 8** (4 semaines d'usage, corrections uniquement, idées en issues `post-mvp`)                                                                                                                                                                                                                                                                                                                                                                                                                                                          | Import CSV assisté par IA                                                                              |
 | 068 | 2026-11-07 | **Menus de la semaine** à la place de « Créer une liste » : un menu = des recettes + portions, **sans jours** ; la liste se crée depuis le menu et commence à la revue (l'étape 1 disparaît) ; une recette ajoutée au menu après coup → bouton « Ajouter à la liste » (fusion dans la liste, même prête), pas de mise à jour automatique ; menus **non partagés** ; « Dupliquer » un menu ; supprimer un menu garde sa liste ; « Nouvelle liste » dans Mes listes = liste sans recette. **Lot 8 mis en pause** : les menus sont livrés en lot 7bis (4 PR), puis les 4 semaines d'usage repartent de zéro                                                                                                                                  | Menus en issue `post-mvp` ; jours de la semaine ; menus partagés ; mise à jour automatique de la liste |
+| 069 | 2026-11-07 | Retours d'Alex sur les menus : un menu se compose dans un **formulaire** (« Enregistrer le menu » / « Enregistrer et créer la liste », plus d'enregistrement automatique, rien de créé avant de valider) et se consulte sur une **fiche** qui n'affiche que ses recettes (portions et retrait par recette ; Modifier, Supprimer le menu ; créer ou voir la liste), sur le modèle des recettes. US-MEN-05                                                                                                                                                                                                                                                                                                                                  | Écran unique avec toutes les recettes et enregistrement automatique (décision 068)                     |
 
 ---
 

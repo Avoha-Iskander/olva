@@ -38,6 +38,8 @@ export function AddRecipeMenu({
     startTransition(async () => {
       const menuId = beforeLeave ? await beforeLeave() : null;
       setOpen(false);
+      // Menu pas enregistré (erreur affichée par le formulaire) : on reste ici
+      if (beforeLeave && !menuId) return;
       router.push(withMenuReturn(path, menuId));
     });
   }

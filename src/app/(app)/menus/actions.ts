@@ -24,57 +24,98 @@ const recipesSchema = z
   .array(z.object({ recipeId: z.uuid(), servings: z.number().int().min(1).max(50) }))
   .max(50);
 
-/** « Nouveau menu » : crée un menu « Semaine du … » et l'ouvre. */
-export async function createMenu(): Promise<void> {
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("menus")
-    .insert({ name: defaultMenuName(new Date()) })
-    .select("id")
-    .single();
-  if (error || !data) throw new Error("Le menu n'a pas pu être créé");
-  redirect(`/menus/${data.id}`);
-}
+const menuSchema = z.object({
+  name: z.string().trim().min(1).max(80),
+  recipes: recipesSchema,
+});
 
 /**
- * Enregistre les recettes du menu et leurs portions (enregistrement automatique).
- * « upsert » = insérer, ou mettre à jour si la recette est déjà là : une recette déjà
- * présente garde ainsi sa date d'ajout (utile pour « Pas encore dans la liste »).
+ * « Enregistrer le menu » (US-MEN-01, décision 069) : crée le menu (menuId null) ou met à
+ * jour son nom et ses recettes. Renvoie l'identifiant du menu ; c'est l'écran qui décide
+ * où aller ensuite (fiche du menu, ou création de la liste).
  */
-export async function saveMenuRecipes(
-  menuId: string,
-  recipes: { recipeId: string; servings: number }[],
-): Promise<{ ok: boolean }> {
-  const id = parseId(menuId);
-  const parsed = recipesSchema.safeParse(recipes);
-  if (!id || !parsed.success) return { ok: false };
-
+export async function saveMenu(
+  menuId: string | null,
+  input: { name: string; recipes: { recipeId: string; servings: number }[] },
+): Promise<{ ok: true; menuId: string } | { ok: false }> {
+  const parsed = menuSchema.safeParse(input);
+  const existingId = menuId === null ? null : parseId(menuId);
+  if (!parsed.success || (menuId !== null && !existingId)) return { ok: false };
+  const { name, recipes } = parsed.data;
   const supabase = await createClient();
-  if (parsed.data.length) {
+
+  // 1. Le menu lui-même : création, ou nouveau nom
+  let id = existingId;
+  if (!id) {
+    const { data, error } = await supabase.from("menus").insert({ name }).select("id").single();
+    if (error || !data) return { ok: false };
+    id = data.id;
+  } else {
+    const { error, count } = await supabase
+      .from("menus")
+      .update({ name }, { count: "exact" })
+      .eq("id", id);
+    if (error || count !== 1) return { ok: false };
+  }
+
+  // 2. Ses recettes. « upsert » = insérer, ou mettre à jour si la recette est déjà là :
+  //    une recette déjà présente garde ainsi sa date d'ajout.
+  if (recipes.length) {
     const { error } = await supabase.from("menu_recipes").upsert(
-      parsed.data.map((r) => ({ menu_id: id, recipe_id: r.recipeId, servings: r.servings })),
+      recipes.map((r) => ({ menu_id: id, recipe_id: r.recipeId, servings: r.servings })),
       { onConflict: "menu_id,recipe_id" },
     );
     if (error) return { ok: false };
   }
-
-  // Puis on retire les recettes qui ne sont plus choisies
+  // 3. On retire les recettes qui ne sont plus choisies
   let removal = supabase.from("menu_recipes").delete().eq("menu_id", id);
-  if (parsed.data.length) {
-    removal = removal.not("recipe_id", "in", `(${parsed.data.map((r) => r.recipeId).join(",")})`);
+  if (recipes.length) {
+    removal = removal.not("recipe_id", "in", `(${recipes.map((r) => r.recipeId).join(",")})`);
   }
   const { error } = await removal;
-  return { ok: !error };
+  if (error) return { ok: false };
+
+  revalidatePath("/menus");
+  revalidatePath(`/menus/${id}`);
+  return { ok: true, menuId: id };
 }
 
-/** Renommer un menu. */
-export async function renameMenu(menuId: string, name: string): Promise<{ ok: boolean }> {
+/** Fiche du menu (US-MEN-05) : changer les portions d'une recette du menu. */
+export async function setMenuRecipeServings(
+  menuId: string,
+  recipeId: string,
+  servings: number,
+): Promise<{ ok: boolean }> {
   const id = parseId(menuId);
-  const parsed = z.string().trim().min(1).max(80).safeParse(name);
-  if (!id || !parsed.success) return { ok: false };
+  const recipe = parseId(recipeId);
+  const parsed = z.number().int().min(1).max(50).safeParse(servings);
+  if (!id || !recipe || !parsed.success) return { ok: false };
   const supabase = await createClient();
-  const { error } = await supabase.from("menus").update({ name: parsed.data }).eq("id", id);
+  const { error, count } = await supabase
+    .from("menu_recipes")
+    .update({ servings: parsed.data }, { count: "exact" })
+    .eq("menu_id", id)
+    .eq("recipe_id", recipe);
+  revalidatePath(`/menus/${id}`);
+  return { ok: !error && count === 1 };
+}
+
+/** Fiche du menu (US-MEN-05) : retirer une recette du menu (la liste n'est pas touchée). */
+export async function removeRecipeFromMenu(
+  menuId: string,
+  recipeId: string,
+): Promise<{ ok: boolean }> {
+  const id = parseId(menuId);
+  const recipe = parseId(recipeId);
+  if (!id || !recipe) return { ok: false };
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("menu_recipes")
+    .delete()
+    .eq("menu_id", id)
+    .eq("recipe_id", recipe);
   revalidatePath("/menus");
+  revalidatePath(`/menus/${id}`);
   return { ok: !error };
 }
 

@@ -4,22 +4,40 @@ import { expect } from "./fixtures";
 
 /** Outils partagés par les tests du mode courses. */
 
-/** Crée un menu vide depuis « Mes menus » ; renvoie son id (on est sur sa page). */
-export async function createMenu(page: Page): Promise<string> {
+/** Ouvre le formulaire d'un nouveau menu depuis « Mes menus ». */
+export async function openNewMenu(page: Page) {
   await page.goto("/menus");
-  await page.getByRole("button", { name: "Nouveau", exact: true }).click();
+  await page.getByRole("link", { name: "Nouveau", exact: true }).click();
+  await expect(page).toHaveURL(/\/menus\/nouveau$/);
+}
+
+/** Id du menu affiché (fiche /menus/<id> ou formulaire /menus/<id>/modifier). */
+export const menuIdFromUrl = (page: Page) => new URL(page.url()).pathname.split("/")[2];
+
+/**
+ * Crée un menu avec ces recettes (par le début de leur titre) et l'enregistre ;
+ * renvoie son id (on est sur sa fiche).
+ */
+export async function createMenu(page: Page, recipes: string[] = []): Promise<string> {
+  await openNewMenu(page);
+  for (const title of recipes) {
+    await page.getByRole("button", { name: new RegExp(`^${title}`) }).click();
+  }
+  await page.getByRole("button", { name: "Enregistrer le menu" }).click();
   await expect(page).toHaveURL(/\/menus\/[0-9a-f-]{36}$/);
-  return new URL(page.url()).pathname.split("/")[2];
+  return menuIdFromUrl(page);
 }
 
 /**
- * « Créer une recette » depuis la page d'un menu : une salade de tomates saisie à la main.
- * On revient au menu, recette ajoutée (US-MEN-01).
+ * « Créer une recette » depuis le formulaire d'un menu : une salade de tomates saisie à la
+ * main. Le menu est enregistré au départ ; on revient au formulaire, recette ajoutée.
+ * Renvoie l'id du menu.
  */
-export async function createRecipeFromMenu(page: Page, menuId: string, title: string) {
+export async function createRecipeFromMenu(page: Page, title: string): Promise<string> {
   await page.getByRole("button", { name: "Créer une recette" }).click();
   await page.getByRole("button", { name: "Saisir à la main" }).click();
-  await expect(page).toHaveURL(new RegExp(`/recettes/nouvelle\\?menu=${menuId}$`));
+  await expect(page).toHaveURL(/\/recettes\/nouvelle\?menu=[0-9a-f-]{36}$/);
+  const menuId = new URL(page.url()).searchParams.get("menu")!;
   await page.getByLabel("Titre").fill(title);
   await page.getByRole("combobox").first().click();
   await page.getByPlaceholder("Rechercher (ex. tomate)").fill("tomate");
@@ -32,7 +50,8 @@ export async function createRecipeFromMenu(page: Page, menuId: string, title: st
   await page.getByLabel("Ingrédient 1 : quantité (vide = au goût)").fill("2");
   await page.getByRole("textbox", { name: "Étape 1", exact: true }).fill("Couper les tomates.");
   await page.getByRole("button", { name: "Enregistrer" }).click();
-  await expect(page).toHaveURL(new RegExp(`/menus/${menuId}\\?ajout=[0-9a-f-]{36}$`));
+  await expect(page).toHaveURL(new RegExp(`/menus/${menuId}/modifier\\?ajout=[0-9a-f-]{36}$`));
+  return menuId;
 }
 
 /** Supprime une recette par son titre (depuis sa fiche). */
@@ -45,7 +64,7 @@ export async function deleteRecipe(page: Page, title: string) {
   await expect(page).toHaveURL(/\/recettes$/);
 }
 
-/** Supprime un menu depuis sa page (sa liste éventuelle est gardée). */
+/** Supprime un menu depuis sa fiche (sa liste éventuelle est gardée). */
 export async function deleteMenu(page: Page, menuId: string) {
   await page.goto(`/menus/${menuId}`);
   await page.getByRole("button", { name: "Supprimer le menu…" }).click();
@@ -55,18 +74,20 @@ export async function deleteMenu(page: Page, menuId: string) {
 }
 
 /**
- * Menu avec la recette d'exemple « Crêpes » → « Créer la liste » → revue → pré-liste.
- * Le menu est supprimé en route (sa liste est gardée, US-MEN-04) : le compte de test
- * reste propre, et deleteList suffit ensuite pour ranger.
+ * Nouveau menu avec la recette d'exemple « Crêpes » → « Enregistrer et créer la liste »
+ * → revue → pré-liste. Le menu est supprimé en route (sa liste est gardée, US-MEN-04) :
+ * le compte de test reste propre, et deleteList suffit ensuite pour ranger.
  */
 export async function goToPrelist(page: Page) {
-  const menuId = await createMenu(page);
+  await openNewMenu(page);
   await page.getByRole("button", { name: /^Crêpes/ }).click();
-  await page.getByRole("button", { name: "Créer la liste" }).click();
+  await page.getByRole("button", { name: "Enregistrer et créer la liste" }).click();
   await expect(page).toHaveURL(/\/listes\/[0-9a-f-]{36}\/revue$/);
   const listId = new URL(page.url()).pathname.split("/")[2];
+  // Le lien « Modifier le menu » de la revue donne l'id du menu
+  const menuHref = await page.getByRole("link", { name: "Modifier le menu" }).getAttribute("href");
 
-  await deleteMenu(page, menuId);
+  await deleteMenu(page, menuHref!.split("/")[2]);
   await page.goto(`/listes/${listId}/revue`);
   await page.getByRole("button", { name: "Continuer : pré-liste et articles libres" }).click();
   await expect(page).toHaveURL(/\/pre-liste$/);

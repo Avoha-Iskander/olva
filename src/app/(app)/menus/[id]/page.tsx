@@ -1,20 +1,19 @@
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Pencil } from "lucide-react";
 import Link from "next/link";
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import { Suspense } from "react";
 
 import { DeleteMenuButton } from "@/components/menus/delete-menu-button";
-import { MenuEditor } from "@/components/menus/menu-editor";
-import { MenuName } from "@/components/menus/menu-name";
+import { MenuView } from "@/components/menus/menu-view";
+import { Button } from "@/components/ui/button";
 import { getMenu } from "@/lib/menus";
 import { parseId } from "@/lib/menu-return";
-import { getCurrentProfile } from "@/lib/profile";
-import { listMyCollections, listMyRecipes } from "@/lib/recipes";
+import { listMyRecipes } from "@/lib/recipes";
 
 export const metadata = { title: "Menu — Olva" };
 
-/** Un menu de la semaine (US-MEN-01, US-MEN-02). */
-export default function MenuPage({ params, searchParams }: PageProps<"/menus/[id]">) {
+/** Fiche d'un menu (US-MEN-05) : ses recettes, la liste ; Modifier, Supprimer. */
+export default function MenuPage({ params }: PageProps<"/menus/[id]">) {
   return (
     <main className="grid gap-4 px-4 py-6">
       <Link
@@ -25,49 +24,48 @@ export default function MenuPage({ params, searchParams }: PageProps<"/menus/[id
         Mes menus
       </Link>
       <Suspense fallback={<p className="text-muted-foreground">Chargement…</p>}>
-        <Menu params={params} searchParams={searchParams} />
+        <Menu params={params} />
       </Suspense>
     </main>
   );
 }
 
-async function Menu({
-  params,
-  searchParams,
-}: {
-  params: PageProps<"/menus/[id]">["params"];
-  searchParams: PageProps<"/menus/[id]">["searchParams"];
-}) {
-  const [{ id }, query] = await Promise.all([params, searchParams]);
+async function Menu({ params }: { params: PageProps<"/menus/[id]">["params"] }) {
+  const { id } = await params;
   if (!parseId(id)) notFound();
-  const [profile, menu, recipes, collections] = await Promise.all([
-    getCurrentProfile(),
-    getMenu(id),
-    listMyRecipes({}),
-    listMyCollections(),
-  ]);
-  if (!profile) redirect("/connexion");
+  const [menu, recipes] = await Promise.all([getMenu(id), listMyRecipes({})]);
   if (!menu) notFound();
 
-  // Retour de « Créer une recette » (décision 064) : la recette est déjà ajoutée en base
-  const added = parseId(query.ajout);
-  const addedTitle = recipes.find((r) => r.id === added)?.title ?? null;
+  // Titre et miniature des recettes du menu (dans l'ordre du menu)
+  const byId = new Map(recipes.map((r) => [r.id, r]));
+  const menuRecipes = menu.recipes.flatMap((r) => {
+    const recipe = byId.get(r.recipeId);
+    return recipe
+      ? [
+          {
+            recipeId: r.recipeId,
+            title: recipe.title,
+            thumbUrl: recipe.thumbUrl,
+            servings: r.servings,
+          },
+        ]
+      : [];
+  });
 
   return (
     <>
-      <MenuName menuId={menu.id} initialName={menu.name} />
-      <MenuEditor
-        // Clé : un nouvel affichage repart de la sélection enregistrée (qui contient la
-        // recette ajoutée), même si Next.js gardait l'ancien écran en mémoire
-        key={added ?? "menu"}
-        menuId={menu.id}
-        addedTitle={addedTitle}
-        recipes={recipes} // déjà par ordre alphabétique (listMyRecipes)
-        collections={collections}
-        initialSelected={menu.recipes.map(({ recipeId, servings }) => ({ recipeId, servings }))}
-        defaultServings={profile.default_servings}
-        list={menu.list}
-      />
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <h1 className="min-w-0 text-2xl font-semibold tracking-tight break-words">{menu.name}</h1>
+        <div className="flex flex-wrap gap-2">
+          <Button asChild variant="outline">
+            <Link href={`/menus/${menu.id}/modifier`}>
+              <Pencil />
+              Modifier
+            </Link>
+          </Button>
+        </div>
+      </div>
+      <MenuView menuId={menu.id} recipes={menuRecipes} list={menu.list} />
       <DeleteMenuButton menuId={menu.id} hasList={menu.list !== null} />
     </>
   );

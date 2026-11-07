@@ -18,10 +18,10 @@ export function withMenuReturn(path: string, menuId: string | null): string {
 }
 
 /**
- * Où aller une fois la recette enregistrée : retour au menu, recette ajoutée ;
+ * Où aller une fois la recette enregistrée : retour au formulaire du menu, recette ajoutée ;
  * sinon (création ordinaire) la fiche, avec ses paramètres éventuels.
  */
 export function afterSaveUrl(recipeId: string, menuId: string | null, recipeQuery = ""): string {
-  if (menuId) return `/menus/${menuId}?ajout=${recipeId}`;
+  if (menuId) return `/menus/${menuId}/modifier?ajout=${recipeId}`;
   return `/recettes/${recipeId}${recipeQuery}`;
 }
