@@ -2,9 +2,11 @@
 
 import Link from "next/link";
 import { useState, useTransition } from "react";
-import { ChevronRight, Share2, ShoppingBasket, Trash2 } from "lucide-react";
+import { ChevronRight, LogOut, Share2, ShoppingBasket, Trash2 } from "lucide-react";
 
-import { deleteList } from "@/app/(app)/listes/actions";
+import { deleteList, leaveList } from "@/app/(app)/listes/actions";
+import { CardActionsMenu } from "@/components/cards/card-actions-menu";
+import { SwipeableRow } from "@/components/cards/swipeable-row";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -25,7 +27,11 @@ const STATUS_LABEL: Record<ListStatus, string> = {
   done: "Terminée",
 };
 
-/** Carte de « Mes listes en cours » : ouvrir la liste, ou la supprimer (avec confirmation). */
+/**
+ * Carte de « Mes listes » : ouvrir la liste ; la supprimer (ma liste) ou y renoncer
+ * (liste qu'on me partage), avec confirmation (US-LST-09).
+ * Ordinateur : menu ⋯ ; mobile : glissement à gauche, comme Mes recettes.
+ */
 export function ListCard({
   href,
   status,
@@ -42,74 +48,86 @@ export function ListCard({
   recipeTitles: string[];
   itemCount: number;
   listId: string;
-  sharedBy: string | null; // liste qu'on me partage : pas de suppression (seul le créateur)
+  sharedBy: string | null; // liste qu'on me partage : je peux seulement y renoncer
   detail?: string; // remplace la ligne « recettes · articles » (ex. historique)
 }) {
   const [confirm, setConfirm] = useState(false);
   const [failed, setFailed] = useState(false);
   const [pending, startTransition] = useTransition();
   const title = listTitle(createdAt);
+  const lowerTitle = `${title.charAt(0).toLowerCase()}${title.slice(1)}`;
+  // Ma liste : Supprimer ; liste partagée avec moi : Renoncer
+  const leave = sharedBy !== null;
+  const actionLabel = leave ? "Renoncer" : "Supprimer";
 
   return (
-    <div className="bg-card hover:bg-accent flex items-center gap-1 rounded-xl border pr-2 shadow-sm transition-colors">
-      <Link href={href} className="flex min-w-0 flex-1 items-center gap-3 p-3">
-        <span className="bg-secondary flex size-12 shrink-0 items-center justify-center rounded-lg">
-          <ShoppingBasket className="text-secondary-foreground/70 size-6" aria-hidden="true" />
-        </span>
-        <span className="grid min-w-0 flex-1 gap-1">
-          <span className="flex flex-wrap items-center gap-2">
-            <span className="font-medium first-letter:uppercase">{title}</span>
-            <span
-              className={cn(
-                "rounded px-1.5 py-0.5 text-xs",
-                status === "draft"
-                  ? "bg-muted text-foreground"
-                  : "bg-primary text-primary-foreground",
+    <>
+      <SwipeableRow deleteLabel={actionLabel} onDelete={() => setConfirm(true)}>
+        <div className="group bg-card hover:bg-accent flex items-center gap-1 rounded-xl border pr-2 shadow-sm transition-colors">
+          <Link href={href} className="flex min-w-0 flex-1 items-center gap-3 p-3">
+            <span className="bg-secondary flex size-12 shrink-0 items-center justify-center rounded-lg">
+              <ShoppingBasket className="text-secondary-foreground/70 size-6" aria-hidden="true" />
+            </span>
+            <span className="grid min-w-0 flex-1 gap-1">
+              <span className="flex flex-wrap items-center gap-2">
+                <span className="font-medium first-letter:uppercase">{title}</span>
+                <span
+                  className={cn(
+                    "rounded px-1.5 py-0.5 text-xs",
+                    status === "draft"
+                      ? "bg-muted text-foreground"
+                      : "bg-primary text-primary-foreground",
+                  )}
+                >
+                  {STATUS_LABEL[status]}
+                </span>
+              </span>
+              {sharedBy && (
+                <span className="text-muted-foreground flex items-center gap-1 text-xs">
+                  <Share2 className="size-3" aria-hidden="true" />
+                  Partagée par {sharedBy}
+                </span>
               )}
-            >
-              {STATUS_LABEL[status]}
+              <span className="text-muted-foreground truncate text-sm">
+                {detail ?? (
+                  <>
+                    {recipeTitles.length ? recipeTitles.join(", ") : "Aucune recette"}
+                    {itemCount > 0 && ` · ${itemCount} article${itemCount > 1 ? "s" : ""}`}
+                  </>
+                )}
+              </span>
             </span>
-          </span>
-          {sharedBy && (
-            <span className="text-muted-foreground flex items-center gap-1 text-xs">
-              <Share2 className="size-3" aria-hidden="true" />
-              Partagée par {sharedBy}
-            </span>
-          )}
-          <span className="text-muted-foreground truncate text-sm">
-            {detail ?? (
-              <>
-                {recipeTitles.length ? recipeTitles.join(", ") : "Aucune recette"}
-                {itemCount > 0 && ` · ${itemCount} article${itemCount > 1 ? "s" : ""}`}
-              </>
-            )}
-          </span>
-        </span>
-        <ChevronRight className="text-muted-foreground size-5 shrink-0" aria-hidden="true" />
-      </Link>
-      {!sharedBy && (
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          onClick={() => setConfirm(true)}
-          aria-label={`Supprimer la ${title.charAt(0).toLowerCase()}${title.slice(1)}`}
-        >
-          <Trash2 />
-        </Button>
-      )}
+            <ChevronRight className="text-muted-foreground size-5 shrink-0" aria-hidden="true" />
+          </Link>
+          <CardActionsMenu
+            label={`Actions pour la ${lowerTitle}`}
+            actions={[
+              {
+                label: actionLabel,
+                Icon: leave ? LogOut : Trash2,
+                onClick: () => setConfirm(true),
+                destructive: true,
+              },
+            ]}
+          />
+        </div>
+      </SwipeableRow>
 
       <Dialog open={confirm} onOpenChange={setConfirm}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Supprimer cette liste ?</DialogTitle>
+            <DialogTitle>
+              {leave ? "Renoncer à cette liste ?" : "Supprimer cette liste ?"}
+            </DialogTitle>
             <DialogDescription>
-              {title} sera supprimée définitivement. Vos recettes ne sont pas touchées.
+              {leave
+                ? `Vous ne verrez plus la ${lowerTitle}. Elle reste à ${sharedBy}.`
+                : `${title} sera supprimée définitivement. Vos recettes ne sont pas touchées.`}
             </DialogDescription>
           </DialogHeader>
           {failed && (
             <p role="alert" className="text-destructive text-sm">
-              La suppression a échoué. Réessayez.
+              L&apos;opération a échoué. Réessayez.
             </p>
           )}
           <div className="flex flex-wrap justify-end gap-3">
@@ -124,17 +142,17 @@ export function ListCard({
               disabled={pending}
               onClick={() =>
                 startTransition(async () => {
-                  const { ok } = await deleteList(listId);
+                  const { ok } = await (leave ? leaveList(listId) : deleteList(listId));
                   if (ok) setConfirm(false);
                   else setFailed(true);
                 })
               }
             >
-              {pending ? "Suppression…" : "Supprimer"}
+              {pending ? "Un instant…" : actionLabel}
             </Button>
           </div>
         </DialogContent>
       </Dialog>
-    </div>
+    </>
   );
 }

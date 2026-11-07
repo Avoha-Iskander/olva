@@ -77,6 +77,22 @@ export async function deleteList(listId: string): Promise<{ ok: boolean }> {
   return { ok: !error && count === 1 };
 }
 
+/** Renoncer à une liste qu'on me partage (US-LST-09) : je ne la vois plus, elle reste à son créateur. */
+export async function leaveList(listId: string): Promise<{ ok: boolean }> {
+  const id = z.uuid().safeParse(listId);
+  if (!id.success) return { ok: false };
+  const supabase = await createClient();
+  const userId = await currentUserId(supabase);
+  if (!userId) return { ok: false };
+  const { error, count } = await supabase
+    .from("list_shares")
+    .delete({ count: "exact" })
+    .eq("list_id", id.data)
+    .eq("shared_with", userId);
+  revalidatePath("/listes");
+  return { ok: !error && count === 1 };
+}
+
 const extraSchema = z.object({
   itemId: z.uuid(),
   origin: z.enum(["prelist", "free", "carryover"]),

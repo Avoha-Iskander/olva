@@ -1,4 +1,4 @@
-import type { Page } from "@playwright/test";
+import type { Locator, Page } from "@playwright/test";
 
 import { expect } from "./fixtures";
 
@@ -111,10 +111,23 @@ export async function deleteList(page: Page, listId: string, finished = false) {
   await page.goto(finished ? "/listes?onglet=terminees" : "/listes");
   // Un brouillon mène à son étape en cours (/listes/<id>/revue…) : on compare le début
   const link = page.locator(`a[href^="/listes/${listId}"]`);
-  const card = page.locator("div", { has: link }).last();
-  await card.getByRole("button", { name: /^Supprimer la / }).click();
+  const card = page.locator("li", { has: link });
+  await openRevealedAction(page, card, "Supprimer");
   await page.getByRole("dialog").getByRole("button", { name: "Supprimer", exact: true }).click();
   await expect(link).toHaveCount(0);
+}
+
+/**
+ * Sur mobile, les actions d'une carte sont sous la carte (révélées par le glissement) :
+ * on déclenche le bouton directement, Playwright ne sachant pas faire glisser au doigt.
+ * Tant que la page n'est pas « hydratée » (React pas encore branché), le clic est sans
+ * effet : on recommence jusqu'à ce que la fenêtre de confirmation s'ouvre.
+ */
+export async function openRevealedAction(page: Page, card: Locator, label: string) {
+  await expect(async () => {
+    await card.locator("button", { hasText: label }).first().dispatchEvent("click");
+    await expect(page.getByRole("dialog")).toBeVisible({ timeout: 1_000 });
+  }).toPass({ timeout: 15_000 });
 }
 
 /** Ouvre l'écran de courses et attend que le temps réel soit branché. */
