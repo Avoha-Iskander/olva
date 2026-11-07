@@ -3,7 +3,7 @@ import { Suspense } from "react";
 
 import { NewRecipeForm } from "@/components/recipe-form/new-recipe-form";
 import { getCatalogue } from "@/lib/catalogue";
-import { parseListReturn } from "@/lib/list-return";
+import { parseId } from "@/lib/menu-return";
 import { getCurrentProfile } from "@/lib/profile";
 import { listMyCollections } from "@/lib/recipes";
 
@@ -35,8 +35,8 @@ async function NewRecipeScreen({
 
   return (
     <NewRecipeForm
-      // Venu de l'étape 1 d'une liste : on y reviendra, recette cochée (décision 064)
-      returnToList={parseListReturn(query.liste)}
+      // Venu d'un menu : on y reviendra, recette ajoutée (US-MEN-01, décision 064)
+      returnToMenu={parseId(query.menu)}
       userId={profile.id}
       defaultServings={profile.default_servings}
       items={catalogue.items}

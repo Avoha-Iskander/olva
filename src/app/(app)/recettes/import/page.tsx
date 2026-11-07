@@ -4,7 +4,7 @@ import { Suspense } from "react";
 import { PhotoImport } from "@/components/recipe-import/photo-import";
 import { selectableModels } from "@/lib/ai/models";
 import { getCatalogue } from "@/lib/catalogue";
-import { parseListReturn } from "@/lib/list-return";
+import { parseId } from "@/lib/menu-return";
 import { getCurrentProfile } from "@/lib/profile";
 import { listMyCollections } from "@/lib/recipes";
 
@@ -38,8 +38,8 @@ async function ImportScreen({
 
   return (
     <PhotoImport
-      // Venu de l'étape 1 d'une liste : on y reviendra, recette cochée (décision 064)
-      returnToList={parseListReturn(query.liste)}
+      // Venu d'un menu : on y reviendra, recette ajoutée (US-MEN-01, décision 064)
+      returnToMenu={parseId(query.menu)}
       userId={profile.id}
       defaultServings={profile.default_servings}
       items={catalogue.items}

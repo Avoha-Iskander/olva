@@ -30,11 +30,11 @@ async function ShoppableLists() {
         <div className="grid gap-1">
           <p className="font-medium">Aucune liste prête</p>
           <p className="text-muted-foreground text-sm">
-            Préparez une liste, puis terminez-la pour faire vos courses.
+            Préparez une liste depuis un menu, puis terminez-la pour faire vos courses.
           </p>
         </div>
         <Button asChild>
-          <Link href="/nouvelle-liste">Créer une liste</Link>
+          <Link href="/menus">Mes menus</Link>
         </Button>
       </div>
     );

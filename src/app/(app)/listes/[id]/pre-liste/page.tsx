@@ -8,11 +8,11 @@ import { getExtras, getList } from "@/lib/lists";
 
 export const metadata = { title: "Pré-liste — Olva" };
 
-// Étape 3 (US-LST-03, US-LST-04) : pré-liste anti-oubli et articles libres.
+// Dernière étape (US-LST-03, US-LST-04) : pré-liste anti-oubli et articles libres.
+// Étape 2 sur 2 pour une liste tirée d'un menu, seule étape pour une liste sans recette.
 export default function PrelistPage({ params }: PageProps<"/listes/[id]/pre-liste">) {
   return (
     <main className="grid gap-4 px-4 py-6">
-      <StepHeader step={3} title="Pré-liste et articles libres" subtitle="Rien n'est oublié" />
       <Suspense fallback={<p className="text-muted-foreground">Chargement…</p>}>
         <Extras params={params} />
       </Suspense>
@@ -27,15 +27,24 @@ async function Extras({ params }: { params: PageProps<"/listes/[id]/pre-liste">[
   if (list.status !== "draft") redirect(`/listes/${id}`);
 
   const [extras, catalogue] = await Promise.all([getExtras(id), getCatalogue()]);
+  const hasRecipes = list.recipes.length > 0;
   return (
-    <ExtrasEditor
-      listId={id}
-      catalogue={catalogue.items}
-      aisles={catalogue.aisles}
-      initialPrelist={extras.prelist}
-      initialChecked={extras.checked}
-      initialFree={extras.free}
-      initialCarryover={extras.carryover}
-    />
+    <>
+      <StepHeader
+        step={2}
+        total={hasRecipes ? 2 : 1}
+        title={hasRecipes ? "Pré-liste et articles libres" : "Nouvelle liste"}
+        subtitle={hasRecipes ? "Rien n'est oublié" : "Pré-liste et articles libres"}
+      />
+      <ExtrasEditor
+        listId={id}
+        catalogue={catalogue.items}
+        aisles={catalogue.aisles}
+        initialPrelist={extras.prelist}
+        initialChecked={extras.checked}
+        initialFree={extras.free}
+        initialCarryover={extras.carryover}
+      />
+    </>
   );
 }

@@ -11,7 +11,6 @@ import { saveImportDirectly } from "@/components/recipe-import/save-import";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useFreshSession } from "@/hooks/use-fresh-session";
-import type { ListReturn } from "@/lib/list-return";
 import type { Aisle, CatalogueItem } from "@/lib/catalogue";
 import { draftToForm, NO_HIGHLIGHTS, withoutCover } from "@/lib/import-draft";
 import { compressAndUploadImportPages } from "@/lib/photo-upload";
@@ -23,7 +22,7 @@ type Page = { id: string; file: File; previewUrl: string };
 
 type Props = {
   recipeId: string;
-  returnToList: ListReturn | null; // venu de l'étape 1 d'une liste (décision 064)
+  returnToMenu: string | null; // venu d'un menu (US-MEN-01, décision 064)
   userId: string;
   defaultServings: number;
   items: CatalogueItem[];
@@ -123,7 +122,7 @@ function PhotoImportFlow(props: Props) {
             userId: props.userId,
             defaultServings: props.defaultServings,
             photoFile, // les pages, elles, sont rattachées par le serveur
-            returnToList: props.returnToList,
+            returnToMenu: props.returnToMenu,
           });
           if (recipeUrl) return router.push(recipeUrl);
           // Sinon : le brouillon, avec seulement les points à regarder
@@ -189,7 +188,7 @@ function PhotoImportFlow(props: Props) {
         collections={props.collections}
         initial={null}
         draft={draft}
-        returnToList={props.returnToList}
+        returnToMenu={props.returnToMenu}
       />
     );
   }

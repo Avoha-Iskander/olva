@@ -6,14 +6,19 @@ import { createClient } from "@/lib/supabase/server";
 
 export type DraftRecipe = { recipeId: string; servings: number };
 export type ListStatus = "draft" | "ready" | "shopping" | "done";
-export type Draft = { id: string; status: ListStatus; recipes: DraftRecipe[] };
+export type Draft = {
+  id: string;
+  status: ListStatus;
+  menuId: string | null; // menu d'où vient la liste (null : liste sans recette)
+  recipes: DraftRecipe[];
+};
 
 /** Une liste (statut + recettes choisies), ou null si elle n'existe pas ou n'est pas à moi. */
 export async function getList(id: string): Promise<Draft | null> {
   const supabase = await createClient();
   const { data: list } = await supabase
     .from("shopping_lists")
-    .select("id, status, shopping_list_recipes(recipe_id, servings, position)")
+    .select("id, status, menu_id, shopping_list_recipes(recipe_id, servings, position)")
     .eq("id", id)
     .maybeSingle();
   if (!list) return null;
@@ -21,6 +26,7 @@ export async function getList(id: string): Promise<Draft | null> {
   return {
     id: list.id,
     status: list.status as ListStatus,
+    menuId: list.menu_id,
     recipes: [...list.shopping_list_recipes]
       .sort((a, b) => a.position - b.position)
       .map((r) => ({ recipeId: r.recipe_id, servings: r.servings })),
@@ -121,11 +127,7 @@ export async function listFinishedLists(): Promise<FinishedSummary[]> {
   });
 }
 
-/** Adresse où reprendre une liste : son étape en cours (brouillon) ou sa page. */
-export function listHref(list: { id: string; status: ListStatus; hasRecipes: boolean }) {
-  if (list.status !== "draft") return `/listes/${list.id}`;
-  return list.hasRecipes ? `/listes/${list.id}/revue` : `/listes/${list.id}/recettes`;
-}
+export { listHref } from "@/lib/list-href";
 
 /** Tout ce qu'il faut pour afficher la revue (étape 2) d'un brouillon. */
 export type ReviewData = {
