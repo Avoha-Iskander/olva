@@ -8,12 +8,11 @@ import { safeRedirectPath } from "@/lib/validation/auth";
  * Point d'arrivée des liens envoyés par email (confirmation d'inscription,
  * réinitialisation du mot de passe). Deux formats de lien sont acceptés :
  *
- * - « code » : format des emails par défaut de Supabase. Le lien passe d'abord
- *   par Supabase, qui renvoie ici avec un code à échanger contre une session.
- *   ⚠️ Fonctionne seulement si le lien est ouvert dans le navigateur qui a fait
- *   la demande (une clé secrète y a été déposée dans un cookie).
- * - « token_hash » : format des modèles d'emails personnalisés (quand un service
- *   d'envoi sera configuré). Fonctionne depuis n'importe quel navigateur.
+ * - « token_hash » : format de nos modèles d'emails (supabase/templates, décision 066).
+ *   Fonctionne depuis n'importe quel navigateur.
+ * - « code » : format des emails par défaut de Supabase (projet sans nos modèles, ex. dev).
+ *   Le lien passe d'abord par Supabase, qui renvoie ici avec un code à échanger contre
+ *   une session. ⚠️ Seulement dans le navigateur qui a fait la demande (clé en cookie).
  *
  * Le paramètre « suite » indique où aller ensuite (ex. /nouveau-mot-de-passe).
  */

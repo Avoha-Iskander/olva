@@ -244,16 +244,22 @@ otp_expiry = 3600
 # admin_email = "admin@email.com"
 # sender_name = "Admin"
 
-# Uncomment to customize email template
-# [auth.email.template.invite]
-# subject = "You have been invited"
-# content_path = "./supabase/templates/invite.html"
+# Modèles d'emails en français (décision 066). Ils servent en local ; sur les projets
+# hébergés (dev, prod), ils se collent dans Authentication → Emails → Templates.
+# Liens au format token_hash : ils marchent depuis n'importe quel navigateur.
+[auth.email.template.confirmation]
+subject = "Confirmez votre adresse email — Olva"
+content_path = "./supabase/templates/confirmation.html"
 
-# Uncomment to customize notification email template
-# [auth.email.notification.password_changed]
-# enabled = true
-# subject = "Your password has been changed"
-# content_path = "./supabase/templates/password_changed_notification.html"
+[auth.email.template.recovery]
+subject = "Réinitialisez votre mot de passe — Olva"
+content_path = "./supabase/templates/recovery.html"
+
+# Notification de sécurité après un changement de mot de passe
+[auth.email.notification.password_changed]
+enabled = true
+subject = "Votre mot de passe a été modifié — Olva"
+content_path = "./supabase/templates/password-changed.html"
 
 [auth.sms]
 # Allow/disallow new user signups via SMS to your project.

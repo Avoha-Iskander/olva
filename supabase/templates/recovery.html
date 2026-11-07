@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="supported-color-schemes" content="light dark" />
+    <title>Réinitialisez votre mot de passe</title>
+    <style>
+      /* Mode sombre, pour les messageries qui le gèrent (Apple Mail, Outlook récent…) */
+      @media (prefers-color-scheme: dark) {
+        .page {
+          background: #0f1115 !important;
+        }
+        .card {
+          background: #1a1d24 !important;
+          border-color: #2a2f3a !important;
+        }
+        .text {
+          color: #e8eaee !important;
+        }
+        .muted {
+          color: #a3a9b5 !important;
+        }
+        .btn {
+          background: #4b86e8 !important;
+        }
+        .link {
+          color: #8fb4f2 !important;
+        }
+      }
+    </style>
+  </head>
+  <body class="page" style="margin: 0; padding: 0; background: #f4f6f9">
+    <!-- Aperçu affiché dans la liste des emails, invisible dans le message -->
+    <div style="display: none; max-height: 0; overflow: hidden">
+      Choisissez un nouveau mot de passe pour votre compte Olva.
+    </div>
+    <table
+      role="presentation"
+      width="100%"
+      cellpadding="0"
+      cellspacing="0"
+      class="page"
+      style="background: #f4f6f9"
+    >
+      <tr>
+        <td align="center" style="padding: 32px 16px">
+          <table
+            role="presentation"
+            width="100%"
+            cellpadding="0"
+            cellspacing="0"
+            class="card"
+            style="
+              max-width: 480px;
+              background: #ffffff;
+              border: 1px solid #e3e7ee;
+              border-radius: 16px;
+            "
+          >
+            <tr>
+              <td
+                style="
+                  padding: 32px 28px;
+                  font-family:
+                    -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, Helvetica,
+                    Arial, sans-serif;
+                "
+              >
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                  <tr>
+                    <td
+                      style="
+                        padding-bottom: 24px;
+                        font-size: 22px;
+                        font-weight: 700;
+                        color: #2f6fd6;
+                        letter-spacing: -0.3px;
+                      "
+                    >
+                      Olva
+                    </td>
+                  </tr>
+                  <tr>
+                    <td
+                      class="text"
+                      style="
+                        font-size: 20px;
+                        font-weight: 600;
+                        line-height: 28px;
+                        color: #14171c;
+                        padding-bottom: 12px;
+                      "
+                    >
+                      Réinitialisez votre mot de passe
+                    </td>
+                  </tr>
+                  <tr>
+                    <td
+                      class="text"
+                      style="
+                        font-size: 16px;
+                        line-height: 24px;
+                        color: #14171c;
+                        padding-bottom: 16px;
+                      "
+                    >
+                      Vous avez demandé à changer le mot de passe du compte
+                      <strong>{{ .Email }}</strong>. Cliquez sur le bouton pour en choisir un
+                      nouveau.
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 8px 0 24px">
+                      <a
+                        href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&amp;type=recovery&amp;suite=/nouveau-mot-de-passe"
+                        class="btn"
+                        style="
+                          display: inline-block;
+                          background: #2f6fd6;
+                          color: #ffffff;
+                          text-decoration: none;
+                          font-weight: 600;
+                          font-size: 16px;
+                          line-height: 24px;
+                          padding: 12px 24px;
+                          border-radius: 10px;
+                        "
+                        >Choisir un nouveau mot de passe</a
+                      >
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="muted" style="font-size: 14px; line-height: 21px; color: #5b6270">
+                      Ce lien est valable 1 heure et ne sert qu'une fois.<br /><br />Vous n'êtes pas
+                      à l'origine de cette demande ? Ignorez cet email : votre mot de passe actuel
+                      reste valable.<br /><br />Le bouton ne marche pas ? Copiez cette adresse dans
+                      votre navigateur :<br /><a
+                        href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&amp;type=recovery&amp;suite=/nouveau-mot-de-passe"
+                        class="link"
+                        style="color: #2f6fd6; word-break: break-all"
+                        >{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash
+                        }}&amp;type=recovery&amp;suite=/nouveau-mot-de-passe</a
+                      >
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+          <p
+            class="muted"
+            style="
+              font-family:
+                -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, Helvetica, Arial,
+                sans-serif;
+              font-size: 12px;
+              line-height: 18px;
+              color: #8a909c;
+              margin: 16px 0 0;
+            "
+          >
+            Olva — vos recettes et vos listes de courses ·
+            <a href="{{ .SiteURL }}" class="link" style="color: #2f6fd6">myolva.app</a>
+          </p>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>
