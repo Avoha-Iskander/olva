@@ -6,7 +6,6 @@ import {
   proposedItemIds,
 } from "@/lib/import-draft";
 import { urlAfterCreate } from "@/components/recipes/after-create";
-import type { ListReturn } from "@/lib/list-return";
 import { compressAndUploadPhoto } from "@/lib/photo-upload";
 import { formToRecipeInput } from "@/lib/recipe-form";
 
@@ -30,7 +29,7 @@ export async function saveImportDirectly(options: {
   userId: string;
   defaultServings: number;
   photoFile: File | null;
-  returnToList: ListReturn | null; // venu de l'étape 1 d'une liste (décision 064)
+  returnToMenu: string | null; // venu d'un menu (US-MEN-01, décision 064)
 }): Promise<string | null> {
   const { draft, recipeId, userId, photoFile } = options;
   if (!canSaveDirectly(draft)) return null;
@@ -81,11 +80,11 @@ export async function saveImportDirectly(options: {
     }
 
     // La fiche s'ouvre avec le bandeau « Recette importée » (et les articles proposés),
-    // ou l'étape 1 de la liste d'origine, recette cochée
+    // ou le menu d'origine, recette ajoutée
     const params = new URLSearchParams({ importee: "1" });
     const proposed = proposedItemIds(draft);
     if (proposed.length) params.set("proposes", proposed.join(","));
-    return await urlAfterCreate(saved.id, options.returnToList, `?${params}`);
+    return await urlAfterCreate(saved.id, options.returnToMenu, `?${params}`);
   } catch {
     return null; // réseau, photo, article : on montre le brouillon, rien n'est perdu
   }

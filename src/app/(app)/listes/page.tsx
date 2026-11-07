@@ -2,6 +2,7 @@ import Link from "next/link";
 import { History, ListChecks, Plus } from "lucide-react";
 import { Suspense } from "react";
 
+import { createEmptyList } from "@/app/(app)/listes/actions";
 import { ListCard } from "@/components/lists/list-card";
 import { Button } from "@/components/ui/button";
 import { listFinishedLists, listHref, listMyLists } from "@/lib/lists";
@@ -24,12 +25,13 @@ export default function ListsPage({ searchParams }: PageProps<"/listes">) {
     <main className="grid gap-4 px-4 py-6">
       <div className="flex items-center justify-between gap-4">
         <h1 className="text-2xl font-semibold tracking-tight">Mes listes en cours</h1>
-        <Button asChild>
-          <Link href="/nouvelle-liste">
+        {/* Liste sans recette (US-LST-08) ; avec recettes : depuis un menu (US-MEN-02) */}
+        <form action={createEmptyList}>
+          <Button type="submit">
             <Plus />
             <span>Nouvelle</span>
-          </Link>
-        </Button>
+          </Button>
+        </form>
       </div>
       <Suspense fallback={<p className="text-muted-foreground">Chargement…</p>}>
         <TabbedLists searchParams={searchParams} />
@@ -79,12 +81,19 @@ async function OpenLists() {
         <div className="grid gap-1">
           <p className="font-medium">Aucune liste en cours</p>
           <p className="text-muted-foreground text-sm">
-            Choisissez vos recettes : la liste de courses se prépare en 2 minutes.
+            Composez le menu de la semaine pour en tirer la liste, ou créez une liste sans recette.
           </p>
         </div>
-        <Button asChild>
-          <Link href="/nouvelle-liste">Créer une liste</Link>
-        </Button>
+        <div className="flex flex-wrap justify-center gap-3">
+          <Button asChild>
+            <Link href="/menus">Mes menus</Link>
+          </Button>
+          <form action={createEmptyList}>
+            <Button type="submit" variant="outline">
+              Liste sans recette
+            </Button>
+          </form>
+        </div>
       </div>
     );
   }

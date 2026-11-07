@@ -6,8 +6,8 @@ import { getCurrentProfile } from "@/lib/profile";
 
 const DESCRIPTIONS: Record<string, string> = {
   "/recettes": "Consulter, ajouter et organiser vos recettes",
-  "/nouvelle-liste": "Choisir les recettes de la semaine et préparer la liste",
-  "/listes": "Reprendre une liste en préparation",
+  "/menus": "Composer le menu de la semaine et en tirer la liste de courses",
+  "/listes": "Reprendre une liste, ou en créer une sans recette",
   "/courses": "Cocher votre liste en magasin",
 };
 

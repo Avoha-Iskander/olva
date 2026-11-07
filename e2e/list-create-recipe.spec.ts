@@ -1,20 +1,20 @@
 import { expect, test } from "./fixtures";
-import { deleteList } from "./helpers";
+import { createMenu, deleteMenu } from "./helpers";
 
 /**
- * « Créer une recette » depuis l'étape 1 d'une nouvelle liste (décision 064) : la recette
- * créée à la main revient déjà cochée dans la liste. Liste et recette sont supprimées à
- * la fin : le compte de test reste propre.
+ * « Créer une recette » depuis un menu (US-MEN-01, reprend la décision 064) : la recette
+ * créée à la main revient déjà ajoutée au menu. Menu et recette sont supprimés à la fin :
+ * le compte de test reste propre.
  */
-test("créer une recette depuis une nouvelle liste : elle revient cochée", async ({ page }) => {
+test("créer une recette depuis un menu : elle revient ajoutée", async ({ page }) => {
   const title = `E2E Salade ${Date.now()}`;
-  let listId = "";
+  let menuId = "";
 
-  await test.step("partir de l'étape 1 vers « Saisir à la main »", async () => {
-    await page.goto("/nouvelle-liste");
+  await test.step("partir du menu vers « Saisir à la main »", async () => {
+    menuId = await createMenu(page);
     await page.getByRole("button", { name: "Créer une recette" }).click();
     await page.getByRole("button", { name: "Saisir à la main" }).click();
-    await expect(page).toHaveURL(/\/recettes\/nouvelle\?liste=nouvelle$/);
+    await expect(page).toHaveURL(new RegExp(`/recettes/nouvelle\\?menu=${menuId}$`));
   });
 
   await test.step("saisir et enregistrer la recette", async () => {
@@ -32,17 +32,14 @@ test("créer une recette depuis une nouvelle liste : elle revient cochée", asyn
     await page.getByRole("button", { name: "Enregistrer" }).click();
   });
 
-  await test.step("retour à l'étape 1 : la liste est créée, la recette est cochée", async () => {
-    await expect(page).toHaveURL(/\/listes\/[0-9a-f-]{36}\/recettes\?ajout=[0-9a-f-]{36}$/);
-    listId = new URL(page.url()).pathname.split("/")[2];
+  await test.step("retour au menu : la recette est ajoutée", async () => {
+    await expect(page).toHaveURL(new RegExp(`/menus/${menuId}\\?ajout=[0-9a-f-]{36}$`));
     await expect(page.getByRole("status").filter({ hasText: title })).toBeVisible();
-    await expect(
-      page.getByRole("region", { name: /Recettes choisies/ }).getByText(title),
-    ).toBeVisible();
+    await expect(page.getByRole("region", { name: /Au menu/ }).getByText(title)).toBeVisible();
   });
 
-  await test.step("ranger : supprimer la liste puis la recette", async () => {
-    await deleteList(page, listId);
+  await test.step("ranger : supprimer le menu puis la recette", async () => {
+    await deleteMenu(page, menuId);
     await page.goto("/recettes");
     await page.getByRole("link").filter({ hasText: title }).filter({ visible: true }).click();
     await page.getByRole("link", { name: "Modifier", exact: true }).click();

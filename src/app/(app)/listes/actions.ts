@@ -6,78 +6,21 @@ import { z } from "zod";
 
 import { undecidedCarryover } from "@/lib/carryover";
 
-import { parseId, parseListReturn } from "@/lib/list-return";
 import { consolidateLines, findMergeTarget, type LineOrigin } from "@/lib/list-lines";
-import { getList } from "@/lib/lists";
 import { currentUserId, loadConversions } from "@/lib/my-catalogue";
-import { getCurrentProfile } from "@/lib/profile";
 import { createClient } from "@/lib/supabase/server";
 import { roundQuantity } from "@/lib/units";
 
-const recipesSchema = z
-  .array(z.object({ recipeId: z.uuid(), servings: z.number().int().min(1).max(50) }))
-  .max(50);
-
 /**
- * Étape 1 : enregistre les recettes choisies et leurs portions.
- * Le brouillon de liste est créé au premier enregistrement ; on renvoie son identifiant.
+ * « Nouvelle liste » dans Mes listes (US-LST-08) : une liste sans recette, qui commence
+ * directement à la pré-liste. Les listes avec recettes se créent depuis un menu (US-MEN-02).
  */
-export async function saveListRecipes(
-  listId: string | null,
-  recipes: { recipeId: string; servings: number }[],
-): Promise<{ ok: true; listId: string } | { ok: false }> {
-  const parsed = recipesSchema.safeParse(recipes);
-  const parsedId = z.uuid().nullable().safeParse(listId);
-  if (!parsed.success || !parsedId.success) return { ok: false };
-
+export async function createEmptyList(): Promise<void> {
   const supabase = await createClient();
-  let id = parsedId.data;
-  if (!id) {
-    const { data: created, error } = await supabase
-      .from("shopping_lists")
-      .insert({})
-      .select("id")
-      .single();
-    if (error || !created) return { ok: false };
-    id = created.id;
-  }
-
-  const { error } = await supabase.rpc("set_list_recipes", {
-    target_list: id,
-    recipes: parsed.data.map((r) => ({ recipe_id: r.recipeId, servings: r.servings })),
-  });
-  if (error) return { ok: false };
-
-  // Pas de revalidatePath ici : appelé depuis la page en cours d'édition, il forcerait
-  // Next.js à recharger cette page (petit « clignotement » à chaque choix de recette).
-  // Les pages Revue et Mes listes relisent de toute façon la base à chaque visite.
-  return { ok: true, listId: id };
-}
-
-/**
- * « Créer une recette » depuis l'étape 1 (décision 064) : une fois la recette enregistrée,
- * elle est ajoutée (cochée) à la liste d'origine, pour le nombre de personnes par défaut.
- * « nouvelle » : la liste n'existait pas encore, elle est créée avec cette recette.
- * Une recette déjà dans la liste n'est pas ajoutée deux fois.
- */
-export async function addRecipeToList(
-  list: string,
-  recipeId: string,
-): Promise<{ ok: true; listId: string } | { ok: false }> {
-  const target = parseListReturn(list);
-  const recipe = parseId(recipeId);
-  if (!target || !recipe) return { ok: false };
-
-  const profile = await getCurrentProfile();
-  if (!profile) return { ok: false };
-  const added = { recipeId: recipe, servings: profile.default_servings };
-
-  if (target === "nouvelle") return saveListRecipes(null, [added]);
-
-  const current = await getList(target);
-  if (!current || current.status !== "draft") return { ok: false }; // liste prête : fermée
-  if (current.recipes.some((r) => r.recipeId === recipe)) return { ok: true, listId: target };
-  return saveListRecipes(target, [...current.recipes, added]);
+  const { data, error } = await supabase.from("shopping_lists").insert({}).select("id").single();
+  if (error || !data) throw new Error("La liste n'a pas pu être créée");
+  revalidatePath("/listes");
+  redirect(`/listes/${data.id}/pre-liste`);
 }
 
 const lineSchema = z.object({

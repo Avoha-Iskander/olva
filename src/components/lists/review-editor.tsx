@@ -18,14 +18,16 @@ import { cn } from "@/lib/utils";
  * Étape 2 : revue des ingrédients (US-LST-02).
  * Les lignes arrivent déjà calculées et fusionnées par le serveur ; ici on les ajuste,
  * on les retire ou on coche les ingrédients de base. Chaque changement est enregistré
- * automatiquement, comme à l'étape 1.
+ * automatiquement, comme dans le menu.
  */
 export function ReviewEditor({
   listId,
+  menuId,
   initialLines,
   recipeTitles,
 }: {
   listId: string;
+  menuId: string | null; // menu d'où vient la liste (null : plus de menu)
   initialLines: ReviewLine[];
   recipeTitles: Record<string, string>;
 }) {
@@ -82,14 +84,17 @@ export function ReviewEditor({
   return (
     <div className="grid gap-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <Link
-          href={`/listes/${listId}/recettes`}
-          className="text-muted-foreground hover:text-foreground -ml-1 flex min-h-11 items-center gap-2 text-sm"
-        >
-          <ArrowLeft className="size-4" />
-          Modifier les recettes
-        </Link>
-        <p className="text-muted-foreground text-sm" aria-live="polite">
+        {/* Les recettes se changent dans le menu (décision 068) */}
+        {menuId && (
+          <Link
+            href={`/menus/${menuId}`}
+            className="text-muted-foreground hover:text-foreground -ml-1 flex min-h-11 items-center gap-2 text-sm"
+          >
+            <ArrowLeft className="size-4" />
+            Modifier le menu
+          </Link>
+        )}
+        <p className="text-muted-foreground ml-auto text-sm" aria-live="polite">
           {keptCount} article{keptCount > 1 ? "s" : ""} retenu{keptCount > 1 ? "s" : ""}
         </p>
       </div>

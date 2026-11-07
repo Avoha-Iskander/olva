@@ -25,11 +25,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { useFreshSession } from "@/hooks/use-fresh-session";
 import type { Aisle, CatalogueItem } from "@/lib/catalogue";
 import { draftToForm, type ImportDraft } from "@/lib/import-draft";
-import type { ListReturn } from "@/lib/list-return";
 
 type Props = {
   recipeId: string;
-  returnToList: ListReturn | null; // venu de l'étape 1 d'une liste (décision 064)
+  returnToMenu: string | null; // venu d'un menu (US-MEN-01, décision 064)
   /** Partage vers Olva (décision 065) : lien ou texte reçu, lu dès l'ouverture. */
   shared: { url: string } | { text: string } | null;
   userId: string;
@@ -99,9 +98,9 @@ function UrlImportFlow(props: Props) {
   /** Fin commune (lien ou texte) : recette existante, enregistrement direct, ou brouillon. */
   async function handle(result: Result) {
     // Lien déjà importé : on ouvre la recette existante plutôt qu'un doublon
-    // (venu d'une liste : c'est elle qui est cochée dans la liste)
+    // (venu d'un menu : c'est elle qui est ajoutée au menu)
     if (result.status === "exists") {
-      return router.push(await urlAfterCreate(result.recipeId, props.returnToList, "?deja=1"));
+      return router.push(await urlAfterCreate(result.recipeId, props.returnToMenu, "?deja=1"));
     }
     if (result.status === "done") {
       const photoFile = result.draft.photo ? photoToFile(result.draft.photo) : null;
@@ -113,7 +112,7 @@ function UrlImportFlow(props: Props) {
         userId: props.userId,
         defaultServings: props.defaultServings,
         photoFile,
-        returnToList: props.returnToList,
+        returnToMenu: props.returnToMenu,
       });
       if (recipeUrl) return router.push(recipeUrl);
       setSaving(false);
@@ -184,7 +183,7 @@ function UrlImportFlow(props: Props) {
         collections={props.collections}
         initial={null}
         draft={draft}
-        returnToList={props.returnToList}
+        returnToMenu={props.returnToMenu}
       />
     );
   }

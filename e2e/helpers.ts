@@ -4,24 +4,49 @@ import { expect } from "./fixtures";
 
 /** Outils partagés par les tests du mode courses. */
 
-/** Étapes 1 et 2 avec la recette d'exemple « Crêpes » : arrive à l'étape 3 (pré-liste). */
+/** Crée un menu vide depuis « Mes menus » ; renvoie son id (on est sur sa page). */
+export async function createMenu(page: Page): Promise<string> {
+  await page.goto("/menus");
+  await page.getByRole("button", { name: "Nouveau", exact: true }).click();
+  await expect(page).toHaveURL(/\/menus\/[0-9a-f-]{36}$/);
+  return new URL(page.url()).pathname.split("/")[2];
+}
+
+/** Supprime un menu depuis sa page (sa liste éventuelle est gardée). */
+export async function deleteMenu(page: Page, menuId: string) {
+  await page.goto(`/menus/${menuId}`);
+  await page.getByRole("button", { name: "Supprimer le menu…" }).click();
+  await page.getByRole("dialog").getByRole("button", { name: "Oui, supprimer" }).click();
+  await expect(page).toHaveURL(/\/menus$/);
+  await expect(page.locator(`a[href="/menus/${menuId}"]`)).toHaveCount(0);
+}
+
+/**
+ * Menu avec la recette d'exemple « Crêpes » → « Créer la liste » → revue → pré-liste.
+ * Le menu est supprimé en route (sa liste est gardée, US-MEN-04) : le compte de test
+ * reste propre, et deleteList suffit ensuite pour ranger.
+ */
 export async function goToPrelist(page: Page) {
-  await page.goto("/nouvelle-liste");
+  const menuId = await createMenu(page);
   await page.getByRole("button", { name: /^Crêpes/ }).click();
-  await page.getByRole("button", { name: /^Revoir les ingrédients/ }).click();
-  await expect(page).toHaveURL(/\/revue$/);
+  await page.getByRole("button", { name: "Créer la liste" }).click();
+  await expect(page).toHaveURL(/\/listes\/[0-9a-f-]{36}\/revue$/);
+  const listId = new URL(page.url()).pathname.split("/")[2];
+
+  await deleteMenu(page, menuId);
+  await page.goto(`/listes/${listId}/revue`);
   await page.getByRole("button", { name: "Continuer : pré-liste et articles libres" }).click();
   await expect(page).toHaveURL(/\/pre-liste$/);
 }
 
-/** Termine la préparation (étape 3) ; renvoie l'id de la liste. */
+/** Termine la préparation (pré-liste) ; renvoie l'id de la liste. */
 export async function finishPreparation(page: Page): Promise<string> {
   await page.getByRole("button", { name: "Terminer la liste" }).click();
   await expect(page).toHaveURL(/\/listes\/[0-9a-f-]{36}$/);
   return page.url().split("/").pop()!;
 }
 
-/** Prépare une liste avec la recette d'exemple « Crêpes » (étapes 1 à 3) ; renvoie son id. */
+/** Prépare une liste avec la recette d'exemple « Crêpes » (menu, revue, pré-liste) ; renvoie son id. */
 export async function prepareList(page: Page): Promise<string> {
   await goToPrelist(page);
   return finishPreparation(page);
