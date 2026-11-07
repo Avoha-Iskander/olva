@@ -50,45 +50,6 @@ export type Database = {
         }
         Relationships: []
       }
-      carryover_items: {
-        Row: {
-          created_at: string
-          item_id: string
-          quantity: number
-          unit: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          item_id: string
-          quantity: number
-          unit: string
-          user_id?: string
-        }
-        Update: {
-          created_at?: string
-          item_id?: string
-          quantity?: number
-          unit?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "carryover_items_item_id_fkey"
-            columns: ["item_id"]
-            isOneToOne: false
-            referencedRelation: "items"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "carryover_items_unit_fkey"
-            columns: ["unit"]
-            isOneToOne: false
-            referencedRelation: "units"
-            referencedColumns: ["code"]
-          },
-        ]
-      }
       collections: {
         Row: {
           created_at: string
@@ -943,7 +904,10 @@ export type Database = {
       copy_recipe: { Args: { source: string }; Returns: string }
       delete_own_account: { Args: never; Returns: undefined }
       ensure_my_prelist: { Args: never; Returns: undefined }
-      finish_shopping: { Args: { target_list: string }; Returns: number }
+      finish_shopping: {
+        Args: { carry_over?: boolean; target_list: string }
+        Returns: string
+      }
       finalize_list: {
         Args: { lines: Json; target_list: string }
         Returns: undefined

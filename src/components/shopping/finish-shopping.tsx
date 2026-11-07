@@ -1,6 +1,6 @@
 "use client";
 
-import { Flag } from "lucide-react";
+import { Check, Flag } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
@@ -15,12 +15,13 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { finishMessage } from "@/lib/carryover";
+import { cn } from "@/lib/utils";
 
 /**
- * « Terminer les courses » (US-CRS-03), avec confirmation : combien d'articles non cochés
- * seront reportés, et sur la liste de qui (le créateur, pour une liste partagée).
- * En ligne seulement, et une fois les coches faites hors ligne envoyées : le report doit
- * tenir compte de TOUTES les coches.
+ * « Terminer les courses » (US-CRS-03, décision 070), avec confirmation. S'il reste des
+ * articles non cochés, une case (cochée par défaut) crée une nouvelle liste avec eux.
+ * En ligne seulement, et une fois les coches faites hors ligne envoyées : la nouvelle
+ * liste doit tenir compte de TOUTES les coches.
  */
 export function FinishShopping({
   listId,
@@ -30,12 +31,13 @@ export function FinishShopping({
 }: {
   listId: string;
   unchecked: number;
-  ownerName: string | null; // liste qu'on me partage : son créateur reçoit le report
+  ownerName: string | null; // liste qu'on me partage : son créateur reçoit la nouvelle liste
   blockedReason: string | null; // hors ligne, coches en attente… (bouton désactivé)
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [failed, setFailed] = useState(false);
+  const [carryOver, setCarryOver] = useState(true);
   const [pending, startTransition] = useTransition();
 
   return (
@@ -62,6 +64,29 @@ export function FinishShopping({
               {finishMessage(unchecked, ownerName)} La liste passera dans l&apos;historique.
             </DialogDescription>
           </DialogHeader>
+          {unchecked > 0 && (
+            <label className="flex min-h-11 cursor-pointer items-center gap-3">
+              <input
+                type="checkbox"
+                className="peer sr-only"
+                checked={carryOver}
+                onChange={(e) => setCarryOver(e.target.checked)}
+              />
+              <span
+                aria-hidden="true"
+                className={cn(
+                  "flex size-6 shrink-0 items-center justify-center rounded-md border-2",
+                  "peer-focus-visible:ring-ring/50 peer-focus-visible:ring-[3px]",
+                  carryOver
+                    ? "border-primary bg-primary text-primary-foreground"
+                    : "border-muted-foreground/40",
+                )}
+              >
+                {carryOver && <Check className="size-4" strokeWidth={3} />}
+              </span>
+              <span className="text-sm">Créer une nouvelle liste avec les articles restants</span>
+            </label>
+          )}
           {failed && (
             <p role="alert" className="text-destructive text-sm">
               L&apos;opération a échoué. Vérifiez votre connexion et réessayez.
@@ -79,12 +104,10 @@ export function FinishShopping({
               onClick={() =>
                 startTransition(async () => {
                   setFailed(false);
-                  const ok = await finishShopping(listId).then(
-                    (r) => r.ok,
-                    () => false,
-                  );
-                  if (!ok) return setFailed(true);
-                  router.push(`/listes/${listId}`);
+                  const result = await finishShopping(listId, carryOver).catch(() => null);
+                  if (!result?.ok) return setFailed(true);
+                  // Nouvelle liste créée : on l'ouvre ; sinon, le récapitulatif de celle-ci
+                  router.push(`/listes/${result.newListId ?? listId}`);
                 })
               }
             >
