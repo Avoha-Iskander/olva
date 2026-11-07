@@ -20,7 +20,7 @@ describe("retour au menu après création d'une recette", () => {
   });
 
   it("revient au menu, recette ajoutée ; sinon ouvre la fiche", () => {
-    expect(afterSaveUrl(RECIPE, MENU)).toBe(`/menus/${MENU}?ajout=${RECIPE}`);
+    expect(afterSaveUrl(RECIPE, MENU)).toBe(`/menus/${MENU}/modifier?ajout=${RECIPE}`);
     expect(afterSaveUrl(RECIPE, null, "?importee=1")).toBe(`/recettes/${RECIPE}?importee=1`);
   });
 });

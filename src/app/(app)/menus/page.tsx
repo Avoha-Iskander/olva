@@ -1,22 +1,22 @@
 import { Plus, UtensilsCrossed } from "lucide-react";
+import Link from "next/link";
 import { Suspense } from "react";
 
-import { createMenu } from "@/app/(app)/menus/actions";
 import { MenuCard } from "@/components/menus/menu-card";
 import { Button } from "@/components/ui/button";
 import { listMyMenus } from "@/lib/menus";
 
 export const metadata = { title: "Mes menus — Olva" };
 
-/** Bouton « Nouveau menu » : un formulaire qui appelle l'action serveur createMenu. */
+/** « Nouveau » : ouvre le formulaire d'un menu (rien n'est créé avant « Enregistrer »). */
 function NewMenuButton({ label }: { label: string }) {
   return (
-    <form action={createMenu}>
-      <Button type="submit">
+    <Button asChild>
+      <Link href="/menus/nouveau">
         <Plus />
         <span>{label}</span>
-      </Button>
-    </form>
+      </Link>
+    </Button>
   );
 }
 
