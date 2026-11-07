@@ -1,6 +1,6 @@
+import { alreadyPlanned } from "@/lib/already-planned";
 import { computeReview, mergeReview, type ReviewLine, type SelectedRecipe } from "@/lib/review";
 import { applyOverride } from "@/lib/catalogue-overrides";
-import { carryoverChoices, type CarryoverChoice } from "@/lib/carryover";
 import { currentUserId, loadItemsDetails, loadOverrides } from "@/lib/my-catalogue";
 import { createClient } from "@/lib/supabase/server";
 
@@ -222,34 +222,38 @@ export async function getExtras(listId: string): Promise<{
   prelist: ExtraItem[];
   checked: ExtraItem[]; // articles de la pré-liste cochés pour cette liste
   free: ExtraItem[]; // articles libres ajoutés à cette liste
-  carryover: CarryoverChoice[]; // reports de mes dernières courses (gardés ou non)
+  /** « Déjà prévu » par les recettes de la liste : libellé par article (US-LST-03). */
+  planned: Record<string, string>;
 }> {
   const supabase = await createClient();
   await supabase.rpc("ensure_my_prelist");
 
-  const [{ data: prelist }, { data: lines }, { data: pool }] = await Promise.all([
-    supabase
-      .from("prelist_items")
-      .select("item_id, quantity, unit, position, items(name, aisle_id, aisles(name, position))")
-      .order("position"),
-    supabase
-      .from("shopping_list_items")
-      .select(
-        "item_id, origin, quantity, unit, included, items(name, aisle_id, aisles(name, position))",
-      )
-      .eq("list_id", listId)
-      .in("origin", ["prelist", "free", "carryover"])
-      .order("created_at"),
-    supabase
-      .from("carryover_items")
-      .select("item_id, quantity, unit, items(name, aisle_id, aisles(name, position))")
-      .order("created_at"),
-  ]);
+  const [{ data: prelist }, { data: lines }, { data: fromRecipes }, { data: listRecipes }] =
+    await Promise.all([
+      supabase
+        .from("prelist_items")
+        .select("item_id, quantity, unit, position, items(name, aisle_id, aisles(name, position))")
+        .order("position"),
+      supabase
+        .from("shopping_list_items")
+        .select(
+          "item_id, origin, quantity, unit, included, items(name, aisle_id, aisles(name, position))",
+        )
+        .eq("list_id", listId)
+        .in("origin", ["prelist", "free"])
+        .order("created_at"),
+      // Ingrédients gardés à la revue (recettes, ingrédients de base cochés)
+      supabase
+        .from("shopping_list_items")
+        .select("item_id, quantity, unit, recipe_ids")
+        .eq("list_id", listId)
+        .in("origin", ["recipe", "staple"])
+        .eq("included", true),
+      supabase.from("shopping_list_recipes").select("recipes(id, title)").eq("list_id", listId),
+    ]);
 
   // Mes rayons personnalisés s'appliquent aussi au regroupement de l'étape 3
-  const itemIds = [
-    ...new Set([...(prelist ?? []), ...(lines ?? []), ...(pool ?? [])].map((row) => row.item_id)),
-  ];
+  const itemIds = [...new Set([...(prelist ?? []), ...(lines ?? [])].map((row) => row.item_id))];
   const { overrides, aisles } = await loadOverrides(
     supabase,
     await currentUserId(supabase),
@@ -292,11 +296,18 @@ export async function getExtras(listId: string): Promise<{
     prelist: (prelist ?? []).map(toExtra),
     checked: (lines ?? []).filter((l) => l.origin === "prelist").map(toExtra),
     free: (lines ?? []).filter((l) => l.origin === "free").map(toExtra),
-    carryover: carryoverChoices(
-      (pool ?? []).map(toExtra),
-      (lines ?? [])
-        .filter((l) => l.origin === "carryover")
-        .map((l) => ({ itemId: l.item_id, unit: l.unit, included: l.included })),
+    planned: Object.fromEntries(
+      alreadyPlanned(
+        (fromRecipes ?? []).map((l) => ({
+          itemId: l.item_id,
+          quantity: Number(l.quantity),
+          unit: l.unit,
+          recipeIds: l.recipe_ids,
+        })),
+        Object.fromEntries(
+          (listRecipes ?? []).flatMap((r) => (r.recipes ? [[r.recipes.id, r.recipes.title]] : [])),
+        ),
+      ),
     ),
   };
 }

@@ -8,6 +8,7 @@ import {
   deleteMenu,
   deleteRecipe,
   menuIdFromUrl,
+  openRevealedAction,
 } from "./helpers";
 
 /** Menus et listes sans recette (décisions 068 et 069). Tout ce qui est créé est supprimé. */
@@ -51,7 +52,7 @@ test("formulaire, fiche, portions, retrait, duplication, liste", async ({ page }
   });
 
   await test.step("changer les portions d'une recette", async () => {
-    await swipeAction(recipeCard(page, "Crêpes"), "Portions");
+    await openRevealedAction(page, recipeCard(page, "Crêpes"), "Portions");
     const dialog = page.getByRole("dialog");
     await dialog.getByRole("button", { name: "Une personne de plus" }).click();
     await dialog.getByRole("button", { name: "Enregistrer" }).click();
@@ -80,7 +81,7 @@ test("formulaire, fiche, portions, retrait, duplication, liste", async ({ page }
   });
 
   await test.step("retirer une recette du menu", async () => {
-    await swipeAction(recipeCard(page, "Crêpes"), "Supprimer");
+    await openRevealedAction(page, recipeCard(page, "Crêpes"), "Supprimer");
     await page.getByRole("dialog").getByRole("button", { name: "Retirer" }).click();
     await expect(page.getByText("Aucune recette dans ce menu")).toBeVisible();
   });

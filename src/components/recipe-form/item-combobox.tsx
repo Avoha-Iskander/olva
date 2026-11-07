@@ -27,6 +27,8 @@ type ItemComboboxProps = {
   invalid?: boolean;
   id?: string;
   placeholder?: string; // texte du bouton tant qu'aucun article n'est choisi
+  /** Article déjà prévu ailleurs (ex. par les recettes de la liste) : affiché sous son nom. */
+  hints?: Record<string, string>;
 };
 
 /**
@@ -42,6 +44,7 @@ export function ItemCombobox({
   invalid,
   id,
   placeholder = "Choisir un article…",
+  hints,
 }: ItemComboboxProps) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -93,7 +96,12 @@ export function ItemCombobox({
                     <Check
                       className={cn("size-4", item.id === selectedId ? "opacity-100" : "opacity-0")}
                     />
-                    <span className="flex-1">{item.name}</span>
+                    <span className="grid flex-1">
+                      <span>{item.name}</span>
+                      {hints?.[item.id] && (
+                        <span className="text-primary text-xs">Déjà prévu : {hints[item.id]}</span>
+                      )}
+                    </span>
                     {item.isPersonal && (
                       <span className="text-muted-foreground text-xs">perso</span>
                     )}

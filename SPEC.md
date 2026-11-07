@@ -289,6 +289,7 @@ En tant que préparateur, je veux revoir les ingrédients calculés à partir de
 
 - [ ] Une pré-liste de mes articles habituels (alimentaires et non alimentaires) est présentée ; je coche ce qui manque
 - [ ] Je peux ajouter ou retirer des articles de ma pré-liste
+- [ ] Un article déjà apporté par les recettes de la liste est signalé **« Déjà prévu : [quantité] ([recettes]) »**, dans la pré-liste et dans l'auto-complétion des articles libres ; il n'est pas masqué (décision 070)
 
 **US-LST-04 — Ajouter un article libre** · M
 
@@ -312,6 +313,18 @@ En tant que préparateur, je veux revoir les ingrédients calculés à partir de
 - [ ] Option « Partager automatiquement mes nouvelles listes avec … » (une ou plusieurs personnes)
 - [ ] Seul le créateur peut supprimer la liste ou retirer un partage
 
+**US-LST-09 — Supprimer une liste en glissant** · M
+
+- [ ] Dans « Mes listes », glisser une liste vers la gauche révèle **« Verser »** (US-LST-10) et **« Supprimer »** (avec confirmation), comme pour les recettes ; sur ordinateur, menu ⋯
+- [ ] Une liste qu'on me partage ne propose que **« Renoncer »** (avec confirmation)
+
+**US-LST-10 — Verser une liste dans une autre** · M
+
+- [ ] « Verser… » (carte ou page de la liste) propose mes listes prêtes ou en courses (les miennes et celles partagées avec moi)
+- [ ] Les articles **non cochés** de la liste de départ rejoignent la liste d'arrivée : même article non coché, unité compatible → quantités additionnées ; sinon nouvelle ligne (même règle que US-MEN-03)
+- [ ] La liste d'arrivée garde son nom et ses partages ; la liste de départ est supprimée
+- [ ] Réservé au créateur de la liste de départ ; les brouillons ne se versent pas et ne reçoivent pas
+
 ### 6.4 Faire ses courses
 
 **US-CRS-01 — Liste à cocher par rayon** · M
@@ -326,8 +339,9 @@ En tant que préparateur, je veux revoir les ingrédients calculés à partir de
 
 **US-CRS-03 — Fin des courses** · M
 
-- [ ] L'utilisateur termine la liste ; les articles non cochés sont reportés sur la prochaine liste
-- [ ] La liste terminée passe dans l'historique
+- [ ] « Terminer » propose une case cochée par défaut : **« Créer une nouvelle liste avec les articles restants »** (décision 070)
+- [ ] Case cochée et articles non cochés restants : une nouvelle liste **prête** est créée avec ces seuls articles ; elle appartient au créateur de la liste, garde **les mêmes partages** et n'est rattachée à aucun menu
+- [ ] La liste terminée passe dans l'historique ; plus de réserve à reporter ni d'articles « Reporté » dans la pré-liste (remplace la décision 055)
 
 ### 6.5 Compte et partages
 
@@ -351,6 +365,11 @@ En tant que préparateur, je veux revoir les ingrédients calculés à partir de
 - [ ] Paramètres → « Mes partages » : ce que je partage (avec qui, quoi) et ce qu'on me partage
 - [ ] Retirer un partage envoyé, renoncer à un partage reçu
 - [ ] Un lien de partage est à usage unique et expire après 7 jours ; un lien expiré ou déjà utilisé affiche un message clair
+
+**US-CPT-05 — Mode clair ou sombre** · M
+
+- [ ] Paramètres → **Apparence** : Automatique (suit le téléphone, par défaut) / Clair / Sombre
+- [ ] Le choix est enregistré dans le profil (il me suit d'un appareil à l'autre) et gardé sur l'appareil pour s'appliquer dès l'ouverture, sans flash, même hors ligne (décision 070)
 
 **US-CPT-04 — Supprimer son compte** · M
 
@@ -509,9 +528,10 @@ Toutes les tables sont protégées par Row Level Security : je vois mes données
 | 6    | Faire ses courses : liste par rayon, temps réel entre co-acheteurs, PWA hors ligne, report, historique ; achat du domaine                                                                                                                        | US-CRS-*                                                                | Temps réel, service workers, stockage hors ligne                      | début déc. · Playwright        |
 | 7    | ~~Import des ~100 recettes du Sheets (CSV → base, correspondance des ingrédients assistée par IA, liste des cas non résolus)~~ — **abandonné** (décision 067)                                                                                    | —                                                                       | Scripts de migration de données                                       | mi-déc.                        |
 | 7bis | **Menus** (décision 068) : menus de la semaine, liste créée depuis un menu, liste sans recette, « Ajouter à la liste »                                                                                                                           | US-MEN-01 à 05, US-LST-08                                               | Migrations, réutiliser un composant, fusion de listes (fonction pure) | nov.                           |
+| 7ter | **Améliorations** (décision 070) : supprimer en glissant et verser une liste, nouvelle liste à la fin des courses, « Déjà prévu », mode clair / sombre                                                                                           | US-LST-09, US-LST-10, US-CRS-03, US-LST-03, US-CPT-05                   | Fusion de listes, fonctions SQL, thème CSS                            | 1 semaine                      |
 | 8    | Période d'usage : 4 semaines, corrections uniquement                                                                                                                                                                                             | —                                                                       | —                                                                     | mi-déc. → mi-janv.             |
 
-**Fin du MVP** = lots 0 à 6 et 7bis livrés (le lot 7 est abandonné, décision 067 ; le lot 8, commencé le 07/11, est mis en pause pour le lot 7bis et ses 4 semaines repartent de zéro ensuite, décision 068) **et** 4 semaines de courses avec l'app sans le Sheets (lot 8). Pendant le lot 8, aucune nouvelle fonctionnalité : les idées vont en issues étiquetées `post-mvp`.
+**Fin du MVP** = lots 0 à 6, 7bis et 7ter livrés (le lot 7 est abandonné, décision 067 ; le lot 8 est décalé après les lots 7bis et 7ter et ses 4 semaines partent de zéro ensuite, décisions 068 et 070) **et** 4 semaines de courses avec l'app sans le Sheets (lot 8). Pendant le lot 8, aucune nouvelle fonctionnalité : les idées vont en issues étiquetées `post-mvp`.
 
 **Date cible du MVP** : **15/01/2027** (révisée après le lot 4, décision 047 ; auparavant 31/01/2027, puis 28/02/2027). Lots 5 à 7 d'ici mi-décembre, puis les 4 semaines d'usage pendant les fêtes et début janvier.
 **Charge estimée (mon temps)** : ~100 à 150 h de validation, tests et compréhension, soit ~7 à 9 h par semaine.
@@ -605,6 +625,7 @@ Toutes les tables sont protégées par Row Level Security : je vois mes données
 | 067 | 2026-11-07 | **Lot 7 abandonné** : pas d'import des recettes du Sheets ; les recettes seront ajoutées au fil de l'eau (import par lien, photo, texte collé, saisie). Les lots 0 à 6 sont livrés : début du **lot 8** (4 semaines d'usage, corrections uniquement, idées en issues `post-mvp`)                                                                                                                                                                                                                                                                                                                                                                                                                                                          | Import CSV assisté par IA                                                                              |
 | 068 | 2026-11-07 | **Menus de la semaine** à la place de « Créer une liste » : un menu = des recettes + portions, **sans jours** ; la liste se crée depuis le menu et commence à la revue (l'étape 1 disparaît) ; une recette ajoutée au menu après coup → bouton « Ajouter à la liste » (fusion dans la liste, même prête), pas de mise à jour automatique ; menus **non partagés** ; « Dupliquer » un menu ; supprimer un menu garde sa liste ; « Nouvelle liste » dans Mes listes = liste sans recette. **Lot 8 mis en pause** : les menus sont livrés en lot 7bis (4 PR), puis les 4 semaines d'usage repartent de zéro                                                                                                                                  | Menus en issue `post-mvp` ; jours de la semaine ; menus partagés ; mise à jour automatique de la liste |
 | 069 | 2026-11-07 | Retours d'Alex sur les menus : un menu se compose dans un **formulaire** (« Enregistrer le menu » / « Enregistrer et créer la liste », plus d'enregistrement automatique, rien de créé avant de valider) et se consulte sur une **fiche** qui n'affiche que ses recettes (portions et retrait par recette ; Modifier, Supprimer le menu ; créer ou voir la liste), sur le modèle des recettes. US-MEN-05                                                                                                                                                                                                                                                                                                                                  | Écran unique avec toutes les recettes et enregistrement automatique (décision 068)                     |
+| 070 | 2026-11-07 | **Lot 8 décalé d'une semaine** pour un lot 7ter d'améliorations : glisser pour supprimer ou renoncer à une liste ; verser une liste (articles non cochés, fusion US-MEN-03, liste de départ supprimée, réservé à son créateur, pas de brouillon) ; fin des courses → **nouvelle liste prête avec les articles restants, mêmes partages** (case cochée par défaut ; remplace la réserve à reporter de la décision 055) ; badge « Déjà prévu » ; thème Automatique / Clair / Sombre **dans le profil**, mémorisé sur l'appareil. Écartés : rangement des ajouts par rayon, foyer (après MVP)                                                                                                                                                | Lot 8 tout de suite ; thème sur l'appareil seulement ; report dans la pré-liste suivante               |
 
 ---
 
@@ -629,4 +650,4 @@ Toutes les tables sont protégées par Row Level Security : je vois mes données
 | Revue des ingrédients | Étape 2 : ingrédients calculés depuis les recettes, à ajuster ou retirer avant de compléter la liste                              |
 | Pré-liste             | Liste de mes articles habituels, passée en revue à l'étape 3 pour ne rien oublier                                                 |
 | Collection            | Groupe de recettes (ex. « Plats d'hiver »)                                                                                        |
-| Report                | Article non coché, reporté automatiquement sur la liste suivante                                                                  |
+| Report                | Article non coché à la fin des courses, repris dans une nouvelle liste (décision 070)                                             |

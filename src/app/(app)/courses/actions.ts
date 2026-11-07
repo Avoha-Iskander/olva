@@ -45,16 +45,24 @@ export async function reloadShoppingLines(
 }
 
 /**
- * « Terminer les courses » (US-CRS-03) : la liste passe dans l'historique et les articles
- * non cochés vont dans la réserve à reporter de son créateur (fonction finish_shopping).
+ * « Terminer les courses » (US-CRS-03, décision 070) : la liste passe dans l'historique ;
+ * si on le demande, les articles non cochés repartent sur une NOUVELLE liste prête, au
+ * créateur, avec les mêmes partages (fonction finish_shopping). Renvoie son identifiant.
  */
-export async function finishShopping(listId: string): Promise<{ ok: boolean }> {
+export async function finishShopping(
+  listId: string,
+  carryOver: boolean,
+): Promise<{ ok: true; newListId: string | null } | { ok: false }> {
   const id = z.uuid().safeParse(listId);
   if (!id.success) return { ok: false };
   const supabase = await createClient();
-  const { error } = await supabase.rpc("finish_shopping", { target_list: id.data });
+  // carry_over : nouvelle liste avec les articles non cochés (décision 070)
+  const { data: newListId, error } = await supabase.rpc("finish_shopping", {
+    target_list: id.data,
+    carry_over: carryOver === true,
+  });
   if (error) return { ok: false };
   revalidatePath("/listes");
   revalidatePath("/courses");
-  return { ok: true };
+  return { ok: true, newListId: newListId ?? null };
 }

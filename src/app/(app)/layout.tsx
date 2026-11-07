@@ -2,6 +2,8 @@ import { redirect } from "next/navigation";
 import { Suspense } from "react";
 
 import { AppBottomNav, AppHeader } from "@/components/layout/app-nav";
+import { ThemeSync } from "@/components/theme/theme-sync";
+import { isTheme } from "@/lib/theme";
 import { getCurrentProfile } from "@/lib/profile";
 
 /**
@@ -44,5 +46,11 @@ async function OnboardingGuard({ children }: { children: React.ReactNode }) {
   const profile = await getCurrentProfile();
   if (!profile) redirect("/connexion");
   if (!profile.onboarded) redirect("/bienvenue");
-  return children;
+  return (
+    <>
+      {/* Thème du profil appliqué à cet appareil (US-CPT-05) */}
+      <ThemeSync theme={isTheme(profile.theme) ? profile.theme : "system"} />
+      {children}
+    </>
+  );
 }

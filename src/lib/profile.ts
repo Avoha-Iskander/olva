@@ -17,7 +17,7 @@ export async function getCurrentProfile() {
   const fetchProfile = () =>
     supabase
       .from("profiles")
-      .select("id, display_name, default_servings, onboarded")
+      .select("id, display_name, default_servings, onboarded, theme")
       .eq("id", userId)
       .maybeSingle();
 
