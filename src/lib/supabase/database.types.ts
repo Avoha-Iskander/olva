@@ -565,6 +565,7 @@ export type Database = {
           id: string
           import_photo_paths: string[]
           is_example: boolean
+          notes: string | null
           owner_id: string
           photo_path: string | null
           servings: number
@@ -582,6 +583,7 @@ export type Database = {
           id?: string
           import_photo_paths?: string[]
           is_example?: boolean
+          notes?: string | null
           owner_id?: string
           photo_path?: string | null
           servings: number
@@ -599,6 +601,7 @@ export type Database = {
           id?: string
           import_photo_paths?: string[]
           is_example?: boolean
+          notes?: string | null
           owner_id?: string
           photo_path?: string | null
           servings?: number

@@ -18,6 +18,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { ServingsStepper } from "@/components/ui/servings-stepper";
+import { Textarea } from "@/components/ui/textarea";
 import type { Aisle, CatalogueItem } from "@/lib/catalogue";
 import {
   countHighlights,
@@ -33,6 +34,7 @@ import {
   type FormErrors,
   type FormIngredient,
   formToRecipeInput,
+  NOTES_MAX,
   type RecipeFormState,
   unitForChosenItem,
 } from "@/lib/recipe-form";
@@ -82,6 +84,7 @@ function initialState(initial: RecipeForEdit | null, defaultServings: number): R
       servings: defaultServings,
       ingredients: [newLine("line-0")],
       steps: [""],
+      notes: "",
       bookTitle: "",
       bookPageText: "",
       sourceUrl: "",
@@ -100,6 +103,7 @@ function initialState(initial: RecipeForEdit | null, defaultServings: number): R
       note: i.note ?? "",
     })),
     steps: initial.steps.length ? initial.steps : [""],
+    notes: initial.notes ?? "",
     bookTitle: initial.bookTitle ?? "",
     bookPageText: initial.bookPage ? String(initial.bookPage) : "",
     sourceUrl: initial.sourceUrl ?? "",
@@ -332,6 +336,36 @@ export function RecipeForm(props: RecipeFormProps) {
         </CardHeader>
         <CardContent>
           <StepsEditor steps={state.steps} onChange={(steps) => update({ steps })} />
+        </CardContent>
+      </Card>
+
+      {/* Notes libres, après les étapes (US-REC-08) */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">
+            <Label htmlFor="notes" className="text-lg">
+              Notes
+            </Label>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="grid gap-2">
+          <Textarea
+            id="notes"
+            name="notes"
+            rows={4}
+            value={state.notes}
+            onChange={(e) => update({ notes: e.target.value })}
+            maxLength={NOTES_MAX}
+            aria-invalid={errors.notes ? true : undefined}
+            aria-describedby="notes-help"
+            placeholder="Astuces, variantes, remarques après l'avoir cuisinée…"
+          />
+          <p
+            id="notes-help"
+            className={errors.notes ? "text-destructive text-sm" : "text-muted-foreground text-sm"}
+          >
+            {errors.notes ?? `${state.notes.length} / ${NOTES_MAX} caractères`}
+          </p>
         </CardContent>
       </Card>
 

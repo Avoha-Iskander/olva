@@ -195,6 +195,15 @@ export function RecipeView({
               ))}
             </ol>
           )}
+          {/* Notes libres (US-REC-08) : seulement s'il y en a */}
+          {recipe.notes && (
+            <section className="grid gap-2 border-t pt-4" aria-labelledby="notes-title">
+              <h2 id="notes-title" className="text-lg font-semibold">
+                Notes
+              </h2>
+              <p className="whitespace-pre-line">{recipe.notes}</p>
+            </section>
+          )}
         </section>
       </div>
 

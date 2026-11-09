@@ -29,8 +29,8 @@ begin
     (pate_bob, bob, 'pâte maison', 2, 'piece');
   insert into public.unit_conversions (item_id, owner_id, from_unit, to_unit, factor)
     values (sauce, alex, 'bouteille', 'cl', 50);
-  insert into public.recipes (id, owner_id, title, servings, steps, book_title, book_page)
-    values (r1, alex, 'Tarte de mamie', 6, array['Étaler', 'Cuire'], 'Carnet', 12);
+  insert into public.recipes (id, owner_id, title, servings, steps, notes, book_title, book_page)
+    values (r1, alex, 'Tarte de mamie', 6, array['Étaler', 'Cuire'], 'Doubler le beurre', 'Carnet', 12);
   insert into public.recipe_ingredients (recipe_id, position, item_id, quantity, unit, note) values
     (r1, 1, pate, 1, 'piece', null),
     (r1, 2, sauce, 5, 'cl', 'bien froide'),
@@ -47,6 +47,7 @@ begin
   select count(*) into n from public.recipes
     where id = copie and title = 'Tarte de mamie' and servings = 6 and steps = array['Étaler', 'Cuire'] and book_page = 12;
   r := r || ('Titre, personnes, étapes et livre copiés: ' || (n = 1));
+  select notes into t from public.recipes where id = copie; r := r || ('Notes copiées (US-REC-08): ' || (t = 'Doubler le beurre'));
   select count(*) into n from public.recipe_ingredients where recipe_id = copie; r := r || ('3 ingrédients: ' || (n = 3));
 
   select ri.item_id into item from public.recipe_ingredients ri where ri.recipe_id = copie and ri.position = 2;
