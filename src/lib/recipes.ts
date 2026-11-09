@@ -1,5 +1,6 @@
 import { sortByTitle } from "@/lib/recipe-sort";
 import { createClient } from "@/lib/supabase/server";
+import { examplePhotoUrl, isExamplePhoto } from "@/lib/example-photos";
 
 /** Durée de validité des liens vers les photos privées (1 heure). */
 const SIGNED_URL_SECONDS = 60 * 60;
@@ -66,7 +67,10 @@ export async function listMyRecipes({
     .in("recipe_id", ids);
 
   // Liens temporaires vers les miniatures (photos privées)
-  const thumbPaths = recipes.map((r) => r.thumb_path).filter((p): p is string => Boolean(p));
+  // (les photos des exemples sont servies par l'app : pas besoin de lien temporaire)
+  const thumbPaths = recipes
+    .map((r) => r.thumb_path)
+    .filter((p): p is string => Boolean(p) && !isExamplePhoto(p));
   const signed = thumbPaths.length
     ? (
         await supabase.storage
@@ -83,7 +87,11 @@ export async function listMyRecipes({
     servings: r.servings,
     isExample: r.is_example,
     sharedBy: r.owner_id === userId ? null : (names.get(r.owner_id) ?? "Quelqu'un"),
-    thumbUrl: r.thumb_path ? (urlByPath.get(r.thumb_path) ?? null) : null,
+    thumbUrl: !r.thumb_path
+      ? null
+      : isExamplePhoto(r.thumb_path)
+        ? examplePhotoUrl(r.thumb_path)
+        : (urlByPath.get(r.thumb_path) ?? null),
     collections: (links ?? [])
       .filter((l) => l.recipe_id === r.id && l.collections)
       .map((l) => ({ id: l.collections!.id, name: l.collections!.name }))
@@ -169,13 +177,15 @@ export async function getRecipeForEdit(id: string): Promise<RecipeForEdit | null
           .maybeSingle()
       : { data: null };
 
-  const photoUrl = recipe.photo_path
-    ? ((
-        await supabase.storage
-          .from("recipe-photos")
-          .createSignedUrl(recipe.photo_path, SIGNED_URL_SECONDS)
-      ).data?.signedUrl ?? null)
-    : null;
+  const photoUrl = isExamplePhoto(recipe.photo_path)
+    ? examplePhotoUrl(recipe.photo_path) // photo d'exemple, servie par l'app
+    : recipe.photo_path
+      ? ((
+          await supabase.storage
+            .from("recipe-photos")
+            .createSignedUrl(recipe.photo_path, SIGNED_URL_SECONDS)
+        ).data?.signedUrl ?? null)
+      : null;
 
   // Pages du livre photographiées à l'import : visibles par le propriétaire seulement
   const importPageUrls =
