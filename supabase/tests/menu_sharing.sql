@@ -41,10 +41,10 @@ begin
   delete from public.menus where id = menu;
   select count(*) into n from public.menus where id = menu; r := r || ('Bob ne supprime pas le menu: ' || (n = 1));
   insert into public.shopping_lists (menu_id) values (menu) returning id into list;
-  r := r || 'Bob crée sa liste depuis le menu partagé: true';
+  r := r || 'Bob crée sa liste depuis le menu partagé: true'::text;
   insert into public.menus (name) values ('Copie de Bob') returning id into menu2;
   insert into public.menu_recipes (menu_id, recipe_id, servings) values (menu2, quiche, 4);
-  r := r || 'Bob duplique le menu (recette d''Alex comprise): true';
+  r := r || 'Bob duplique le menu (recette d''Alex comprise): true'::text;
 
   -- Alex voit la tarte ajoutée par Bob ; Carole ne voit rien
   perform set_config('request.jwt.claims', json_build_object('sub', alex, 'role', 'authenticated')::text, true);
