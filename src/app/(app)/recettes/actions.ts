@@ -11,6 +11,7 @@ import {
   type LearnedAlias,
   withoutCover,
 } from "@/lib/import-draft";
+import { isExamplePhoto } from "@/lib/example-photos";
 import { createClient } from "@/lib/supabase/server";
 import { isUnitCode } from "@/lib/units";
 import { recipeSchema, type RecipeInput } from "@/lib/validation/recipe";
@@ -31,9 +32,12 @@ function escapeLike(value: string) {
   return value.replace(/[\\%_]/g, (c) => `\\${c}`);
 }
 
-/** Un chemin de photo doit être dans le dossier de l'utilisateur. */
+/**
+ * Un chemin de photo doit être dans le dossier de l'utilisateur, ou être la photo
+ * commune d'une recette d'exemple (gardée telle quelle quand on modifie l'exemple).
+ */
 function isOwnPath(path: string | null, userId: string, recipeId: string) {
-  return path === null || path.startsWith(`${userId}/${recipeId}/`);
+  return path === null || path.startsWith(`${userId}/${recipeId}/`) || isExamplePhoto(path);
 }
 
 export type SaveRecipeResult = { ok: true; id: string } | { ok: false; message: string };
@@ -142,8 +146,10 @@ export async function saveRecipe(input: {
     );
   }
 
+  // Les photos communes des exemples ne se suppriment jamais
   const obsolete = [previous?.photo_path, previous?.thumb_path].filter(
-    (p): p is string => Boolean(p) && p !== input.photoPath && p !== input.thumbPath,
+    (p): p is string =>
+      Boolean(p) && !isExamplePhoto(p) && p !== input.photoPath && p !== input.thumbPath,
   );
   if (obsolete.length) await supabase.storage.from(BUCKET).remove(obsolete);
 
@@ -321,7 +327,13 @@ export async function copyRecipe(
     supabase.from("recipes").select("photo_path, thumb_path").eq("id", source.data).maybeSingle(),
     supabase.from("recipes").select("photo_path").eq("id", copyId).maybeSingle(),
   ]);
-  if (original?.photo_path && !copy?.photo_path) {
+  if (isExamplePhoto(original?.photo_path) && !copy?.photo_path) {
+    // Photo commune d'un exemple : rien à recopier, la copie pointe vers le même fichier
+    await supabase
+      .from("recipes")
+      .update({ photo_path: original.photo_path, thumb_path: original.thumb_path })
+      .eq("id", copyId);
+  } else if (original?.photo_path && !copy?.photo_path) {
     const copyFile = async (path: string | null) => {
       if (!path) return null;
       const target = `${userId}/${copyId}/${path.split("/").pop()}`;
