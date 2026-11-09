@@ -18,7 +18,7 @@ import { convertQuantity, roundQuantity } from "@/lib/units";
 type Amount = { quantity: number; unit: string };
 
 /**
- * « Ma pré-liste » hors d'une liste (Menus → Ma pré-liste, US-LST-03) : mes achats
+ * « Ma pré-liste » hors d'une liste (Mes listes → Ma pré-liste, US-LST-03) : mes achats
  * habituels, rangés par rayon. J'ajoute, je retire, je change la quantité habituelle ;
  * chaque changement est enregistré aussitôt (mêmes actions qu'à l'étape 3 d'une liste).
  */

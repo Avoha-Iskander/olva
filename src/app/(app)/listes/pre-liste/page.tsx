@@ -9,14 +9,14 @@ import { getMyPrelist } from "@/lib/lists";
 
 export const metadata = { title: "Ma pré-liste — Olva" };
 
-/** Menus → « Ma pré-liste » (US-LST-03, décision 072) : revoir et configurer mes achats habituels. */
+/** Mes listes → « Ma pré-liste » (US-LST-03, décision 072) : revoir et configurer mes achats habituels. */
 export default function MyPrelistPage() {
   return (
     <main className="mx-auto grid w-full max-w-2xl gap-4 px-4 py-6">
       <Button asChild variant="ghost" className="-ml-3 justify-self-start">
-        <Link href="/menus">
+        <Link href="/listes">
           <ArrowLeft />
-          Mes menus
+          Mes listes
         </Link>
       </Button>
       <header className="grid gap-1">

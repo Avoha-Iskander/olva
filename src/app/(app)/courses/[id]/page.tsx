@@ -21,7 +21,7 @@ export default function ShoppingListPage({ params }: PageProps<"/courses/[id]">)
         className="text-muted-foreground hover:text-foreground -ml-1 flex min-h-11 w-fit items-center gap-2 text-sm"
       >
         <ArrowLeft className="size-4" />
-        Faire ses courses
+        Mes courses
       </Link>
       <Suspense fallback={<p className="text-muted-foreground">Chargement…</p>}>
         <Content params={params} />

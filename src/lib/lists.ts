@@ -33,7 +33,7 @@ export async function getList(id: string): Promise<Draft | null> {
   };
 }
 
-/** Une carte de « Mes listes en cours ». */
+/** Une carte de « Mes listes ». */
 export type ListSummary = {
   id: string;
   status: ListStatus;
@@ -258,7 +258,7 @@ function rowToExtra(
 }
 
 /**
- * « Ma pré-liste » (Menus → Ma pré-liste, US-LST-03) : mes achats habituels, hors de
+ * « Ma pré-liste » (Mes listes → Ma pré-liste, US-LST-03) : mes achats habituels, hors de
  * toute liste. Créée par défaut la première fois, comme à l'étape 3.
  */
 export async function getMyPrelist(): Promise<ExtraItem[]> {

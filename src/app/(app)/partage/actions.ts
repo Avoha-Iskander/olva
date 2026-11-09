@@ -107,7 +107,7 @@ export async function acceptShareLink(token: string, kind: string) {
   (await cookies()).delete(PENDING_SHARE_COOKIE);
 
   if (status === "accepted") {
-    // Recettes partagées → Mes recettes ; listes partagées → Mes listes en cours
+    // Recettes partagées → Mes recettes ; listes partagées → Mes listes
     const destination = kind === "list" || kind === "auto_lists" ? "/listes" : "/recettes";
     revalidatePath(destination);
     redirect(destination);
