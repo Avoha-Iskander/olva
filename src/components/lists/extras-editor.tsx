@@ -14,7 +14,7 @@ import { QuantityControl } from "@/components/lists/quantity-control";
 import { ItemCombobox } from "@/components/recipe-form/item-combobox";
 import { NewItemDialog } from "@/components/recipe-form/new-item-dialog";
 import { Button } from "@/components/ui/button";
-import { groupByAisle } from "@/lib/aisles";
+import { groupExtrasByAisle } from "@/lib/extras";
 import type { Aisle, CatalogueItem } from "@/lib/catalogue";
 import type { ExtraItem } from "@/lib/lists";
 import { normalizeUnit } from "@/lib/review";
@@ -158,6 +158,12 @@ export function ExtrasEditor({
 
   // --- Articles libres ------------------------------------------------------------
   function addFree(item: CatalogueItem) {
+    // Déjà dans ma pré-liste : on le coche plutôt que de le doubler (décision 074)
+    const inPrelist = prelist.find((p) => p.itemId === item.id);
+    if (inPrelist) {
+      if (!checked.has(item.id)) togglePrelist(inPrelist);
+      return;
+    }
     // Déjà ajouté : on n'en crée pas une deuxième ligne
     if (free.some((f) => f.itemId === item.id)) return;
     updateFree([
@@ -183,7 +189,7 @@ export function ExtrasEditor({
 
   return (
     <div className="grid gap-6">
-      <section className="grid gap-2" aria-labelledby="prelist-title">
+      <section className="grid gap-3" aria-labelledby="prelist-title">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="grid gap-0.5">
             <h2 id="prelist-title" className="font-medium">
@@ -201,84 +207,59 @@ export function ExtrasEditor({
           </Button>
         </div>
 
-        {prelist.length === 0 && !editing ? (
+        {/* Article ponctuel (US-LST-04) : il se range aussitôt dans son rayon, plus bas
+            (décision 074) ; le champ est en haut pour qu'on le voie arriver */}
+        {!editing && (
+          <ItemCombobox
+            items={items}
+            selectedId={null}
+            selectedName=""
+            placeholder="Autre chose ? Ajouter un article…"
+            hints={planned}
+            onSelect={addFree}
+            onCreate={(name) => setNewItem({ name, target: "free" })}
+          />
+        )}
+
+        {prelist.length === 0 && free.length === 0 && !editing ? (
           <p className="text-muted-foreground text-sm">
             Votre pré-liste est vide. « Modifier ma pré-liste » pour y ajouter vos achats habituels.
           </p>
         ) : (
           <div className="grid gap-3">
-            {/* Un bloc par rayon, dans l'ordre du magasin */}
-            {groupByAisle(prelist).map((group) => (
+            {/* Un bloc par rayon, dans l'ordre du magasin : pré-liste puis ajouts */}
+            {groupExtrasByAisle(prelist, free).map((group) => (
               <div key={group.aisle} className="grid gap-1.5">
                 <AisleHeading aisle={group.aisle} />
                 <ul className="divide-border bg-card divide-y rounded-xl border">
-                  {group.lines.map((entry) => {
-                    const amount = checked.get(entry.itemId);
-                    return (
-                      <li
+                  {group.rows.map(({ kind, entry }) =>
+                    kind === "free" ? (
+                      <FreeRow
+                        key={`free-${entry.itemId}`}
+                        line={entry}
+                        onAmount={(amount) =>
+                          updateFree(
+                            free.map((f) => (f.itemId === entry.itemId ? { ...f, ...amount } : f)),
+                          )
+                        }
+                        onRemove={() => updateFree(free.filter((f) => f.itemId !== entry.itemId))}
+                      />
+                    ) : (
+                      <PrelistRow
                         key={entry.itemId}
-                        className="flex flex-wrap items-center gap-x-3 gap-y-2 p-3"
-                      >
-                        {editing ? (
-                          <>
-                            <span className="min-w-0 flex-1 basis-40">{entry.name}</span>
-                            <QuantityControl
-                              line={entry}
-                              onQuantity={(q) => changeUsual(entry, withQuantity(q, entry.unit))}
-                              onUnit={(u) => changeUsual(entry, withUnit(entry, u))}
-                            />
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => removeFromPrelist(entry)}
-                              aria-label={`Retirer ${entry.name} de ma pré-liste`}
-                            >
-                              <X />
-                            </Button>
-                          </>
-                        ) : (
-                          <>
-                            <label className="flex min-h-11 min-w-0 flex-1 basis-40 cursor-pointer items-center gap-3">
-                              <input
-                                type="checkbox"
-                                checked={Boolean(amount)}
-                                onChange={() => togglePrelist(entry)}
-                                className="accent-primary size-5 shrink-0"
-                              />
-                              <span className="grid">
-                                <span className={cn(!amount && "text-muted-foreground")}>
-                                  {entry.name}
-                                </span>
-                                {planned[entry.itemId] && (
-                                  <span className="text-primary text-xs font-medium">
-                                    Déjà prévu : {planned[entry.itemId]}
-                                  </span>
-                                )}
-                              </span>
-                            </label>
-                            {amount ? (
-                              <QuantityControl
-                                line={{ name: entry.name, ...amount }}
-                                onQuantity={(q) =>
-                                  updateChecked((map) =>
-                                    map.set(entry.itemId, withQuantity(q, amount.unit)),
-                                  )
-                                }
-                                onUnit={(u) =>
-                                  updateChecked((map) => map.set(entry.itemId, withUnit(amount, u)))
-                                }
-                              />
-                            ) : (
-                              <span className="text-muted-foreground text-sm">
-                                {formatQuantity(entry.quantity, entry.unit)}
-                              </span>
-                            )}
-                          </>
-                        )}
-                      </li>
-                    );
-                  })}
+                        entry={entry}
+                        editing={editing}
+                        amount={checked.get(entry.itemId)}
+                        planned={planned[entry.itemId]}
+                        onToggle={() => togglePrelist(entry)}
+                        onChecked={(amount) =>
+                          updateChecked((map) => map.set(entry.itemId, amount))
+                        }
+                        onUsual={(amount) => changeUsual(entry, amount)}
+                        onRemove={() => removeFromPrelist(entry)}
+                      />
+                    ),
+                  )}
                 </ul>
               </div>
             ))}
@@ -294,71 +275,6 @@ export function ExtrasEditor({
                 />
               </div>
             )}
-          </div>
-        )}
-      </section>
-
-      <section className="grid gap-2" aria-labelledby="free-title">
-        <div className="grid gap-0.5">
-          <h2 id="free-title" className="font-medium">
-            Autre chose ?
-          </h2>
-          <p className="text-muted-foreground text-sm">
-            Ajoutez un article ponctuel, alimentaire ou non.
-          </p>
-        </div>
-        <ItemCombobox
-          items={items}
-          selectedId={null}
-          selectedName=""
-          placeholder="Ajouter un article…"
-          hints={planned}
-          onSelect={addFree}
-          onCreate={(name) => setNewItem({ name, target: "free" })}
-        />
-        {free.length > 0 && (
-          <div className="grid gap-3">
-            {groupByAisle(free).map((group) => (
-              <div key={group.aisle} className="grid gap-1.5">
-                <AisleHeading aisle={group.aisle} />
-                <ul className="divide-border bg-card divide-y rounded-xl border">
-                  {group.lines.map((line) => (
-                    <li
-                      key={line.itemId}
-                      className="flex flex-wrap items-center gap-x-3 gap-y-2 p-3"
-                    >
-                      <span className="min-w-0 flex-1 basis-40 font-medium">{line.name}</span>
-                      <QuantityControl
-                        line={line}
-                        onQuantity={(q) =>
-                          updateFree(
-                            free.map((f) =>
-                              f.itemId === line.itemId ? { ...f, ...withQuantity(q, f.unit) } : f,
-                            ),
-                          )
-                        }
-                        onUnit={(u) =>
-                          updateFree(
-                            free.map((f) =>
-                              f.itemId === line.itemId ? { ...f, ...withUnit(f, u) } : f,
-                            ),
-                          )
-                        }
-                      />
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => updateFree(free.filter((f) => f.itemId !== line.itemId))}
-                        aria-label={`Retirer ${line.name}`}
-                      >
-                        <X />
-                      </Button>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
           </div>
         )}
       </section>
@@ -393,5 +309,114 @@ export function ExtrasEditor({
         }}
       />
     </div>
+  );
+}
+
+/** Une ligne de ma pré-liste : à cocher, ou à configurer en mode « Modifier ». */
+function PrelistRow({
+  entry,
+  editing,
+  amount,
+  planned,
+  onToggle,
+  onChecked,
+  onUsual,
+  onRemove,
+}: {
+  entry: ExtraItem;
+  editing: boolean;
+  amount: Amount | undefined; // cochée pour cette liste : quantité choisie
+  planned: string | undefined; // « Déjà prévu » par les recettes
+  onToggle: () => void;
+  onChecked: (amount: Amount) => void;
+  onUsual: (amount: Amount) => void;
+  onRemove: () => void;
+}) {
+  return (
+    <li className="flex flex-wrap items-center gap-x-3 gap-y-2 p-3">
+      {editing ? (
+        <>
+          <span className="min-w-0 flex-1 basis-40">{entry.name}</span>
+          <QuantityControl
+            line={entry}
+            onQuantity={(q) => onUsual(withQuantity(q, entry.unit))}
+            onUnit={(u) => onUsual(withUnit(entry, u))}
+          />
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            onClick={onRemove}
+            aria-label={`Retirer ${entry.name} de ma pré-liste`}
+          >
+            <X />
+          </Button>
+        </>
+      ) : (
+        <>
+          <label className="flex min-h-11 min-w-0 flex-1 basis-40 cursor-pointer items-center gap-3">
+            <input
+              type="checkbox"
+              checked={Boolean(amount)}
+              onChange={onToggle}
+              className="accent-primary size-5 shrink-0"
+            />
+            <span className="grid">
+              <span className={cn(!amount && "text-muted-foreground")}>{entry.name}</span>
+              {planned && (
+                <span className="text-primary text-xs font-medium">Déjà prévu : {planned}</span>
+              )}
+            </span>
+          </label>
+          {amount ? (
+            <QuantityControl
+              line={{ name: entry.name, ...amount }}
+              onQuantity={(q) => onChecked(withQuantity(q, amount.unit))}
+              onUnit={(u) => onChecked(withUnit(amount, u))}
+            />
+          ) : (
+            <span className="text-muted-foreground text-sm">
+              {formatQuantity(entry.quantity, entry.unit)}
+            </span>
+          )}
+        </>
+      )}
+    </li>
+  );
+}
+
+/** Un article ajouté ponctuellement à cette liste (US-LST-04), rangé dans son rayon. */
+function FreeRow({
+  line,
+  onAmount,
+  onRemove,
+}: {
+  line: ExtraItem;
+  onAmount: (amount: Amount) => void;
+  onRemove: () => void;
+}) {
+  return (
+    <li className="flex flex-wrap items-center gap-x-3 gap-y-2 p-3">
+      <span className="flex min-w-0 flex-1 basis-40 items-center gap-2">
+        <span className="font-medium">{line.name}</span>
+        <span className="bg-secondary text-secondary-foreground rounded-full px-2 py-0.5 text-xs">
+          ajouté
+        </span>
+      </span>
+      <QuantityControl
+        line={line}
+        onQuantity={(q) => onAmount(withQuantity(q, line.unit))}
+        onUnit={(u) => onAmount(withUnit(line, u))}
+      />
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon"
+        onClick={onRemove}
+        aria-label={`Retirer ${line.name}`}
+      >
+        <X />
+      </Button>
+    </li>
   );
 }
