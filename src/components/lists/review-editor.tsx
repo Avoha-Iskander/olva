@@ -116,7 +116,7 @@ export function ReviewEditor({
           // Un bloc par rayon, dans l'ordre du magasin
           groupByAisle(main).map((group) => (
             <div key={group.aisle} className="grid gap-1.5">
-              <AisleHeading>{group.aisle}</AisleHeading>
+              <AisleHeading aisle={group.aisle} />
               <ul className="divide-border bg-card divide-y rounded-xl border">
                 {group.lines.map((line) => (
                   <li key={line.key} className="p-3">

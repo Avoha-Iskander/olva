@@ -10,7 +10,7 @@ export type CatalogueItem = {
   isPersonal: boolean; // article de mon catalogue personnel
 };
 
-export type Aisle = { id: number; name: string };
+export type Aisle = { id: number; name: string; emoji: string };
 
 /**
  * Catalogue visible par l'utilisateur (commun + ses articles), et les rayons.
@@ -29,7 +29,7 @@ export async function getCatalogue(): Promise<{ items: CatalogueItem[]; aisles: 
       // personnels des recettes qu'on me partage : ils n'ont pas leur place ici.
       .or(`owner_id.is.null,owner_id.eq.${userId}`)
       .order("name"),
-    supabase.from("aisles").select("id, name").order("position"),
+    supabase.from("aisles").select("id, name, emoji").order("position"),
   ]);
 
   return {
@@ -44,4 +44,14 @@ export async function getCatalogue(): Promise<{ items: CatalogueItem[]; aisles: 
     })),
     aisles: aisles ?? [],
   };
+}
+
+/**
+ * Emoji de chaque rayon, par nom (US-CAT-06). Les rayons sont communs et peu nombreux
+ * (20) : lus une fois par le gabarit de l'app pour tous les titres de rayon.
+ */
+export async function getAisleEmojis(): Promise<Record<string, string>> {
+  const supabase = await createClient();
+  const { data } = await supabase.from("aisles").select("name, emoji");
+  return Object.fromEntries((data ?? []).filter((a) => a.emoji).map((a) => [a.name, a.emoji]));
 }

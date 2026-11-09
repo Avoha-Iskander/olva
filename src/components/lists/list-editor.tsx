@@ -103,7 +103,7 @@ export function ListEditor({
       ) : (
         byAisle.map((group) => (
           <section key={group.aisle} className="grid gap-2" aria-label={group.aisle}>
-            <AisleHeading>{group.aisle}</AisleHeading>
+            <AisleHeading aisle={group.aisle} />
             <ul className="divide-border bg-card divide-y rounded-xl border">
               {group.lines.map((line) => (
                 <li key={line.id} className="flex flex-wrap items-center gap-x-3 gap-y-2 p-3">

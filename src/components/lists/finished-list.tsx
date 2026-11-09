@@ -20,7 +20,7 @@ export function FinishedList({ lines }: { lines: ShoppingLine[] }) {
       </p>
       {shoppingGroups(lines).map((group) => (
         <section key={group.aisle} className="grid gap-2" aria-label={group.aisle}>
-          <AisleHeading>{group.aisle}</AisleHeading>
+          <AisleHeading aisle={group.aisle} />
           <ul className="divide-border bg-card divide-y rounded-xl border">
             {group.lines.map((line) => (
               <li key={line.id} className="flex items-center gap-3 px-4 py-3">

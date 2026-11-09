@@ -2,8 +2,10 @@ import { redirect } from "next/navigation";
 import { Suspense } from "react";
 
 import { AppBottomNav, AppHeader } from "@/components/layout/app-nav";
+import { AisleEmojisProvider } from "@/components/lists/aisle-emojis";
 import { ThemeSync } from "@/components/theme/theme-sync";
 import { isTheme } from "@/lib/theme";
+import { getAisleEmojis } from "@/lib/catalogue";
 import { getCurrentProfile } from "@/lib/profile";
 
 /**
@@ -43,14 +45,15 @@ function HeaderFallback() {
 }
 
 async function OnboardingGuard({ children }: { children: React.ReactNode }) {
-  const profile = await getCurrentProfile();
+  const [profile, aisleEmojis] = await Promise.all([getCurrentProfile(), getAisleEmojis()]);
   if (!profile) redirect("/connexion");
   if (!profile.onboarded) redirect("/bienvenue");
   return (
     <>
       {/* Thème du profil appliqué à cet appareil (US-CPT-05) */}
       <ThemeSync theme={isTheme(profile.theme) ? profile.theme : "system"} />
-      {children}
+      {/* Emoji des rayons, pour tous les titres de rayon des pages (US-CAT-06) */}
+      <AisleEmojisProvider emojis={aisleEmojis}>{children}</AisleEmojisProvider>
     </>
   );
 }
