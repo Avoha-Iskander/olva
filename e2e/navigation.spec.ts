@@ -13,8 +13,10 @@ const PAGES = [
 
 test("l'accueil propose les 4 entrées du menu", async ({ page }) => {
   await page.goto("/");
-  for (const name of ["Mes recettes", "Menus", "Mes listes", "Mes courses"]) {
-    await expect(page.getByRole("link", { name }).filter({ visible: true }).first()).toBeVisible();
+  for (const name of ["Recettes", "Menus", "Listes", "Courses"]) {
+    await expect(
+      page.getByRole("link", { name, exact: true }).filter({ visible: true }).first(),
+    ).toBeVisible();
   }
 });
 
