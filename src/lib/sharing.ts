@@ -123,6 +123,7 @@ export const getMyShares = cache(async function getMyShares(): Promise<MyShares>
   const linkLabel = (l: NonNullable<typeof links>[number]) => {
     if (l.kind === "recipe") return `« ${l.recipes?.title ?? "recette"} »`;
     if (l.kind === "library") return "toutes mes recettes";
+    if (l.kind === "everything") return "toutes mes recettes et mes nouvelles listes";
     if (l.kind === "list" && l.shopping_lists) return listTitle(l.shopping_lists.created_at);
     return "mes nouvelles listes";
   };

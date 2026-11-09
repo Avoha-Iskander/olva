@@ -27,13 +27,17 @@ export function ShareListButton({ listId }: { listId: string }) {
 }
 
 /** Paramètres → Mes partages : « Partager automatiquement mes nouvelles listes avec … ». */
-export function ShareAutoListsButton() {
+export function ShareAutoListsButton({
+  label = "Partager mes nouvelles listes automatiquement",
+}: {
+  label?: string; // « Partager » dans l'en-tête de Mes listes (décision 076)
+}) {
   const [open, setOpen] = useState(false);
   return (
     <>
       <Button type="button" variant="outline" onClick={() => setOpen(true)}>
         <Share2 />
-        Partager mes nouvelles listes automatiquement
+        {label}
       </Button>
       <ShareDialog
         target={{ kind: "auto_lists" }}

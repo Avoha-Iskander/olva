@@ -11,13 +11,15 @@ import { createClient } from "@/lib/supabase/server";
 
 /**
  * Ce que l'on partage : une recette, toute ma bibliothèque (en lecture),
- * une liste, ou mes futures listes (en co-édition).
+ * une liste, mes futures listes (en co-édition), ou tout à la fois : bibliothèque
+ * et futures listes (« everything », décision 076).
  */
 const targetSchema = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("recipe"), recipeId: z.uuid() }),
   z.object({ kind: z.literal("library") }),
   z.object({ kind: z.literal("list"), listId: z.uuid() }),
   z.object({ kind: z.literal("auto_lists") }),
+  z.object({ kind: z.literal("everything") }),
 ]);
 export type ShareTarget = z.infer<typeof targetSchema>;
 
@@ -61,6 +63,19 @@ export async function shareByEmail(target: ShareTarget, email: string): Promise<
 
   const supabase = await createClient();
   const what = parsedTarget.data;
+
+  // Tout partager : bibliothèque puis futures listes, avec les deux fonctions existantes
+  if (what.kind === "everything") {
+    const recipes = await shareByEmail({ kind: "library" }, parsedEmail.data);
+    if (!recipes.ok) return recipes;
+    const lists = await shareByEmail({ kind: "auto_lists" }, parsedEmail.data);
+    if (!lists.ok) return lists;
+    return {
+      ok: true,
+      message: `Recettes et nouvelles listes partagées avec ${parsedEmail.data}.`,
+    };
+  }
+
   // Les types générés ne savent pas qu'un paramètre SQL peut recevoir null
   // (partage de bibliothèque ou de mes futures listes), d'où la conversion explicite
   const none = null as unknown as string;
@@ -108,6 +123,7 @@ export async function acceptShareLink(token: string, kind: string) {
 
   if (status === "accepted") {
     // Recettes partagées → Mes recettes ; listes partagées → Mes listes
+    // (tout partager : les recettes, visibles tout de suite ; les listes arrivent ensuite)
     const destination = kind === "list" || kind === "auto_lists" ? "/listes" : "/recettes";
     revalidatePath(destination);
     redirect(destination);

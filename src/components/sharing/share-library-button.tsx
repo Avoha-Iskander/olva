@@ -13,8 +13,8 @@ export function ShareLibraryButton() {
     <>
       <Button type="button" variant="outline" onClick={() => setOpen(true)}>
         <Share2 />
-        {/* Mobile : icône seule (le titre « Mes recettes » et « Ajouter » prennent la place) */}
-        <span className="sr-only sm:not-sr-only">Partager</span>
+        {/* Les boutons sont sous le titre sur mobile : il y a la place pour le texte */}
+        Partager
       </Button>
       <ShareDialog
         target={{ kind: "library" }}

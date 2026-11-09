@@ -16,9 +16,10 @@ export const metadata = { title: "Mes recettes — Olva" };
 export default function RecipesPage({ searchParams }: PageProps<"/recettes">) {
   return (
     <main className="grid gap-4 px-4 py-6">
-      <div className="flex items-center justify-between gap-4">
+      {/* Mobile : boutons sous le titre ; ordinateur : sur la même ligne (décision 076) */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-2xl font-semibold tracking-tight">Mes recettes</h1>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <ShareLibraryButton />
           <AddRecipeMenu />
         </div>
