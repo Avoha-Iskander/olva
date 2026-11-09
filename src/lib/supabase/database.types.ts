@@ -16,16 +16,19 @@ export type Database = {
     Tables: {
       aisles: {
         Row: {
+          emoji: string
           id: number
           name: string
           position: number
         }
         Insert: {
+          emoji?: string
           id?: never
           name: string
           position: number
         }
         Update: {
+          emoji?: string
           id?: never
           name?: string
           position?: number

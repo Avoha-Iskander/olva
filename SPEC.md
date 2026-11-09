@@ -212,6 +212,13 @@ Champs : titre (obligatoire), nombre de personnes (obligatoire), ingrédients (q
 - [ ] Les accents comptent dans la reconnaissance : « pâtes » n'est pas « Pâté » ; un mot écrit sans aucun accent reste reconnu (« echalote »)
 - [ ] Un nouvel article est pré-rempli (rayon, unité de cuisine, unité d'achat) ; je n'ai qu'à valider
 
+**US-CAT-06 — Rayons lisibles** · S
+
+- [ ] 20 rayons communs aux noms courts : Fruits et légumes, Boulangerie, Boucherie, Poissonnerie, Charcuterie et traiteur, Crèmerie, Fromages, Féculents, Conserves, Condiments, Épices, Épicerie sucrée, Apéritif, Surgelés, Boissons, Bébé, Hygiène et beauté, Entretien, Animalerie, Divers
+- [ ] L'ancien rayon Petit-déjeuner est versé dans Épicerie sucrée (articles communs et personnels, personnalisations comprises)
+- [ ] Un emoji précède chaque rayon partout où il s'affiche (revue, pré-liste, liste, mode courses, historique, choix du rayon d'un article)
+- [ ] Les rayons restent communs : pas de renommage, de fusion ni d'ordre propre à chaque utilisateur (après MVP, décision 071)
+
 **US-CAT-02 — Ajouter un article à mon catalogue** · M
 
 - [ ] Quand un article tapé n'existe pas, l'utilisateur le crée en indiquant rayon et unité
@@ -394,7 +401,7 @@ En tant que préparateur, je veux revoir les ingrédients calculés à partir de
 | `recipes`               | id, owner_id, titre, portions, étapes, notes, livre_titre, livre_page, photo_url, photo_import_url, est_exemple, copiée_de                           |                                                     |
 | `collections`           | id, owner_id, nom                                                                                                                                    |                                                     |
 | `recipe_collections`    | recipe_id, collection_id                                                                                                                             |                                                     |
-| `aisles` (rayons)       | id, nom, ordre                                                                                                                                       |                                                     |
+| `aisles` (rayons)       | id, nom, emoji, ordre                                                                                                                                |                                                     |
 | `items` (catalogue)     | id, owner_id (null = commun), nom, aisle_id, unité_par_défaut, est_de_base, unité_de_conditionnement                                                 |                                                     |
 | `item_overrides`        | user_id, item_id, aisle_id, est_de_base                                                                                                              | Personnalisation d'un article commun                |
 | `item_aliases`          | alias, item_id                                                                                                                                       | Correspondances (« oignons jaunes » → « oignon »)   |
