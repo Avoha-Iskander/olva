@@ -36,8 +36,13 @@ setup("connexion du compte de test", async ({ page }) => {
 
   // Tutoriel (US-CPT-06) : il se lance tout seul tant qu'il n'a été ni vu ni passé, et
   // couvrirait l'écran pendant les parcours. On le passe (c'est enregistré dans le profil).
+  // isVisible() n'attend pas : le tutoriel s'ouvre ~0,4 s après la page, on l'attend donc
   const skip = page.getByRole("button", { name: "Passer le tutoriel" });
-  if (await skip.isVisible({ timeout: 3000 }).catch(() => false)) {
+  const shown = await skip
+    .waitFor({ state: "visible", timeout: 5000 })
+    .then(() => true)
+    .catch(() => false);
+  if (shown) {
     await skip.click();
     await expect(page.getByRole("dialog", { name: /Bienvenue sur Olva/ })).toBeHidden();
   }
