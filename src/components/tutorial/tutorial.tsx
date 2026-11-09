@@ -165,7 +165,13 @@ export function Tutorial({ autoStart }: { autoStart: boolean }) {
           {step.text}
         </p>
 
+        {/* Précédent à gauche, Suivant à droite (sens de lecture) */}
         <div className="flex flex-wrap items-center gap-2">
+          {index > 0 && (
+            <Button type="button" variant="outline" onClick={() => setIndex(index - 1)}>
+              Précédent
+            </Button>
+          )}
           {isLast ? (
             <Button
               type="button"
@@ -180,11 +186,6 @@ export function Tutorial({ autoStart }: { autoStart: boolean }) {
           ) : (
             <Button type="button" className="flex-1" onClick={() => setIndex(index + 1)}>
               {index === 0 ? "C'est parti" : "Suivant"}
-            </Button>
-          )}
-          {index > 0 && (
-            <Button type="button" variant="outline" onClick={() => setIndex(index - 1)}>
-              Précédent
             </Button>
           )}
         </div>
