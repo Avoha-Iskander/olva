@@ -1,4 +1,4 @@
-import { Plus, UtensilsCrossed } from "lucide-react";
+import { ClipboardList, Plus, UtensilsCrossed } from "lucide-react";
 import Link from "next/link";
 import { Suspense } from "react";
 
@@ -26,7 +26,16 @@ export default function MenusPage() {
     <main className="grid gap-4 px-4 py-6">
       <div className="flex items-center justify-between gap-4">
         <h1 className="text-2xl font-semibold tracking-tight">Mes menus</h1>
-        <NewMenuButton label="Nouveau" />
+        <div className="flex flex-wrap justify-end gap-2">
+          {/* Revoir et configurer ses achats habituels (US-LST-03, décision 072) */}
+          <Button asChild variant="outline">
+            <Link href="/menus/pre-liste">
+              <ClipboardList />
+              <span>Ma pré-liste</span>
+            </Link>
+          </Button>
+          <NewMenuButton label="Nouveau" />
+        </div>
       </div>
       <Suspense fallback={<p className="text-muted-foreground">Chargement…</p>}>
         <Menus />
