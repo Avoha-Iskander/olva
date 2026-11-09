@@ -2,6 +2,10 @@ import { BookOpen, Link2, ListChecks, Repeat, UtensilsCrossed } from "lucide-rea
 
 import { cancelShareLink, removeShare } from "@/app/(app)/partage/actions";
 import { ShareActionButton } from "@/components/sharing/share-action-button";
+import {
+  ShareEverythingButton,
+  ShareRecipesAutoButton,
+} from "@/components/sharing/share-everything-button";
 import { ShareAutoListsButton } from "@/components/sharing/share-list-button";
 import type { MyShares, ShareRow } from "@/lib/sharing";
 
@@ -85,8 +89,11 @@ export function MyShares({ shares }: { shares: MyShares }) {
             ))}
           </ul>
         )}
-        <div className="pt-2">
+        {/* Partages automatiques : listes, recettes, ou tout à la fois (décision 076) */}
+        <div className="flex flex-col items-start gap-2 pt-2">
           <ShareAutoListsButton />
+          <ShareRecipesAutoButton />
+          <ShareEverythingButton />
         </div>
       </section>
 

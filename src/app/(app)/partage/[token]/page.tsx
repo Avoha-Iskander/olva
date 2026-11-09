@@ -39,7 +39,9 @@ async function ShareCard({ params }: { params: PageProps<"/partage/[token]">["pa
         ? `sa ${listTitle(link.list_created_at).replace("Liste", "liste de courses")}`
         : link?.kind === "auto_lists"
           ? "ses prochaines listes de courses"
-          : "toutes ses recettes";
+          : link?.kind === "everything"
+            ? "toutes ses recettes et ses prochaines listes"
+            : "toutes ses recettes";
 
   // Lien utilisable : on propose de l'accepter
   if (link?.status === "valid") {
@@ -59,14 +61,20 @@ async function ShareCard({ params }: { params: PageProps<"/partage/[token]">["pa
                 ? "Elles apparaîtront dans Mes recettes, en lecture seule, y compris celles ajoutées plus tard."
                 : link.kind === "list"
                   ? "Elle apparaîtra dans Mes listes : vous pourrez ajouter, retirer et modifier des articles."
-                  : "Chaque nouvelle liste terminée apparaîtra dans Mes listes, modifiable par vous deux."}
+                  : link.kind === "everything"
+                    ? "Ses recettes apparaîtront dans Mes recettes, en lecture seule ; chaque nouvelle liste terminée apparaîtra dans Mes listes, modifiable par vous deux."
+                    : "Chaque nouvelle liste terminée apparaîtra dans Mes listes, modifiable par vous deux."}
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form action={accept}>
             <Button type="submit" className="w-full">
               <BookOpen />
-              {isList ? "Ajouter à mes listes" : "Ajouter à mes recettes"}
+              {link.kind === "everything"
+                ? "Accepter le partage"
+                : isList
+                  ? "Ajouter à mes listes"
+                  : "Ajouter à mes recettes"}
             </Button>
           </form>
         </CardContent>

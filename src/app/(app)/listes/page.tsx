@@ -3,6 +3,7 @@ import { ClipboardList, History, ListChecks, Plus } from "lucide-react";
 import { Suspense } from "react";
 
 import { createEmptyList } from "@/app/(app)/listes/actions";
+import { ShareAutoListsButton } from "@/components/sharing/share-list-button";
 import { ListCard } from "@/components/lists/list-card";
 import { Button } from "@/components/ui/button";
 import { listFinishedLists, listHref, listMyLists } from "@/lib/lists";
@@ -23,9 +24,12 @@ const TABS = [
 export default function ListsPage({ searchParams }: PageProps<"/listes">) {
   return (
     <main className="grid gap-4 px-4 py-6">
-      <div className="flex items-center justify-between gap-4">
+      {/* Mobile : boutons sous le titre ; ordinateur : sur la même ligne (décision 076) */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-2xl font-semibold tracking-tight">Mes listes</h1>
-        <div className="flex flex-wrap justify-end gap-2">
+        <div className="flex flex-wrap gap-2">
+          {/* Mes nouvelles listes, partagées automatiquement en co-édition */}
+          <ShareAutoListsButton label="Partager" />
           {/* Revoir et configurer ses achats habituels (US-LST-03, décisions 072 et 073) */}
           <Button asChild variant="outline">
             <Link href="/listes/pre-liste">
