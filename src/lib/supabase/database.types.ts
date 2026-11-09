@@ -53,6 +53,24 @@ export type Database = {
         }
         Relationships: []
       }
+      auto_menu_shares: {
+        Row: {
+          created_at: string
+          owner_id: string
+          shared_with: string
+        }
+        Insert: {
+          created_at?: string
+          owner_id: string
+          shared_with: string
+        }
+        Update: {
+          created_at?: string
+          owner_id?: string
+          shared_with?: string
+        }
+        Relationships: []
+      }
       collections: {
         Row: {
           created_at: string
@@ -277,6 +295,32 @@ export type Database = {
             columns: ["recipe_id"]
             isOneToOne: false
             referencedRelation: "recipes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      menu_shares: {
+        Row: {
+          created_at: string
+          menu_id: string
+          shared_with: string
+        }
+        Insert: {
+          created_at?: string
+          menu_id: string
+          shared_with: string
+        }
+        Update: {
+          created_at?: string
+          menu_id?: string
+          shared_with?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "menu_shares_menu_id_fkey"
+            columns: ["menu_id"]
+            isOneToOne: false
+            referencedRelation: "menus"
             referencedColumns: ["id"]
           },
         ]
@@ -637,6 +681,7 @@ export type Database = {
           id: string
           kind: string
           list_id: string | null
+          menu_id: string | null
           owner_id: string
           recipe_id: string | null
           token_hash: string
@@ -649,6 +694,7 @@ export type Database = {
           id?: string
           kind: string
           list_id?: string | null
+          menu_id?: string | null
           owner_id?: string
           recipe_id?: string | null
           token_hash: string
@@ -661,6 +707,7 @@ export type Database = {
           id?: string
           kind?: string
           list_id?: string | null
+          menu_id?: string | null
           owner_id?: string
           recipe_id?: string | null
           token_hash?: string
@@ -673,6 +720,13 @@ export type Database = {
             columns: ["list_id"]
             isOneToOne: false
             referencedRelation: "shopping_lists"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "share_links_menu_id_fkey"
+            columns: ["menu_id"]
+            isOneToOne: false
+            referencedRelation: "menus"
             referencedColumns: ["id"]
           },
           {
@@ -934,6 +988,7 @@ export type Database = {
           kind: string
           owner_name: string
           list_created_at: string
+          menu_name: string
           recipe_title: string
           status: string
         }[]
@@ -983,6 +1038,10 @@ export type Database = {
       }
       share_list_by_email: {
         Args: { kind: string; target_email: string; target_list: string }
+        Returns: string
+      }
+      share_menu_by_email: {
+        Args: { kind: string; target_email: string; target_menu: string }
         Returns: string
       }
       start_shopping: { Args: { target_list: string }; Returns: undefined }

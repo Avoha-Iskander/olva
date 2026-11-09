@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 
 import { MenuCard } from "@/components/menus/menu-card";
+import { ShareAutoMenusButton } from "@/components/sharing/share-menu-button";
 import { Button } from "@/components/ui/button";
 import { listMyMenus } from "@/lib/menus";
 
@@ -24,9 +25,14 @@ function NewMenuButton({ label }: { label: string }) {
 export default function MenusPage() {
   return (
     <main className="grid gap-4 px-4 py-6">
-      <div className="flex items-center justify-between gap-4">
+      {/* Mobile : boutons sous le titre ; ordinateur : sur la même ligne (décision 076) */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-2xl font-semibold tracking-tight">Mes menus</h1>
-        <NewMenuButton label="Nouveau" />
+        <div className="flex flex-wrap gap-2">
+          {/* Mes menus, y compris les prochains, en co-édition (décision 077) */}
+          <ShareAutoMenusButton label="Partager" />
+          <NewMenuButton label="Nouveau" />
+        </div>
       </div>
       <Suspense fallback={<p className="text-muted-foreground">Chargement…</p>}>
         <Menus />

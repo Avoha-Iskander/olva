@@ -15,6 +15,7 @@ export type MenuRecipe = DraftRecipe & { addedAt: string };
 export type Menu = {
   id: string;
   name: string;
+  sharedBy: string | null; // menu qu'on me partage : nom du créateur (null : c'est le mien)
   createdAt: string;
   recipes: MenuRecipe[];
   list: MenuList | null;
@@ -24,6 +25,7 @@ export type Menu = {
 export type MenuSummary = {
   id: string;
   name: string;
+  sharedBy: string | null; // menu qu'on me partage (co-édition, décision 077)
   createdAt: string;
   recipeTitles: string[];
   list: MenuList | null;
@@ -58,13 +60,18 @@ export async function listMyMenus(): Promise<MenuSummary[]> {
   const { data } = await supabase
     .from("menus")
     .select(
-      "id, name, created_at, menu_recipes(added_at, recipes(title)), shopping_lists(id, status, created_at, shopping_list_recipes(recipe_id))",
+      "id, owner_id, name, created_at, menu_recipes(added_at, recipes(title)), shopping_lists(id, status, created_at, shopping_list_recipes(recipe_id))",
     )
     .order("created_at", { ascending: false });
+  const names = await sharerNames(
+    supabase,
+    (data ?? []).map((m) => m.owner_id),
+  );
 
   return (data ?? []).map((m) => ({
     id: m.id,
     name: m.name,
+    sharedBy: names.get(m.owner_id) ?? null,
     createdAt: m.created_at,
     recipeTitles: [...m.menu_recipes]
       .sort((a, b) => a.added_at.localeCompare(b.added_at))
@@ -74,21 +81,44 @@ export async function listMyMenus(): Promise<MenuSummary[]> {
   }));
 }
 
-/** Un menu (le mien), ou null s'il n'existe pas. */
+/**
+ * Créateurs des menus qu'on me partage → nom affiché. Mes propres menus n'y sont pas :
+ * pour eux, `get` renvoie undefined (donc « pas partagé »).
+ */
+async function sharerNames(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  ownerIds: string[],
+): Promise<Map<string, string>> {
+  const { data: claims } = await supabase.auth.getClaims();
+  const userId = claims?.claims?.sub;
+  const others = [...new Set(ownerIds)].filter((id) => id !== userId);
+  if (!others.length) return new Map();
+  const { data: profiles } = await supabase
+    .from("profiles")
+    .select("id, display_name")
+    .in("id", others);
+  return new Map(
+    others.map((id) => [id, profiles?.find((p) => p.id === id)?.display_name || "Quelqu'un"]),
+  );
+}
+
+/** Un menu (le mien ou partagé avec moi), ou null s'il n'existe pas. */
 export async function getMenu(id: string): Promise<Menu | null> {
   const supabase = await createClient();
   const { data: menu } = await supabase
     .from("menus")
     .select(
-      "id, name, created_at, menu_recipes(recipe_id, servings, added_at, recipes(id)), shopping_lists(id, status, created_at, shopping_list_recipes(recipe_id))",
+      "id, owner_id, name, created_at, menu_recipes(recipe_id, servings, added_at, recipes(id)), shopping_lists(id, status, created_at, shopping_list_recipes(recipe_id))",
     )
     .eq("id", id)
     .maybeSingle();
   if (!menu) return null;
+  const names = await sharerNames(supabase, [menu.owner_id]);
 
   return {
     id: menu.id,
     name: menu.name,
+    sharedBy: names.get(menu.owner_id) ?? null,
     createdAt: menu.created_at,
     recipes: [...menu.menu_recipes]
       .filter((r) => r.recipes) // recette encore lisible (à moi ou partagée avec moi)

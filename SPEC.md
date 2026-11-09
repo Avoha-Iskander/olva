@@ -73,12 +73,12 @@ Proposition de valeur : **Toutes vos recettes à un endroit, vos listes de cours
 
 Chaque utilisateur possède ses propres données ; il n'y a pas de « foyer ».
 
-| Objet                                     | Appartient à       | Partage                                                                                                           |
-| ----------------------------------------- | ------------------ | ----------------------------------------------------------------------------------------------------------------- |
-| Recette                                   | Son créateur       | **En lecture**, recette par recette **ou toute ma bibliothèque** d'un coup ; bouton « Copier dans mes recettes »  |
-| Menu de la semaine                        | Son créateur       | Pas de partage (décision 068)                                                                                     |
-| Liste de courses                          | Son créateur       | **En co-édition** (cocher, ajouter, retirer, modifier) ; option « partager automatiquement mes nouvelles listes » |
-| Catalogue, pré-liste, portions par défaut | Chaque utilisateur | Pas de partage ; une liste partagée est triée selon les rayons de son créateur                                    |
+| Objet                                     | Appartient à       | Partage                                                                                                                                                                 |
+| ----------------------------------------- | ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Recette                                   | Son créateur       | **En lecture**, recette par recette **ou toute ma bibliothèque** d'un coup ; bouton « Copier dans mes recettes »                                                        |
+| Menu de la semaine                        | Son créateur       | **En co-édition** (recettes, portions, nom), un menu ou tous mes nouveaux menus ; ses recettes deviennent lisibles ; chacun crée sa liste depuis le menu (décision 077) |
+| Liste de courses                          | Son créateur       | **En co-édition** (cocher, ajouter, retirer, modifier) ; option « partager automatiquement mes nouvelles listes »                                                       |
+| Catalogue, pré-liste, portions par défaut | Chaque utilisateur | Pas de partage ; une liste partagée est triée selon les rayons de son créateur                                                                                          |
 
 - Seul le créateur peut modifier ou supprimer une recette, supprimer une liste, ou retirer un partage. La personne qui reçoit un partage peut aussi y renoncer.
 - Partager avec quelqu'un : **lien à usage unique valable 7 jours** (SMS, WhatsApp…) ou **email** d'un utilisateur Olva existant.
@@ -107,7 +107,6 @@ Chaque utilisateur possède ses propres données ; il n'y a pas de « foyer ».
 ### 4.2 Après MVP
 
 - Planning des repas : affecter une recette d'un menu à un jour
-- Partage des menus
 - Commande drive : tout ce qui est disponible au drive est commandé automatiquement, le reste (et les rayons exclus, ex. fruits et légumes) va sur la liste à cocher. Un drive au début, d'autres ensuite. Nécessite un partenariat ou un agrégateur (pas d'API publique côté enseignes)
 - Notifications push
 - Export de ses données
@@ -237,6 +236,13 @@ Champs : titre (obligatoire), nombre de personnes (obligatoire), ingrédients (q
 ### 6.3 Menus et listes
 
 > Décision 068 : le choix des recettes (ancienne étape 1) se fait dans un **menu de la semaine** ; la liste se crée depuis le menu et commence à la revue des ingrédients.
+
+**US-MEN-06 — Partager mes menus** · M
+
+- [ ] « Partager » sur la page Menus partage **mes nouveaux menus automatiquement** ; « Partager » sur la fiche d'un menu partage ce menu (par lien ou email, comme les listes)
+- [ ] La personne voit le menu dans Mes menus (« Partagé par … ») et le **modifie** : nom, recettes, portions ; elle lit les recettes du menu et crée **sa propre liste** depuis le menu
+- [ ] Seul le créateur supprime le menu ou le partage ; la personne peut y renoncer (glisser → « Renoncer »)
+- [ ] Paramètres → Mes partages : « Partager mes nouveaux menus automatiquement » ; « Tout partager » inclut les menus
 
 **US-MEN-01 — Créer un menu** · M
 
@@ -661,6 +667,7 @@ Toutes les tables sont protégées par Row Level Security : je vois mes données
 | 074 | 2026-11-09 | Révision de la 070 : à l'étape « Pré-liste », les **articles ajoutés se rangent dans leur rayon**, mêlés à la pré-liste (une seule liste par rayon, fonction pure `groupExtrasByAisle`) ; champ d'ajout en haut ; un ajout déjà présent dans la pré-liste coche sa ligne ; l'ajout reste ponctuel (pas ajouté à la pré-liste). Affichage seulement, pas de migration                                                                                                                                                                                                                                                                                                                                                                                                                                | Section « Autre chose ? » séparée sous la pré-liste                                                                                                                                                                     |
 | 075 | 2026-11-09 | **Photos des 4 recettes d'exemple** (choisies par Alex sur Unsplash, licence libre, usage commercial sans attribution) : compressées en WebP (1 600 px + miniature 400 px) dans `public/exemples/`, **communes à tous les comptes** ; en base, chemin « exemples/… » affiché directement (fonction pure `isExamplePhoto`), jamais supprimé ni recopié ; un déclencheur l'ajoute aux exemples créés à l'inscription, les exemples existants sans photo sont mis à jour                                                                                                                                                                                                                                                                                                                               | Copie des photos dans le stockage de chaque utilisateur ; photos trouvées et téléchargées par Claude (sites bloqués depuis son environnement)                                                                           |
 | 076 | 2026-11-09 | Partages : bouton **« Partager »** dans Mes listes (mes nouvelles listes, comme le bouton des Paramètres) ; dans Paramètres, **« Partager mes recettes automatiquement »** (bibliothèque) et **« Tout partager automatiquement »** : nouveau type de lien `everything`, dont l'acceptation crée un partage de bibliothèque et un partage automatique des listes ; par email, les deux fonctions existantes sont appelées ; les listes déjà créées ne sont pas partagées (décision 045). Mes recettes et Mes listes : boutons **sous le titre sur mobile**, avec leur texte                                                                                                                                                                                                                          | Un partage « tout » unique, à retirer d'un bloc ; partage rétroactif des listes                                                                                                                                         |
+| 077 | 2026-11-09 | **Partage des menus en co-édition** (révise la 068, sorti de « Après MVP ») : tables `menu_shares` et `auto_menu_shares` ; un menu partagé rend ses recettes lisibles par ceux qui peuvent le modifier (élargissement de `is_shared_with_me`, sur laquelle reposent déjà recettes, ingrédients, articles, conversions et photos) ; on n'ajoute à un menu qu'une recette qu'on lit déjà ; partage automatique appliqué à la création d'un menu (déclencheur) ; une liste peut venir d'un menu partagé et reste à celui qui la crée ; liens `menu` et `auto_menus`, « Tout partager » inclut les menus. Conséquence assumée : dupliquer un menu partagé garde l'accès en lecture à ses recettes (comme une copie)                                                                                     | Menus en lecture seule ; partage des recettes du menu à part ; menus non partagés                                                                                                                                       |
 
 ---
 
