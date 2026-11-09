@@ -23,7 +23,7 @@ export default function ListPage({ params }: PageProps<"/listes/[id]">) {
         className="text-muted-foreground hover:text-foreground -ml-1 flex min-h-11 w-fit items-center gap-2 text-sm"
       >
         <ArrowLeft className="size-4" />
-        Mes listes en cours
+        Mes listes
       </Link>
       <Suspense fallback={<p className="text-muted-foreground">Chargement…</p>}>
         <ListContent params={params} />

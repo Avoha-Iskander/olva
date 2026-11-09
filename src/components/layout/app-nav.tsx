@@ -63,7 +63,7 @@ export function AppBottomNav() {
       className="bg-background/95 fixed inset-x-0 bottom-0 z-30 border-t pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden"
     >
       <ul className="grid grid-cols-4">
-        {NAV_ITEMS.map(({ href, shortLabel, icon: Icon }) => {
+        {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
           const active = isActive(pathname, href);
           return (
             <li key={href}>
@@ -77,7 +77,7 @@ export function AppBottomNav() {
                 )}
               >
                 <Icon className="size-5" />
-                {shortLabel}
+                {label}
               </Link>
             </li>
           );
