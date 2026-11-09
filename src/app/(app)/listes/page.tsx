@@ -41,7 +41,7 @@ export default function ListsPage({ searchParams }: PageProps<"/listes">) {
           <form action={createEmptyList}>
             <Button type="submit">
               <Plus />
-              <span>Nouvelle</span>
+              <span>Créer</span>
             </Button>
           </form>
         </div>

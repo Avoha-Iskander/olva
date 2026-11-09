@@ -3,7 +3,7 @@ import { cache } from "react";
 import { listTitle } from "@/lib/list-title";
 import { createClient } from "@/lib/supabase/server";
 
-/** Une ligne de « Mes partages » : recette, bibliothèque, liste ou listes futures. */
+/** Une ligne de « Mes partages » : recette, bibliothèque, liste, menu, ou listes / menus futurs. */
 export type ShareRow =
   | { type: "library"; ownerId: string; sharedWith: string; personName: string }
   | {
@@ -14,7 +14,9 @@ export type ShareRow =
       personName: string;
     }
   | { type: "list"; listId: string; listName: string; sharedWith: string; personName: string }
-  | { type: "auto_lists"; ownerId: string; sharedWith: string; personName: string };
+  | { type: "auto_lists"; ownerId: string; sharedWith: string; personName: string }
+  | { type: "menu"; menuId: string; menuName: string; sharedWith: string; personName: string }
+  | { type: "auto_menus"; ownerId: string; sharedWith: string; personName: string };
 
 export type PendingLink = {
   id: string;
@@ -45,6 +47,8 @@ export const getMyShares = cache(async function getMyShares(): Promise<MyShares>
     { data: lists },
     { data: autoLists },
     { data: links },
+    { data: menus },
+    { data: autoMenus },
   ] = await Promise.all([
     supabase.from("library_shares").select("owner_id, shared_with").order("created_at"),
     // !inner : jointure obligatoire, pour connaître le titre (ou la date) et le propriétaire
@@ -59,10 +63,15 @@ export const getMyShares = cache(async function getMyShares(): Promise<MyShares>
     supabase.from("auto_list_shares").select("owner_id, shared_with").order("created_at"),
     supabase
       .from("share_links")
-      .select("id, kind, expires_at, recipes(title), shopping_lists(created_at)")
+      .select("id, kind, expires_at, recipes(title), shopping_lists(created_at), menus(name)")
       .is("used_at", null)
       .gt("expires_at", new Date().toISOString())
       .order("created_at"),
+    supabase
+      .from("menu_shares")
+      .select("menu_id, shared_with, menus!inner(name, owner_id)")
+      .order("created_at"),
+    supabase.from("auto_menu_shares").select("owner_id, shared_with").order("created_at"),
   ]);
 
   // Noms de toutes les personnes concernées, en une seule requête
@@ -71,6 +80,8 @@ export const getMyShares = cache(async function getMyShares(): Promise<MyShares>
     ...(recipes ?? []).map((r) => [r.recipes.owner_id, r.shared_with] as [string, string]),
     ...(lists ?? []).map((l) => [l.shopping_lists.owner_id, l.shared_with] as [string, string]),
     ...(autoLists ?? []).map((a) => [a.owner_id, a.shared_with] as [string, string]),
+    ...(menus ?? []).map((m) => [m.menus.owner_id, m.shared_with] as [string, string]),
+    ...(autoMenus ?? []).map((a) => [a.owner_id, a.shared_with] as [string, string]),
   ];
   const otherIds = [...new Set(pairs.map(([owner, other]) => (owner === userId ? other : owner)))];
   const { data: profiles } = otherIds.length
@@ -111,6 +122,23 @@ export const getMyShares = cache(async function getMyShares(): Promise<MyShares>
       personName: person(l.shopping_lists.owner_id, l.shared_with),
     });
   }
+  for (const m of menus ?? []) {
+    add(m.menus.owner_id, {
+      type: "menu",
+      menuId: m.menu_id,
+      menuName: m.menus.name,
+      sharedWith: m.shared_with,
+      personName: person(m.menus.owner_id, m.shared_with),
+    });
+  }
+  for (const a of autoMenus ?? []) {
+    add(a.owner_id, {
+      type: "auto_menus",
+      ownerId: a.owner_id,
+      sharedWith: a.shared_with,
+      personName: person(a.owner_id, a.shared_with),
+    });
+  }
   for (const a of autoLists ?? []) {
     add(a.owner_id, {
       type: "auto_lists",
@@ -123,7 +151,10 @@ export const getMyShares = cache(async function getMyShares(): Promise<MyShares>
   const linkLabel = (l: NonNullable<typeof links>[number]) => {
     if (l.kind === "recipe") return `« ${l.recipes?.title ?? "recette"} »`;
     if (l.kind === "library") return "toutes mes recettes";
-    if (l.kind === "everything") return "toutes mes recettes et mes nouvelles listes";
+    if (l.kind === "everything")
+      return "toutes mes recettes, mes nouvelles listes et mes nouveaux menus";
+    if (l.kind === "menu" && l.menus) return `le menu « ${l.menus.name} »`;
+    if (l.kind === "auto_menus") return "mes nouveaux menus";
     if (l.kind === "list" && l.shopping_lists) return listTitle(l.shopping_lists.created_at);
     return "mes nouvelles listes";
   };

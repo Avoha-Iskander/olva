@@ -129,6 +129,23 @@ export async function deleteMenu(menuId: string): Promise<{ ok: boolean }> {
   return { ok: !error && count === 1 };
 }
 
+/** Renoncer à un menu qu'on me partage (décision 077) : je ne le vois plus, il reste à son créateur. */
+export async function leaveMenu(menuId: string): Promise<{ ok: boolean }> {
+  const id = parseId(menuId);
+  if (!id) return { ok: false };
+  const supabase = await createClient();
+  const { data: claims } = await supabase.auth.getClaims();
+  const userId = claims?.claims?.sub;
+  if (!userId) return { ok: false };
+  const { error, count } = await supabase
+    .from("menu_shares")
+    .delete({ count: "exact" })
+    .eq("menu_id", id)
+    .eq("shared_with", userId);
+  revalidatePath("/menus");
+  return { ok: !error && count === 1 };
+}
+
 /** « Dupliquer » : nouveau menu (nom par défaut) avec les mêmes recettes et portions, sans liste. */
 export async function duplicateMenu(menuId: string): Promise<{ ok: false } | never> {
   const id = parseId(menuId);

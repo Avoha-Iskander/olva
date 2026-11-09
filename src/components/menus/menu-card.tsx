@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useState, useTransition } from "react";
 import { ChevronRight, Copy, Trash2, UtensilsCrossed } from "lucide-react";
 
-import { deleteMenu, duplicateMenu } from "@/app/(app)/menus/actions";
+import { deleteMenu, duplicateMenu, leaveMenu } from "@/app/(app)/menus/actions";
 import { CardActionsMenu } from "@/components/cards/card-actions-menu";
 import { SwipeableRow } from "@/components/cards/swipeable-row";
 import { Button } from "@/components/ui/button";
@@ -36,6 +36,9 @@ export function MenuCard({ menu }: { menu: MenuSummary }) {
   const [pending, startTransition] = useTransition();
   const status = listLabel(menu.list);
   const count = menu.recipeTitles.length;
+  // Mon menu : Supprimer ; menu partagé avec moi : Renoncer (comme les listes)
+  const leave = menu.sharedBy !== null;
+  const actionLabel = leave ? "Renoncer" : "Supprimer";
 
   function duplicate() {
     startTransition(async () => {
@@ -50,6 +53,7 @@ export function MenuCard({ menu }: { menu: MenuSummary }) {
       <SwipeableRow
         primary={{ label: "Dupliquer", Icon: Copy, onClick: duplicate }}
         onDelete={() => setConfirm(true)}
+        deleteLabel={actionLabel}
       >
         <div className="group bg-card hover:bg-accent flex items-center gap-1 rounded-xl border pr-2 shadow-sm transition-colors">
           <Link href={`/menus/${menu.id}`} className="flex min-w-0 flex-1 items-center gap-3 p-3">
@@ -62,6 +66,11 @@ export function MenuCard({ menu }: { menu: MenuSummary }) {
                 {status && (
                   <span className="bg-primary text-primary-foreground rounded px-1.5 py-0.5 text-xs">
                     {status}
+                  </span>
+                )}
+                {menu.sharedBy && (
+                  <span className="bg-secondary text-secondary-foreground rounded px-1.5 py-0.5 text-xs">
+                    Partagé par {menu.sharedBy}
                   </span>
                 )}
               </span>
@@ -78,7 +87,7 @@ export function MenuCard({ menu }: { menu: MenuSummary }) {
             actions={[
               { label: "Dupliquer", Icon: Copy, onClick: duplicate },
               {
-                label: "Supprimer",
+                label: actionLabel,
                 Icon: Trash2,
                 onClick: () => setConfirm(true),
                 destructive: true,
@@ -101,11 +110,19 @@ export function MenuCard({ menu }: { menu: MenuSummary }) {
       <Dialog open={confirm} onOpenChange={setConfirm}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Supprimer ce menu ?</DialogTitle>
+            <DialogTitle>{leave ? "Renoncer à ce menu ?" : "Supprimer ce menu ?"}</DialogTitle>
             <DialogDescription>
-              « {menu.name} » sera supprimé définitivement.
-              {menu.list ? " Sa liste de courses est gardée." : ""} Vos recettes ne sont pas
-              touchées.
+              {leave ? (
+                <>
+                  Vous ne verrez plus « {menu.name} ». Il reste à {menu.sharedBy}.
+                </>
+              ) : (
+                <>
+                  « {menu.name} » sera supprimé définitivement.
+                  {menu.list ? " Sa liste de courses est gardée." : ""} Vos recettes ne sont pas
+                  touchées.
+                </>
+              )}
             </DialogDescription>
           </DialogHeader>
           {failed === "delete" && (
@@ -125,13 +142,13 @@ export function MenuCard({ menu }: { menu: MenuSummary }) {
               disabled={pending}
               onClick={() =>
                 startTransition(async () => {
-                  const { ok } = await deleteMenu(menu.id);
+                  const { ok } = leave ? await leaveMenu(menu.id) : await deleteMenu(menu.id);
                   if (ok) setConfirm(false);
                   else setFailed("delete");
                 })
               }
             >
-              {pending ? "Suppression…" : "Supprimer"}
+              {pending ? "Un instant…" : actionLabel}
             </Button>
           </div>
         </DialogContent>

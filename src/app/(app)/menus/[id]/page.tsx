@@ -5,6 +5,7 @@ import { Suspense } from "react";
 
 import { DeleteMenuButton } from "@/components/menus/delete-menu-button";
 import { MenuView } from "@/components/menus/menu-view";
+import { ShareMenuButton } from "@/components/sharing/share-menu-button";
 import { Button } from "@/components/ui/button";
 import { getMenu } from "@/lib/menus";
 import { parseId } from "@/lib/menu-return";
@@ -12,7 +13,7 @@ import { listMyRecipes } from "@/lib/recipes";
 
 export const metadata = { title: "Menu — Olva" };
 
-/** Fiche d'un menu (US-MEN-05) : ses recettes, la liste ; Modifier, Supprimer. */
+/** Fiche d'un menu (US-MEN-05) : ses recettes, la liste ; Partager, Modifier, Supprimer. */
 export default function MenuPage({ params }: PageProps<"/menus/[id]">) {
   return (
     <main className="grid gap-4 px-4 py-6">
@@ -54,9 +55,16 @@ async function Menu({ params }: { params: PageProps<"/menus/[id]">["params"] }) 
 
   return (
     <>
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <h1 className="min-w-0 text-2xl font-semibold tracking-tight break-words">{menu.name}</h1>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="grid min-w-0 gap-1">
+          <h1 className="text-2xl font-semibold tracking-tight break-words">{menu.name}</h1>
+          {menu.sharedBy && (
+            <p className="text-muted-foreground text-sm">Menu partagé par {menu.sharedBy}</p>
+          )}
+        </div>
         <div className="flex flex-wrap gap-2">
+          {/* Seul le créateur partage son menu (décision 077) */}
+          {!menu.sharedBy && <ShareMenuButton menuId={menu.id} menuName={menu.name} />}
           <Button asChild variant="outline">
             <Link href={`/menus/${menu.id}/modifier`}>
               <Pencil />
@@ -66,7 +74,8 @@ async function Menu({ params }: { params: PageProps<"/menus/[id]">["params"] }) 
         </div>
       </div>
       <MenuView menuId={menu.id} recipes={menuRecipes} list={menu.list} />
-      <DeleteMenuButton menuId={menu.id} hasList={menu.list !== null} />
+      {/* Seul le créateur supprime le menu ; la personne y renonce depuis Mes menus */}
+      {!menu.sharedBy && <DeleteMenuButton menuId={menu.id} hasList={menu.list !== null} />}
     </>
   );
 }

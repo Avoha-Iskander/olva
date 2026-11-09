@@ -10,8 +10,8 @@ import { Button } from "@/components/ui/button";
  * Paramètres → Mes partages (décision 076).
  * - « Partager mes recettes automatiquement » : toute ma bibliothèque, y compris les
  *   recettes futures, en lecture (même partage que « Partager » dans Mes recettes).
- * - « Tout partager automatiquement » : bibliothèque ET nouvelles listes, en un seul
- *   lien ou un seul email ; deux partages sont créés, retirables séparément.
+ * - « Tout partager automatiquement » : bibliothèque, nouvelles listes et nouveaux menus,
+ *   en un seul lien ou un seul email ; trois partages sont créés, retirables séparément.
  */
 export function ShareRecipesAutoButton() {
   const [open, setOpen] = useState(false);
@@ -43,7 +43,7 @@ export function ShareEverythingButton() {
       <ShareDialog
         target={{ kind: "everything" }}
         title="Tout partager"
-        description="La personne pourra consulter toutes vos recettes (y compris les futures), sans les modifier, et chaque liste que vous terminerez lui sera partagée en co-édition."
+        description="La personne pourra consulter toutes vos recettes (y compris les futures), sans les modifier, chaque menu que vous créerez et chaque liste que vous terminerez lui seront partagés en co-édition."
         open={open}
         onOpenChange={setOpen}
       />

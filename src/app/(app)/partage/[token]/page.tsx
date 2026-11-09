@@ -32,6 +32,7 @@ async function ShareCard({ params }: { params: PageProps<"/partage/[token]">["pa
   const link = data?.[0];
   const owner = link?.owner_name || "Quelqu'un";
   const isList = link?.kind === "list" || link?.kind === "auto_lists";
+  const isMenu = link?.kind === "menu" || link?.kind === "auto_menus";
   const what =
     link?.kind === "recipe"
       ? `sa recette « ${link.recipe_title} »`
@@ -40,8 +41,12 @@ async function ShareCard({ params }: { params: PageProps<"/partage/[token]">["pa
         : link?.kind === "auto_lists"
           ? "ses prochaines listes de courses"
           : link?.kind === "everything"
-            ? "toutes ses recettes et ses prochaines listes"
-            : "toutes ses recettes";
+            ? "toutes ses recettes, ses prochaines listes et ses prochains menus"
+            : link?.kind === "menu"
+              ? `son menu « ${link.menu_name} »`
+              : link?.kind === "auto_menus"
+                ? "ses prochains menus"
+                : "toutes ses recettes";
 
   // Lien utilisable : on propose de l'accepter
   if (link?.status === "valid") {
@@ -62,8 +67,12 @@ async function ShareCard({ params }: { params: PageProps<"/partage/[token]">["pa
                 : link.kind === "list"
                   ? "Elle apparaîtra dans Mes listes : vous pourrez ajouter, retirer et modifier des articles."
                   : link.kind === "everything"
-                    ? "Ses recettes apparaîtront dans Mes recettes, en lecture seule ; chaque nouvelle liste terminée apparaîtra dans Mes listes, modifiable par vous deux."
-                    : "Chaque nouvelle liste terminée apparaîtra dans Mes listes, modifiable par vous deux."}
+                    ? "Ses recettes apparaîtront dans Mes recettes, en lecture seule ; ses nouveaux menus et ses nouvelles listes terminées, dans Mes menus et Mes listes, modifiables par vous deux."
+                    : link.kind === "menu"
+                      ? "Il apparaîtra dans Mes menus : vous pourrez ajouter ou retirer des recettes, changer les portions et créer votre liste de courses."
+                      : link.kind === "auto_menus"
+                        ? "Chaque nouveau menu apparaîtra dans Mes menus, modifiable par vous deux."
+                        : "Chaque nouvelle liste terminée apparaîtra dans Mes listes, modifiable par vous deux."}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -74,7 +83,9 @@ async function ShareCard({ params }: { params: PageProps<"/partage/[token]">["pa
                 ? "Accepter le partage"
                 : isList
                   ? "Ajouter à mes listes"
-                  : "Ajouter à mes recettes"}
+                  : isMenu
+                    ? "Ajouter à mes menus"
+                    : "Ajouter à mes recettes"}
             </Button>
           </form>
         </CardContent>
@@ -85,7 +96,7 @@ async function ShareCard({ params }: { params: PageProps<"/partage/[token]">["pa
   const messages: Record<string, { title: string; text: string }> = {
     accepted: {
       title: "C'est déjà fait",
-      text: `Vous avez déjà accepté ce partage. Retrouvez-le dans ${isList ? "Mes listes" : "Mes recettes"}.`,
+      text: `Vous avez déjà accepté ce partage. Retrouvez-le dans ${isList ? "Mes listes" : isMenu ? "Mes menus" : "Mes recettes"}.`,
     },
     own: {
       title: "C'est votre propre lien",
@@ -114,8 +125,8 @@ async function ShareCard({ params }: { params: PageProps<"/partage/[token]">["pa
       </CardHeader>
       <CardContent>
         <Button asChild variant="outline" className="w-full">
-          <Link href={isList ? "/listes" : "/recettes"}>
-            {isList ? "Mes listes" : "Mes recettes"}
+          <Link href={isList ? "/listes" : isMenu ? "/menus" : "/recettes"}>
+            {isList ? "Mes listes" : isMenu ? "Mes menus" : "Mes recettes"}
           </Link>
         </Button>
       </CardContent>

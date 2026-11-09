@@ -19,6 +19,8 @@ const targetSchema = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("library") }),
   z.object({ kind: z.literal("list"), listId: z.uuid() }),
   z.object({ kind: z.literal("auto_lists") }),
+  z.object({ kind: z.literal("menu"), menuId: z.uuid() }),
+  z.object({ kind: z.literal("auto_menus") }),
   z.object({ kind: z.literal("everything") }),
 ]);
 export type ShareTarget = z.infer<typeof targetSchema>;
@@ -46,6 +48,7 @@ export async function createShareLink(
     kind: parsed.data.kind,
     recipe_id: parsed.data.kind === "recipe" ? parsed.data.recipeId : null,
     list_id: parsed.data.kind === "list" ? parsed.data.listId : null,
+    menu_id: parsed.data.kind === "menu" ? parsed.data.menuId : null,
     token_hash: hash,
   });
   if (error) return { ok: false, message: "La création du lien a échoué. Réessayez." };
@@ -64,16 +67,29 @@ export async function shareByEmail(target: ShareTarget, email: string): Promise<
   const supabase = await createClient();
   const what = parsedTarget.data;
 
-  // Tout partager : bibliothèque puis futures listes, avec les deux fonctions existantes
+  // Tout partager : bibliothèque, futures listes et futurs menus, un partage après l'autre
   if (what.kind === "everything") {
-    const recipes = await shareByEmail({ kind: "library" }, parsedEmail.data);
-    if (!recipes.ok) return recipes;
-    const lists = await shareByEmail({ kind: "auto_lists" }, parsedEmail.data);
-    if (!lists.ok) return lists;
+    for (const kind of ["library", "auto_lists", "auto_menus"] as const) {
+      const result = await shareByEmail({ kind }, parsedEmail.data);
+      if (!result.ok) return result;
+    }
     return {
       ok: true,
-      message: `Recettes et nouvelles listes partagées avec ${parsedEmail.data}.`,
+      message: `Recettes, nouvelles listes et nouveaux menus partagés avec ${parsedEmail.data}.`,
     };
+  }
+
+  // Un menu, ou mes futurs menus (co-édition, décision 077)
+  if (what.kind === "menu" || what.kind === "auto_menus") {
+    const noMenu = null as unknown as string;
+    const { data: status, error } = await supabase.rpc("share_menu_by_email", {
+      kind: what.kind,
+      target_menu: what.kind === "menu" ? what.menuId : noMenu,
+      target_email: parsedEmail.data,
+    });
+    if (error) return { ok: false, message: "Le partage a échoué. Réessayez." };
+    revalidatePath("/parametres");
+    return emailShareResult(status, parsedEmail.data);
   }
 
   // Les types générés ne savent pas qu'un paramètre SQL peut recevoir null
@@ -94,11 +110,16 @@ export async function shareByEmail(target: ShareTarget, email: string): Promise<
   if (error) return { ok: false, message: "Le partage a échoué. Réessayez." };
 
   revalidatePath("/parametres");
+  return emailShareResult(status, parsedEmail.data);
+}
+
+/** Message affiché après un partage par email, selon la réponse de la base. */
+function emailShareResult(status: string | null, email: string): ShareResult {
   switch (status) {
     case "shared":
-      return { ok: true, message: `C'est partagé avec ${parsedEmail.data}.` };
+      return { ok: true, message: `C'est partagé avec ${email}.` };
     case "already":
-      return { ok: true, message: `C'était déjà partagé avec ${parsedEmail.data}.` };
+      return { ok: true, message: `C'était déjà partagé avec ${email}.` };
     case "self":
       return { ok: false, message: "C'est votre propre adresse." };
     default:
@@ -124,7 +145,12 @@ export async function acceptShareLink(token: string, kind: string) {
   if (status === "accepted") {
     // Recettes partagées → Mes recettes ; listes partagées → Mes listes
     // (tout partager : les recettes, visibles tout de suite ; les listes arrivent ensuite)
-    const destination = kind === "list" || kind === "auto_lists" ? "/listes" : "/recettes";
+    const destination =
+      kind === "list" || kind === "auto_lists"
+        ? "/listes"
+        : kind === "menu" || kind === "auto_menus"
+          ? "/menus"
+          : "/recettes";
     revalidatePath(destination);
     redirect(destination);
   }
@@ -136,6 +162,8 @@ const removeSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("recipe"), recipeId: z.uuid(), sharedWith: z.uuid() }),
   z.object({ type: z.literal("list"), listId: z.uuid(), sharedWith: z.uuid() }),
   z.object({ type: z.literal("auto_lists"), ownerId: z.uuid(), sharedWith: z.uuid() }),
+  z.object({ type: z.literal("menu"), menuId: z.uuid(), sharedWith: z.uuid() }),
+  z.object({ type: z.literal("auto_menus"), ownerId: z.uuid(), sharedWith: z.uuid() }),
 ]);
 
 /**
@@ -168,11 +196,23 @@ export async function removeShare(share: z.infer<typeof removeSchema>): Promise<
               .delete()
               .eq("list_id", row.listId)
               .eq("shared_with", row.sharedWith)
-          : await supabase
-              .from("auto_list_shares")
-              .delete()
-              .eq("owner_id", row.ownerId)
-              .eq("shared_with", row.sharedWith);
+          : row.type === "menu"
+            ? await supabase
+                .from("menu_shares")
+                .delete()
+                .eq("menu_id", row.menuId)
+                .eq("shared_with", row.sharedWith)
+            : row.type === "auto_menus"
+              ? await supabase
+                  .from("auto_menu_shares")
+                  .delete()
+                  .eq("owner_id", row.ownerId)
+                  .eq("shared_with", row.sharedWith)
+              : await supabase
+                  .from("auto_list_shares")
+                  .delete()
+                  .eq("owner_id", row.ownerId)
+                  .eq("shared_with", row.sharedWith);
 
   revalidatePath("/parametres");
   revalidatePath("/recettes");

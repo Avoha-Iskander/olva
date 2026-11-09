@@ -1,4 +1,4 @@
-import { BookOpen, Link2, ListChecks, Repeat, UtensilsCrossed } from "lucide-react";
+import { BookOpen, CalendarRange, Link2, ListChecks, Repeat, UtensilsCrossed } from "lucide-react";
 
 import { cancelShareLink, removeShare } from "@/app/(app)/partage/actions";
 import { ShareActionButton } from "@/components/sharing/share-action-button";
@@ -7,6 +7,7 @@ import {
   ShareRecipesAutoButton,
 } from "@/components/sharing/share-everything-button";
 import { ShareAutoListsButton } from "@/components/sharing/share-list-button";
+import { ShareAutoMenusButton } from "@/components/sharing/share-menu-button";
 import type { MyShares, ShareRow } from "@/lib/sharing";
 
 /** Date courte en français : « 8 nov. ». */
@@ -32,6 +33,10 @@ function sentText(share: ShareRow) {
       return `${share.listName}, avec ${share.personName}`;
     case "auto_lists":
       return `Mes nouvelles listes, automatiquement avec ${share.personName}`;
+    case "menu":
+      return `Menu ${quoted(share.menuName)}, avec ${share.personName}`;
+    case "auto_menus":
+      return `Mes nouveaux menus, automatiquement avec ${share.personName}`;
   }
 }
 
@@ -46,6 +51,10 @@ function receivedText(share: ShareRow) {
       return `${share.listName}, de ${share.personName}`;
     case "auto_lists":
       return `Les nouvelles listes de ${share.personName}`;
+    case "menu":
+      return `Menu ${quoted(share.menuName)}, de ${share.personName}`;
+    case "auto_menus":
+      return `Les nouveaux menus de ${share.personName}`;
   }
 }
 
@@ -92,6 +101,7 @@ export function MyShares({ shares }: { shares: MyShares }) {
         {/* Partages automatiques : listes, recettes, ou tout à la fois (décision 076) */}
         <div className="flex flex-col items-start gap-2 pt-2">
           <ShareAutoListsButton />
+          <ShareAutoMenusButton />
           <ShareRecipesAutoButton />
           <ShareEverythingButton />
         </div>
@@ -124,11 +134,14 @@ function rowKey(share: ShareRow) {
   switch (share.type) {
     case "library":
     case "auto_lists":
+    case "auto_menus":
       return `${share.type}-${share.ownerId}-${share.sharedWith}`;
     case "recipe":
       return `recipe-${share.recipeId}-${share.sharedWith}`;
     case "list":
       return `list-${share.listId}-${share.sharedWith}`;
+    case "menu":
+      return `menu-${share.menuId}-${share.sharedWith}`;
   }
 }
 
@@ -137,11 +150,14 @@ function removeTarget(share: ShareRow) {
   switch (share.type) {
     case "library":
     case "auto_lists":
+    case "auto_menus":
       return { type: share.type, ownerId: share.ownerId, sharedWith: share.sharedWith };
     case "recipe":
       return { type: share.type, recipeId: share.recipeId, sharedWith: share.sharedWith };
     case "list":
       return { type: share.type, listId: share.listId, sharedWith: share.sharedWith };
+    case "menu":
+      return { type: share.type, menuId: share.menuId, sharedWith: share.sharedWith };
   }
 }
 
@@ -150,6 +166,8 @@ const ICONS = {
   recipe: UtensilsCrossed,
   list: ListChecks,
   auto_lists: Repeat,
+  menu: CalendarRange,
+  auto_menus: Repeat,
 } as const;
 
 function ShareLine({ share, text, label }: { share: ShareRow; text: string; label: string }) {

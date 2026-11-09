@@ -60,7 +60,7 @@ test("créer, afficher puis supprimer une recette", async ({ page }) => {
       .first()
       .click();
     await expect(page).toHaveURL(/\/recettes$/);
-    await page.getByRole("button", { name: "Ajouter" }).click();
+    await page.getByRole("button", { name: "Créer", exact: true }).click();
     await page.getByRole("link", { name: "Saisir à la main" }).click();
     await expect(page).toHaveURL(/\/recettes\/nouvelle$/);
     await expect(page.getByLabel("Titre")).toHaveValue("");
