@@ -22,7 +22,7 @@ const CHOICES = [
  *   sélection en cours et renvoie le menu auquel revenir avec la nouvelle recette.
  */
 export function AddRecipeMenu({
-  label = "Ajouter",
+  label = "Créer", // même verbe partout : Recettes, Menus, Listes (décision 078)
   variant = "default",
   beforeLeave,
 }: {

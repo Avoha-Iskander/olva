@@ -121,7 +121,7 @@ Menu principal (accueil) avec 4 entrées :
 
 1. **Recettes** (page « Mes recettes ») — consulter, créer, importer, organiser en collections
 2. **Menus** (page « Mes menus ») — menus de la semaine ; la liste de courses se crée depuis un menu (section 6.3, décision 068)
-3. **Listes** (page « Mes listes ») — listes en préparation, à reprendre ou modifier ; « Nouvelle liste » crée une liste sans recette
+3. **Listes** (page « Mes listes ») — listes en préparation, à reprendre ou modifier ; « Créer » crée une liste sans recette
 4. **Courses** (page « Mes courses ») — ouvre une liste finalisée en mode cases à cocher
 
 Paramètres : nom affiché, nombre de personnes par défaut, mes partages (envoyés et reçus), compte.
@@ -157,7 +157,7 @@ Champs : titre (obligatoire), nombre de personnes (obligatoire), ingrédients (q
 
 **US-REC-07 — Importer une recette depuis un lien** · M
 
-- [ ] Depuis « Ajouter », je colle le lien d'une page de recette ; le serveur lit la page (données schema.org Recipe si présentes, sinon le texte de la page) et l'IA en tire la recette
+- [ ] Depuis « Créer », je colle le lien d'une page de recette ; le serveur lit la page (données schema.org Recipe si présentes, sinon le texte de la page) et l'IA en tire la recette
 - [ ] Même règle que l'import photo : enregistrement direct si rien n'est à vérifier, sinon le même **brouillon surligné** (décision 060)
 - [ ] Un lien déjà importé ouvre la recette existante, sans nouvelle lecture ni doublon
 - [ ] **Partager vers Olva** : depuis un navigateur ou Instagram, le menu « Partager » (Android, app installée) ou le Raccourci « Ajouter à Olva » (iPhone) ouvre Olva, qui lit le lien aussitôt (décision 065)
@@ -248,7 +248,7 @@ Champs : titre (obligatoire), nombre de personnes (obligatoire), ingrédients (q
 
 En tant que préparateur, je veux composer le menu de la semaine avec mes recettes, afin de savoir quoi cuisiner et de préparer la liste à partir de lui.
 
-- [ ] « Nouveau » ouvre le **formulaire du menu** : nom proposé « Semaine du [lundi de la semaine en cours] », modifiable ; rien n'est enregistré avant de valider (décision 069)
+- [ ] « Créer » ouvre le **formulaire du menu** : nom proposé « Semaine du [lundi de la semaine en cours] », modifiable ; rien n'est enregistré avant de valider (décision 069)
 - [ ] Je choisis des recettes (les miennes et celles qu'on me partage) ; chacune reprend le nombre de personnes par défaut (paramètres), modifiable individuellement
 - [ ] Les recettes sont proposées par ordre alphabétique (décision 063), avec recherche et filtre par collection
 - [ ] « Créer une recette » (à la main, photo, lien ou texte collé) depuis le formulaire : le menu est d'abord enregistré ; une fois la recette enregistrée, je reviens au formulaire avec la nouvelle recette **déjà ajoutée** (reprend la décision 064)
@@ -287,7 +287,7 @@ En tant que préparateur, je veux composer le menu de la semaine avec mes recett
 
 **US-LST-08 — Liste sans recette** · M
 
-- [ ] Dans « Mes listes », « Nouvelle liste » crée une liste sans recette qui commence directement à la pré-liste et aux articles libres
+- [ ] Dans « Mes listes », « Créer » crée une liste sans recette qui commence directement à la pré-liste et aux articles libres
 
 **Étape 1 — Revue des ingrédients** (listes créées depuis un menu)
 
@@ -668,6 +668,7 @@ Toutes les tables sont protégées par Row Level Security : je vois mes données
 | 075 | 2026-11-09 | **Photos des 4 recettes d'exemple** (choisies par Alex sur Unsplash, licence libre, usage commercial sans attribution) : compressées en WebP (1 600 px + miniature 400 px) dans `public/exemples/`, **communes à tous les comptes** ; en base, chemin « exemples/… » affiché directement (fonction pure `isExamplePhoto`), jamais supprimé ni recopié ; un déclencheur l'ajoute aux exemples créés à l'inscription, les exemples existants sans photo sont mis à jour                                                                                                                                                                                                                                                                                                                               | Copie des photos dans le stockage de chaque utilisateur ; photos trouvées et téléchargées par Claude (sites bloqués depuis son environnement)                                                                           |
 | 076 | 2026-11-09 | Partages : bouton **« Partager »** dans Mes listes (mes nouvelles listes, comme le bouton des Paramètres) ; dans Paramètres, **« Partager mes recettes automatiquement »** (bibliothèque) et **« Tout partager automatiquement »** : nouveau type de lien `everything`, dont l'acceptation crée un partage de bibliothèque et un partage automatique des listes ; par email, les deux fonctions existantes sont appelées ; les listes déjà créées ne sont pas partagées (décision 045). Mes recettes et Mes listes : boutons **sous le titre sur mobile**, avec leur texte                                                                                                                                                                                                                          | Un partage « tout » unique, à retirer d'un bloc ; partage rétroactif des listes                                                                                                                                         |
 | 077 | 2026-11-09 | **Partage des menus en co-édition** (révise la 068, sorti de « Après MVP ») : tables `menu_shares` et `auto_menu_shares` ; un menu partagé rend ses recettes lisibles par ceux qui peuvent le modifier (élargissement de `is_shared_with_me`, sur laquelle reposent déjà recettes, ingrédients, articles, conversions et photos) ; on n'ajoute à un menu qu'une recette qu'on lit déjà ; partage automatique appliqué à la création d'un menu (déclencheur) ; une liste peut venir d'un menu partagé et reste à celui qui la crée ; liens `menu` et `auto_menus`, « Tout partager » inclut les menus. Conséquence assumée : dupliquer un menu partagé garde l'accès en lecture à ses recettes (comme une copie)                                                                                     | Menus en lecture seule ; partage des recettes du menu à part ; menus non partagés                                                                                                                                       |
+| 078 | 2026-11-09 | Un seul verbe pour le bouton principal des onglets : **« Créer »** (au lieu de « Ajouter » dans Recettes, « Nouveau » dans Menus, « Nouvelle » dans Listes)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | Garder un libellé propre à chaque onglet                                                                                                                                                                                |
 
 ---
 

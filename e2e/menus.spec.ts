@@ -97,7 +97,7 @@ test("« Nouvelle » dans Mes listes : une liste sans recette, directement à la
   page,
 }) => {
   await page.goto("/listes");
-  await page.getByRole("button", { name: "Nouvelle", exact: true }).click();
+  await page.getByRole("button", { name: "Créer", exact: true }).click();
   await expect(page).toHaveURL(/\/listes\/[0-9a-f-]{36}\/pre-liste$/);
   const listId = new URL(page.url()).pathname.split("/")[2];
   await expect(page.getByRole("heading", { level: 1, name: "Nouvelle liste" })).toBeVisible();

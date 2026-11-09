@@ -7,7 +7,7 @@ import { expect } from "./fixtures";
 /** Ouvre le formulaire d'un nouveau menu depuis « Mes menus ». */
 export async function openNewMenu(page: Page) {
   await page.goto("/menus");
-  await page.getByRole("link", { name: "Nouveau", exact: true }).click();
+  await page.getByRole("link", { name: "Créer", exact: true }).click();
   await expect(page).toHaveURL(/\/menus\/nouveau$/);
 }
 

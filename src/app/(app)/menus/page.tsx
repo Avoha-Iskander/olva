@@ -31,7 +31,7 @@ export default function MenusPage() {
         <div className="flex flex-wrap gap-2">
           {/* Mes menus, y compris les prochains, en co-édition (décision 077) */}
           <ShareAutoMenusButton label="Partager" />
-          <NewMenuButton label="Nouveau" />
+          <NewMenuButton label="Créer" />
         </div>
       </div>
       <Suspense fallback={<p className="text-muted-foreground">Chargement…</p>}>
