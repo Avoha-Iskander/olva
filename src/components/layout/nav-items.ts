@@ -1,11 +1,11 @@
 import { BookOpen, ListChecks, ShoppingCart, UtensilsCrossed } from "lucide-react";
 
-/** Les 4 entrées du menu principal (SPEC §5, décision 068). */
+/** Les 4 entrées du menu principal (SPEC §5, décisions 068 et 073) : un seul nom court par entrée. */
 export const NAV_ITEMS = [
-  { href: "/recettes", label: "Mes recettes", shortLabel: "Recettes", icon: BookOpen },
-  { href: "/menus", label: "Menus", shortLabel: "Menus", icon: UtensilsCrossed },
-  { href: "/listes", label: "Mes listes en cours", shortLabel: "Listes", icon: ListChecks },
-  { href: "/courses", label: "Faire ses courses", shortLabel: "Courses", icon: ShoppingCart },
+  { href: "/recettes", label: "Recettes", icon: BookOpen },
+  { href: "/menus", label: "Menus", icon: UtensilsCrossed },
+  { href: "/listes", label: "Listes", icon: ListChecks },
+  { href: "/courses", label: "Courses", icon: ShoppingCart },
 ] as const;
 
 /** L'entrée du menu est-elle active pour cette adresse ? (/recettes reste actif sur /recettes/123) */

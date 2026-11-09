@@ -55,7 +55,7 @@ test("créer, afficher puis supprimer une recette", async ({ page }) => {
     // Navigation dans l'app (et non rechargement) : Next.js garde les écrans quittés en
     // mémoire ; un écran de création doit pourtant repartir de zéro
     await page
-      .getByRole("link", { name: "Mes recettes" })
+      .getByRole("link", { name: "Recettes", exact: true })
       .filter({ visible: true })
       .first()
       .click();

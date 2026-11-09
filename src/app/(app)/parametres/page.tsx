@@ -6,6 +6,7 @@ import { SignOutButton } from "@/components/profile/sign-out-button";
 import { DeleteAccount } from "@/components/profile/delete-account";
 import { ProfileForm } from "@/components/profile/profile-form";
 import { MyShares } from "@/components/sharing/my-shares";
+import { RestartTutorialButton } from "@/components/tutorial/restart-tutorial-button";
 import { ThemeChoice } from "@/components/theme/theme-choice";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -46,6 +47,16 @@ export default function SettingsPage() {
           <Suspense fallback={<p className="text-muted-foreground h-11 text-sm">Chargement…</p>}>
             <ThemeSection />
           </Suspense>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Tutoriel</CardTitle>
+          <CardDescription>Revoir la présentation des quatre menus d&apos;Olva.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <RestartTutorialButton />
         </CardContent>
       </Card>
 

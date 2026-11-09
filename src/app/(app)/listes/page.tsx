@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { History, ListChecks, Plus } from "lucide-react";
+import { ClipboardList, History, ListChecks, Plus } from "lucide-react";
 import { Suspense } from "react";
 
 import { createEmptyList } from "@/app/(app)/listes/actions";
@@ -24,14 +24,23 @@ export default function ListsPage({ searchParams }: PageProps<"/listes">) {
   return (
     <main className="grid gap-4 px-4 py-6">
       <div className="flex items-center justify-between gap-4">
-        <h1 className="text-2xl font-semibold tracking-tight">Mes listes en cours</h1>
-        {/* Liste sans recette (US-LST-08) ; avec recettes : depuis un menu (US-MEN-02) */}
-        <form action={createEmptyList}>
-          <Button type="submit">
-            <Plus />
-            <span>Nouvelle</span>
+        <h1 className="text-2xl font-semibold tracking-tight">Mes listes</h1>
+        <div className="flex flex-wrap justify-end gap-2">
+          {/* Revoir et configurer ses achats habituels (US-LST-03, décisions 072 et 073) */}
+          <Button asChild variant="outline">
+            <Link href="/listes/pre-liste">
+              <ClipboardList />
+              <span>Ma pré-liste</span>
+            </Link>
           </Button>
-        </form>
+          {/* Liste sans recette (US-LST-08) ; avec recettes : depuis un menu (US-MEN-02) */}
+          <form action={createEmptyList}>
+            <Button type="submit">
+              <Plus />
+              <span>Nouvelle</span>
+            </Button>
+          </form>
+        </div>
       </div>
       <Suspense fallback={<p className="text-muted-foreground">Chargement…</p>}>
         <TabbedLists searchParams={searchParams} />

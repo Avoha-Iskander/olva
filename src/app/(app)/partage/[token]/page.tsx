@@ -58,8 +58,8 @@ async function ShareCard({ params }: { params: PageProps<"/partage/[token]">["pa
               : link.kind === "library"
                 ? "Elles apparaîtront dans Mes recettes, en lecture seule, y compris celles ajoutées plus tard."
                 : link.kind === "list"
-                  ? "Elle apparaîtra dans Mes listes en cours : vous pourrez ajouter, retirer et modifier des articles."
-                  : "Chaque nouvelle liste terminée apparaîtra dans Mes listes en cours, modifiable par vous deux."}
+                  ? "Elle apparaîtra dans Mes listes : vous pourrez ajouter, retirer et modifier des articles."
+                  : "Chaque nouvelle liste terminée apparaîtra dans Mes listes, modifiable par vous deux."}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -77,7 +77,7 @@ async function ShareCard({ params }: { params: PageProps<"/partage/[token]">["pa
   const messages: Record<string, { title: string; text: string }> = {
     accepted: {
       title: "C'est déjà fait",
-      text: `Vous avez déjà accepté ce partage. Retrouvez-le dans ${isList ? "Mes listes en cours" : "Mes recettes"}.`,
+      text: `Vous avez déjà accepté ce partage. Retrouvez-le dans ${isList ? "Mes listes" : "Mes recettes"}.`,
     },
     own: {
       title: "C'est votre propre lien",
@@ -107,7 +107,7 @@ async function ShareCard({ params }: { params: PageProps<"/partage/[token]">["pa
       <CardContent>
         <Button asChild variant="outline" className="w-full">
           <Link href={isList ? "/listes" : "/recettes"}>
-            {isList ? "Mes listes en cours" : "Mes recettes"}
+            {isList ? "Mes listes" : "Mes recettes"}
           </Link>
         </Button>
       </CardContent>
