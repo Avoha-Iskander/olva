@@ -11,7 +11,8 @@ test("un article ajouté se range dans son rayon", async ({ page }) => {
   await expect(page).toHaveURL(/\/listes\/[0-9a-f-]{36}\/pre-liste$/);
   const listId = new URL(page.url()).pathname.split("/")[2];
 
-  await page.getByRole("combobox", { name: /Autre chose/ }).click();
+  // Le sélecteur n'a pas de nom accessible (rôle combobox) : on le repère par son texte
+  await page.getByRole("combobox").filter({ hasText: "Autre chose" }).click();
   await page.getByPlaceholder("Rechercher (ex. tomate)").fill("Abricot");
   await page
     .getByRole("listbox")
