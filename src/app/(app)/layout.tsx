@@ -4,9 +4,11 @@ import { Suspense } from "react";
 import { AppBottomNav, AppHeader } from "@/components/layout/app-nav";
 import { AisleEmojisProvider } from "@/components/lists/aisle-emojis";
 import { ThemeSync } from "@/components/theme/theme-sync";
+import { Tutorial } from "@/components/tutorial/tutorial";
 import { isTheme } from "@/lib/theme";
 import { getAisleEmojis } from "@/lib/catalogue";
 import { getCurrentProfile } from "@/lib/profile";
+import { shouldAutoStartTutorial } from "@/lib/tutorial";
 
 /**
  * Gabarit de toutes les pages de l'app : barre du haut, contenu, barre du bas (mobile).
@@ -54,6 +56,8 @@ async function OnboardingGuard({ children }: { children: React.ReactNode }) {
       <ThemeSync theme={isTheme(profile.theme) ? profile.theme : "system"} />
       {/* Emoji des rayons, pour tous les titres de rayon des pages (US-CAT-06) */}
       <AisleEmojisProvider emojis={aisleEmojis}>{children}</AisleEmojisProvider>
+      {/* Tutoriel (US-CPT-06) : seul la première fois, puis depuis les Paramètres */}
+      <Tutorial autoStart={shouldAutoStartTutorial(profile.tutorial_status)} />
     </>
   );
 }

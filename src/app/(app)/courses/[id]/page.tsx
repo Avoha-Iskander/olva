@@ -4,6 +4,7 @@ import { ArrowLeft } from "lucide-react";
 import { Suspense } from "react";
 
 import { ShoppingList } from "@/components/shopping/shopping-list";
+import { FirstVisitTip } from "@/components/tutorial/first-visit-tip";
 import { getCatalogue } from "@/lib/catalogue";
 import { listTitle } from "@/lib/list-title";
 import { listHref } from "@/lib/lists";
@@ -50,6 +51,11 @@ async function Content({ params }: { params: PageProps<"/courses/[id]">["params"
           <p className="text-muted-foreground text-sm">Liste partagée par {list.sharedBy}</p>
         )}
       </header>
+      {/* Astuce de la première visite en mode courses (US-CPT-06) */}
+      <FirstVisitTip id="courses">
+        Touchez un article pour le cocher. Si la liste est partagée, l&apos;autre personne voit vos
+        coches en direct.
+      </FirstVisitTip>
       <ShoppingList
         // Un écran neuf pour chaque liste (file d'attente et abonnement propres à la liste)
         key={list.id}

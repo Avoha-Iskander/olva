@@ -385,6 +385,8 @@ export type Database = {
           onboarded: boolean
           prelist_initialized: boolean
           theme: string
+          tutorial_status: string | null
+          tutorial_step: number | null
           updated_at: string
         }
         Insert: {
@@ -395,6 +397,8 @@ export type Database = {
           onboarded?: boolean
           prelist_initialized?: boolean
           theme?: string
+          tutorial_status?: string | null
+          tutorial_step?: number | null
           updated_at?: string
         }
         Update: {
@@ -405,6 +409,8 @@ export type Database = {
           onboarded?: boolean
           prelist_initialized?: boolean
           theme?: string
+          tutorial_status?: string | null
+          tutorial_step?: number | null
           updated_at?: string
         }
         Relationships: []

@@ -374,6 +374,15 @@ En tant que préparateur, je veux revoir les ingrédients calculés à partir de
 - [ ] Un nouvel utilisateur reçoit 3 à 5 recettes d'exemple, étiquetées « exemple », supprimables d'un coup (« Supprimer les exemples »)
 - [ ] Les écrans vides affichent un message et une action claire
 
+**US-CPT-06 — Tutoriel de prise en main** · S
+
+- [ ] Juste après le parcours d'accueil, une bienvenue présente Olva (recettes, menus et courses dans une seule app), puis une **visite guidée sur la vraie interface** : chacun des 4 menus est mis en surbrillance tour à tour, avec une bulle d'une ou deux phrases
+- [ ] 6 étapes au plus ; « Suivant », « Précédent » et « Passer le tutoriel » à chaque étape ; la dernière propose « Ajouter ma première recette » (import photo)
+- [ ] Il se lance une seule fois tout seul ; Paramètres → « Revoir le tutoriel » le relance
+- [ ] Terminé ou passé, et la dernière étape vue, sont enregistrés dans le profil (mesure pendant la phase de test)
+- [ ] Une astuce s'affiche à la première ouverture du mode courses, puis plus sur cet appareil
+- [ ] Textes réunis dans un seul fichier ; mobile et ordinateur, clair et sombre, clavier (Échap = passer)
+
 **US-CPT-03 — Gérer mes partages** · M
 
 - [ ] Paramètres → « Mes partages » : ce que je partage (avec qui, quoi) et ce qu'on me partage
@@ -397,7 +406,7 @@ En tant que préparateur, je veux revoir les ingrédients calculés à partir de
 
 | Entité                  | Champs principaux                                                                                                                                    | Notes                                               |
 | ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------- |
-| `profiles`              | id (= utilisateur), nom_affiché, portions_par_défaut                                                                                                 | Créé automatiquement à l'inscription                |
+| `profiles`              | id (= utilisateur), nom_affiché, portions_par_défaut, thème, tutoriel (statut, étape)                                                                | Créé automatiquement à l'inscription                |
 | `recipes`               | id, owner_id, titre, portions, étapes, notes, livre_titre, livre_page, photo_url, photo_import_url, est_exemple, copiée_de                           |                                                     |
 | `collections`           | id, owner_id, nom                                                                                                                                    |                                                     |
 | `recipe_collections`    | recipe_id, collection_id                                                                                                                             |                                                     |

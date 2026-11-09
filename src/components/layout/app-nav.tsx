@@ -26,6 +26,7 @@ export function AppHeader() {
             <Link
               key={href}
               href={href}
+              data-tour={`nav-${href.slice(1)}`} // repère du tutoriel (US-CPT-06)
               aria-current={isActive(pathname, href) ? "page" : undefined}
               className={cn(
                 "text-muted-foreground hover:bg-accent hover:text-accent-foreground flex h-11 items-center gap-2 rounded-md px-3 text-sm font-medium transition-colors",
@@ -68,6 +69,7 @@ export function AppBottomNav() {
             <li key={href}>
               <Link
                 href={href}
+                data-tour={`nav-${href.slice(1)}`} // repère du tutoriel (US-CPT-06)
                 aria-current={active ? "page" : undefined}
                 className={cn(
                   "text-muted-foreground flex h-16 flex-col items-center justify-center gap-1 text-xs",
