@@ -6,5 +6,9 @@ test("ouvrir ma pré-liste depuis Menus", async ({ page }) => {
   await page.getByRole("link", { name: "Ma pré-liste" }).click();
   await expect(page).toHaveURL(/\/menus\/pre-liste/);
   await expect(page.getByRole("heading", { name: "Ma pré-liste" })).toBeVisible();
-  await expect(page.getByPlaceholder("Ajouter un article à ma pré-liste…")).toBeVisible();
+  // La pré-liste par défaut est créée, et l'ajout passe par le sélecteur d'articles
+  await expect(page.getByText("Ajouter un article à ma pré-liste…")).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: /^Retirer .* de ma pré-liste$/ }).first(),
+  ).toBeVisible();
 });
