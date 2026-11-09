@@ -30,6 +30,14 @@ export const recipeSchema = z.object({
   ingredients: z.array(ingredientSchema),
   // Les étapes vides sont retirées
   steps: z.array(z.string()).transform((steps) => steps.map((s) => s.trim()).filter(Boolean)),
+  // Notes libres (US-REC-08) : "" devient null (pas de note)
+  notes: z
+    .string()
+    .trim()
+    .max(2000, "2 000 caractères maximum")
+    .transform((v) => v || null)
+    .nullable()
+    .optional(),
   bookTitle: z.string().trim().max(120, "120 caractères maximum").optional(),
   bookPage: z.number().int().positive("Numéro de page invalide").nullable().optional(),
   // Lien de la page d'origine : http ou https seulement (jamais « javascript: »…)

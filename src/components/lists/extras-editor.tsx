@@ -210,7 +210,7 @@ export function ExtrasEditor({
             {/* Un bloc par rayon, dans l'ordre du magasin */}
             {groupByAisle(prelist).map((group) => (
               <div key={group.aisle} className="grid gap-1.5">
-                <AisleHeading>{group.aisle}</AisleHeading>
+                <AisleHeading aisle={group.aisle} />
                 <ul className="divide-border bg-card divide-y rounded-xl border">
                   {group.lines.map((entry) => {
                     const amount = checked.get(entry.itemId);
@@ -320,7 +320,7 @@ export function ExtrasEditor({
           <div className="grid gap-3">
             {groupByAisle(free).map((group) => (
               <div key={group.aisle} className="grid gap-1.5">
-                <AisleHeading>{group.aisle}</AisleHeading>
+                <AisleHeading aisle={group.aisle} />
                 <ul className="divide-border bg-card divide-y rounded-xl border">
                   {group.lines.map((line) => (
                     <li

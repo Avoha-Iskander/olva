@@ -16,16 +16,19 @@ export type Database = {
     Tables: {
       aisles: {
         Row: {
+          emoji: string
           id: number
           name: string
           position: number
         }
         Insert: {
+          emoji?: string
           id?: never
           name: string
           position: number
         }
         Update: {
+          emoji?: string
           id?: never
           name?: string
           position?: number
@@ -382,6 +385,8 @@ export type Database = {
           onboarded: boolean
           prelist_initialized: boolean
           theme: string
+          tutorial_status: string | null
+          tutorial_step: number | null
           updated_at: string
         }
         Insert: {
@@ -392,6 +397,8 @@ export type Database = {
           onboarded?: boolean
           prelist_initialized?: boolean
           theme?: string
+          tutorial_status?: string | null
+          tutorial_step?: number | null
           updated_at?: string
         }
         Update: {
@@ -402,6 +409,8 @@ export type Database = {
           onboarded?: boolean
           prelist_initialized?: boolean
           theme?: string
+          tutorial_status?: string | null
+          tutorial_step?: number | null
           updated_at?: string
         }
         Relationships: []
@@ -565,6 +574,7 @@ export type Database = {
           id: string
           import_photo_paths: string[]
           is_example: boolean
+          notes: string | null
           owner_id: string
           photo_path: string | null
           servings: number
@@ -582,6 +592,7 @@ export type Database = {
           id?: string
           import_photo_paths?: string[]
           is_example?: boolean
+          notes?: string | null
           owner_id?: string
           photo_path?: string | null
           servings: number
@@ -599,6 +610,7 @@ export type Database = {
           id?: string
           import_photo_paths?: string[]
           is_example?: boolean
+          notes?: string | null
           owner_id?: string
           photo_path?: string | null
           servings?: number

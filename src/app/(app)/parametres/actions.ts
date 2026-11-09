@@ -50,6 +50,26 @@ export async function updateTheme(theme: string): Promise<{ ok: boolean }> {
   return { ok: !error };
 }
 
+/**
+ * Tutoriel (US-CPT-06) : terminé ou passé, et dernière étape vue (pour la phase de test).
+ * Sans gravité en cas d'échec : au pire, le tutoriel se relancera une fois.
+ */
+export async function saveTutorialProgress(
+  status: "completed" | "skipped",
+  step: number,
+): Promise<void> {
+  if (status !== "completed" && status !== "skipped") return;
+  if (!Number.isInteger(step) || step < 1 || step > 20) return;
+  const supabase = await createClient();
+  const { data: claims } = await supabase.auth.getClaims();
+  const userId = claims?.claims?.sub;
+  if (!userId) return;
+  await supabase
+    .from("profiles")
+    .update({ tutorial_status: status, tutorial_step: step })
+    .eq("id", userId);
+}
+
 export type DeleteAccountState = { message?: string };
 
 /** Supprime définitivement le compte, après confirmation par le mot SUPPRIMER. */

@@ -52,3 +52,16 @@ describe("recipeSchema", () => {
     ).toBe(true);
   });
 });
+
+describe("recipeSchema — notes (US-REC-08)", () => {
+  const recipe = { title: "Gratin", servings: 4, ingredients: [], steps: [] };
+
+  it("transforme des notes vides en null", () => {
+    const parsed = recipeSchema.safeParse({ ...recipe, notes: "  " });
+    expect(parsed.success && parsed.data.notes).toBeNull();
+  });
+
+  it("refuse plus de 2 000 caractères", () => {
+    expect(recipeSchema.safeParse({ ...recipe, notes: "a".repeat(2001) }).success).toBe(false);
+  });
+});

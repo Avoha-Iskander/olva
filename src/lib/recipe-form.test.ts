@@ -7,6 +7,7 @@ const base: RecipeFormState = {
   servings: 4,
   ingredients: [],
   steps: [],
+  notes: "",
   bookTitle: "",
   bookPageText: "",
   sourceUrl: "",
@@ -109,5 +110,19 @@ describe("formToRecipeInput — lien de la page", () => {
   it("refuse un lien qui n'est pas une page web", () => {
     expect(withLink("javascript:alert(1)")).toMatchObject({ ok: false });
     expect(withLink("ftp://exemple.fr/x")).toMatchObject({ ok: false });
+  });
+});
+
+describe("formToRecipeInput — notes (US-REC-08)", () => {
+  it("garde les notes, sans espaces autour, et null quand il n'y en a pas", () => {
+    const withNotes = formToRecipeInput({ ...base, notes: "  Doubler le fromage.\n" });
+    expect(withNotes).toMatchObject({ ok: true, data: { notes: "Doubler le fromage." } });
+    const empty = formToRecipeInput({ ...base, notes: "   " });
+    expect(empty).toMatchObject({ ok: true, data: { notes: null } });
+  });
+
+  it("refuse des notes trop longues", () => {
+    const result = formToRecipeInput({ ...base, notes: "a".repeat(2001) });
+    expect(result).toMatchObject({ ok: false, errors: { notes: "2 000 caractères maximum" } });
   });
 });

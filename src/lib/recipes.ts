@@ -121,6 +121,7 @@ export type RecipeForEdit = {
   title: string;
   servings: number;
   steps: string[];
+  notes: string | null; // notes libres, affichées après les étapes (US-REC-08)
   bookTitle: string | null;
   bookPage: number | null;
   photoPath: string | null;
@@ -145,7 +146,7 @@ export async function getRecipeForEdit(id: string): Promise<RecipeForEdit | null
   const { data: recipe } = await supabase
     .from("recipes")
     .select(
-      "id, owner_id, title, servings, is_example, steps, book_title, book_page, photo_path, thumb_path, import_photo_paths, source_url, recipe_ingredients(position, item_id, quantity, unit, note, items(name)), recipe_collections(collection_id, collections(name))",
+      "id, owner_id, title, servings, is_example, steps, notes, book_title, book_page, photo_path, thumb_path, import_photo_paths, source_url, recipe_ingredients(position, item_id, quantity, unit, note, items(name)), recipe_collections(collection_id, collections(name))",
     )
     .eq("id", id)
     .maybeSingle();
@@ -199,6 +200,7 @@ export async function getRecipeForEdit(id: string): Promise<RecipeForEdit | null
     title: recipe.title,
     servings: recipe.servings,
     steps: recipe.steps,
+    notes: recipe.notes,
     bookTitle: recipe.book_title,
     bookPage: recipe.book_page,
     photoPath: recipe.photo_path,

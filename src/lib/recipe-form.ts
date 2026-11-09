@@ -20,11 +20,15 @@ export type RecipeFormState = {
   servings: number;
   ingredients: FormIngredient[];
   steps: string[];
+  notes: string; // notes libres, après les étapes ("" = aucune)
   bookTitle: string;
   bookPageText: string;
   sourceUrl: string; // lien de la page d'origine ("" = aucun)
   collectionIds: string[];
 };
+
+/** Longueur maximale des notes d'une recette (même limite que la base). */
+export const NOTES_MAX = 2000;
 
 export type FormErrors = Partial<Record<string, string>>;
 
@@ -79,6 +83,10 @@ export function formToRecipeInput(
     else errors.sourceUrl = "Lien invalide (https://…)";
   }
 
+  if (state.notes.trim().length > NOTES_MAX) {
+    errors.notes = "2 000 caractères maximum";
+  }
+
   if (!state.title.trim()) errors.title = "Le titre est obligatoire";
 
   if (Object.keys(errors).length > 0) return { ok: false, errors };
@@ -90,6 +98,7 @@ export function formToRecipeInput(
       servings: state.servings,
       ingredients,
       steps: state.steps,
+      notes: state.notes.trim() || null,
       bookTitle: state.bookTitle.trim() || undefined,
       bookPage,
       sourceUrl,

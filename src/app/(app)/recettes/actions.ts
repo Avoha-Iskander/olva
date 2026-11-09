@@ -104,10 +104,10 @@ export async function saveRecipe(input: {
   });
   if (error) return { ok: false, message: "L'enregistrement a échoué. Réessayez." };
 
-  // Lien de la page d'origine : celui du formulaire (pré-rempli lors d'un import par lien)
+  // Lien de la page d'origine (pré-rempli lors d'un import par lien) et notes (US-REC-08)
   await supabase
     .from("recipes")
-    .update({ source_url: r.sourceUrl ?? null })
+    .update({ source_url: r.sourceUrl ?? null, notes: r.notes ?? null })
     .eq("id", id.data);
 
   // Import photo : les pages photographiées restent attachées à la recette (US-REC-02).

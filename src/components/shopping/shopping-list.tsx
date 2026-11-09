@@ -402,10 +402,10 @@ export function ShoppingList(props: Props) {
 
       {groups.map((group) => (
         <section key={group.aisle} className="grid gap-2" aria-label={group.aisle}>
-          <AisleHeading>
-            {group.aisle}
-            {group.remaining === 0 && " · fini"}
-          </AisleHeading>
+          <AisleHeading
+            aisle={group.aisle}
+            suffix={group.remaining === 0 ? " · fini" : undefined}
+          />
           <ul className="divide-border bg-card divide-y rounded-xl border">
             {group.lines.map((line) => {
               const checkedBy =

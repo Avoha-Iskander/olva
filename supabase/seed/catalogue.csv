@@ -155,65 +155,65 @@ Pain viennois,Boulangerie,piece,non,
 Petit pain,Boulangerie,piece,non,
 Tortilla de blé,Boulangerie,paquet,non,
 Tortilla de maïs,Boulangerie,paquet,non,
-Aiguillette de canard,Boucherie et volaille,g,non,
-Aile de poulet,Boucherie et volaille,piece,non,
-Andouillette,Boucherie et volaille,piece,non,
-Bavette,Boucherie et volaille,piece,non,
-Blanc de poulet,Boucherie et volaille,g,non,
-Blanquette de veau,Boucherie et volaille,g,non,
-Boudin blanc,Boucherie et volaille,piece,non,
-Boudin noir,Boucherie et volaille,piece,non,
-Bœuf haché,Boucherie et volaille,g,non,
-Bœuf à bourguignon,Boucherie et volaille,g,non,
-Carpaccio de bœuf,Boucherie et volaille,g,non,
-Chair à saucisse,Boucherie et volaille,g,non,
-Chipolata,Boucherie et volaille,piece,non,
-Cuisse de canard,Boucherie et volaille,piece,non,
-Cuisse de dinde,Boucherie et volaille,piece,non,
-Cuisse de poulet,Boucherie et volaille,piece,non,
-Côte de bœuf,Boucherie et volaille,piece,non,
-Côte de porc,Boucherie et volaille,piece,non,
-Côte de veau,Boucherie et volaille,piece,non,
-Côtelette d'agneau,Boucherie et volaille,piece,non,
-Entrecôte,Boucherie et volaille,piece,non,
-Escalope de dinde,Boucherie et volaille,piece,non,
-Escalope de veau,Boucherie et volaille,piece,non,
-Faux-filet,Boucherie et volaille,piece,non,
-Filet de bœuf,Boucherie et volaille,g,non,
-Filet mignon de porc,Boucherie et volaille,g,non,
-Foie de volaille,Boucherie et volaille,g,non,
-Gigot d'agneau,Boucherie et volaille,g,non,
-Haut de cuisse de poulet,Boucherie et volaille,piece,non,
-Jambonneau,Boucherie et volaille,piece,non,
-Jarret de veau,Boucherie et volaille,g,non,
-Joue de bœuf,Boucherie et volaille,g,non,
-Lapin,Boucherie et volaille,piece,non,
-Magret de canard,Boucherie et volaille,piece,non,
-Merguez,Boucherie et volaille,piece,non,
-Navarin d'agneau,Boucherie et volaille,g,non,
-Onglet,Boucherie et volaille,piece,non,
-Paleron,Boucherie et volaille,g,non,
-Pilon de poulet,Boucherie et volaille,piece,non,
-Pintade,Boucherie et volaille,piece,non,
-Plat de côtes,Boucherie et volaille,g,non,
-Poitrine de porc,Boucherie et volaille,g,non,
-Porc haché,Boucherie et volaille,g,non,
-Poulet entier,Boucherie et volaille,piece,non,
-Rôti de bœuf,Boucherie et volaille,g,non,
-Rôti de dinde,Boucherie et volaille,g,non,
-Rôti de porc,Boucherie et volaille,g,non,
-Rôti de veau,Boucherie et volaille,g,non,
-Saucisse,Boucherie et volaille,piece,non,
-Saucisse de Morteau,Boucherie et volaille,piece,non,
-Saucisse de Toulouse,Boucherie et volaille,piece,non,
-Souris d'agneau,Boucherie et volaille,piece,non,
-Steak de bœuf,Boucherie et volaille,piece,non,
-Steak haché,Boucherie et volaille,piece,non,
-Tendron de veau,Boucherie et volaille,g,non,
-Travers de porc,Boucherie et volaille,g,non,
-Veau haché,Boucherie et volaille,g,non,
-Échine de porc,Boucherie et volaille,g,non,
-Épaule d'agneau,Boucherie et volaille,g,non,
+Aiguillette de canard,Boucherie,g,non,
+Aile de poulet,Boucherie,piece,non,
+Andouillette,Boucherie,piece,non,
+Bavette,Boucherie,piece,non,
+Blanc de poulet,Boucherie,g,non,
+Blanquette de veau,Boucherie,g,non,
+Boudin blanc,Boucherie,piece,non,
+Boudin noir,Boucherie,piece,non,
+Bœuf haché,Boucherie,g,non,
+Bœuf à bourguignon,Boucherie,g,non,
+Carpaccio de bœuf,Boucherie,g,non,
+Chair à saucisse,Boucherie,g,non,
+Chipolata,Boucherie,piece,non,
+Cuisse de canard,Boucherie,piece,non,
+Cuisse de dinde,Boucherie,piece,non,
+Cuisse de poulet,Boucherie,piece,non,
+Côte de bœuf,Boucherie,piece,non,
+Côte de porc,Boucherie,piece,non,
+Côte de veau,Boucherie,piece,non,
+Côtelette d'agneau,Boucherie,piece,non,
+Entrecôte,Boucherie,piece,non,
+Escalope de dinde,Boucherie,piece,non,
+Escalope de veau,Boucherie,piece,non,
+Faux-filet,Boucherie,piece,non,
+Filet de bœuf,Boucherie,g,non,
+Filet mignon de porc,Boucherie,g,non,
+Foie de volaille,Boucherie,g,non,
+Gigot d'agneau,Boucherie,g,non,
+Haut de cuisse de poulet,Boucherie,piece,non,
+Jambonneau,Boucherie,piece,non,
+Jarret de veau,Boucherie,g,non,
+Joue de bœuf,Boucherie,g,non,
+Lapin,Boucherie,piece,non,
+Magret de canard,Boucherie,piece,non,
+Merguez,Boucherie,piece,non,
+Navarin d'agneau,Boucherie,g,non,
+Onglet,Boucherie,piece,non,
+Paleron,Boucherie,g,non,
+Pilon de poulet,Boucherie,piece,non,
+Pintade,Boucherie,piece,non,
+Plat de côtes,Boucherie,g,non,
+Poitrine de porc,Boucherie,g,non,
+Porc haché,Boucherie,g,non,
+Poulet entier,Boucherie,piece,non,
+Rôti de bœuf,Boucherie,g,non,
+Rôti de dinde,Boucherie,g,non,
+Rôti de porc,Boucherie,g,non,
+Rôti de veau,Boucherie,g,non,
+Saucisse,Boucherie,piece,non,
+Saucisse de Morteau,Boucherie,piece,non,
+Saucisse de Toulouse,Boucherie,piece,non,
+Souris d'agneau,Boucherie,piece,non,
+Steak de bœuf,Boucherie,piece,non,
+Steak haché,Boucherie,piece,non,
+Tendron de veau,Boucherie,g,non,
+Travers de porc,Boucherie,g,non,
+Veau haché,Boucherie,g,non,
+Échine de porc,Boucherie,g,non,
+Épaule d'agneau,Boucherie,g,non,
 Bar,Poissonnerie,piece,non,
 Cabillaud,Poissonnerie,g,non,
 Calamars,Poissonnerie,g,non,
@@ -296,37 +296,37 @@ Tortellini,Charcuterie et traiteur,g,non,
 Tzatziki,Charcuterie et traiteur,pot,non,
 Viande des Grisons,Charcuterie et traiteur,tranche,non,
 Vol-au-vent,Charcuterie et traiteur,piece,non,
-Beurre,Crèmerie et œufs,g,non,
-Beurre demi-sel,Crèmerie et œufs,g,non,
-Boisson végétale,Crèmerie et œufs,l,non,
-Compote,Crèmerie et œufs,piece,non,
-Crème anglaise,Crèmerie et œufs,cl,non,
-Crème chantilly,Crèmerie et œufs,piece,non,
-Crème de coco,Crèmerie et œufs,cl,non,
-Crème dessert,Crèmerie et œufs,piece,non,
-Crème fraîche,Crèmerie et œufs,cl,non,
-Crème fraîche légère,Crèmerie et œufs,cl,non,
-Crème liquide,Crèmerie et œufs,cl,non,
-Crème liquide entière,Crèmerie et œufs,cl,non,
-Crème végétale,Crèmerie et œufs,cl,non,
-Faisselle,Crèmerie et œufs,piece,non,
-Flan,Crèmerie et œufs,piece,non,
-Fromage blanc,Crèmerie et œufs,g,non,
-Lait,Crèmerie et œufs,l,non,
-Lait de coco,Crèmerie et œufs,cl,non,
-Lait entier,Crèmerie et œufs,l,non,
-Lait écrémé,Crèmerie et œufs,l,non,
-Margarine,Crèmerie et œufs,g,non,
-Mousse au chocolat,Crèmerie et œufs,piece,non,
-Petit-suisse,Crèmerie et œufs,piece,non,
-Riz au lait,Crèmerie et œufs,piece,non,
-Skyr,Crèmerie et œufs,g,non,
-Yaourt,Crèmerie et œufs,piece,non,
-Yaourt aux fruits,Crèmerie et œufs,piece,non,
-Yaourt grec,Crèmerie et œufs,piece,non,
-Yaourt à boire,Crèmerie et œufs,bouteille,non,
-Œuf,Crèmerie et œufs,piece,non,
-Œuf de caille,Crèmerie et œufs,piece,non,
+Beurre,Crèmerie,g,non,
+Beurre demi-sel,Crèmerie,g,non,
+Boisson végétale,Crèmerie,l,non,
+Compote,Crèmerie,piece,non,
+Crème anglaise,Crèmerie,cl,non,
+Crème chantilly,Crèmerie,piece,non,
+Crème de coco,Crèmerie,cl,non,
+Crème dessert,Crèmerie,piece,non,
+Crème fraîche,Crèmerie,cl,non,
+Crème fraîche légère,Crèmerie,cl,non,
+Crème liquide,Crèmerie,cl,non,
+Crème liquide entière,Crèmerie,cl,non,
+Crème végétale,Crèmerie,cl,non,
+Faisselle,Crèmerie,piece,non,
+Flan,Crèmerie,piece,non,
+Fromage blanc,Crèmerie,g,non,
+Lait,Crèmerie,l,non,
+Lait de coco,Crèmerie,cl,non,
+Lait entier,Crèmerie,l,non,
+Lait écrémé,Crèmerie,l,non,
+Margarine,Crèmerie,g,non,
+Mousse au chocolat,Crèmerie,piece,non,
+Petit-suisse,Crèmerie,piece,non,
+Riz au lait,Crèmerie,piece,non,
+Skyr,Crèmerie,g,non,
+Yaourt,Crèmerie,piece,non,
+Yaourt aux fruits,Crèmerie,piece,non,
+Yaourt grec,Crèmerie,piece,non,
+Yaourt à boire,Crèmerie,bouteille,non,
+Œuf,Crèmerie,piece,non,
+Œuf de caille,Crèmerie,piece,non,
 Beaufort,Fromages,g,non,
 Bleu d'Auvergne,Fromages,g,non,
 Brie,Fromages,g,non,
@@ -367,238 +367,240 @@ Roquefort,Fromages,g,non,
 Saint-Marcellin,Fromages,piece,non,
 Saint-Nectaire,Fromages,g,non,
 Tomme de Savoie,Fromages,g,non,
-Blé précuit,"Pâtes, riz et féculents",g,non,
-Boulgour,"Pâtes, riz et féculents",g,non,
-Cannellonis,"Pâtes, riz et féculents",g,non,
-Coquillettes,"Pâtes, riz et féculents",g,non,
-Farfalle,"Pâtes, riz et féculents",g,non,
-Fusilli,"Pâtes, riz et féculents",g,non,
-Galettes de riz,"Pâtes, riz et féculents",paquet,non,
-Lasagnes (feuilles),"Pâtes, riz et féculents",g,non,
-Lentilles,"Pâtes, riz et féculents",g,non,
-Lentilles corail,"Pâtes, riz et féculents",g,non,
-Linguine,"Pâtes, riz et féculents",g,non,
-Macaroni,"Pâtes, riz et féculents",g,non,
-Nouilles chinoises,"Pâtes, riz et féculents",g,non,
-Nouilles de riz,"Pâtes, riz et féculents",g,non,
-Orzo,"Pâtes, riz et féculents",g,non,
-Penne,"Pâtes, riz et féculents",g,non,
-Petit épeautre,"Pâtes, riz et féculents",g,non,
-Pois cassés,"Pâtes, riz et féculents",g,non,
-Pois chiches secs,"Pâtes, riz et féculents",g,non,
-Polenta,"Pâtes, riz et féculents",g,non,
-Purée en flocons,"Pâtes, riz et féculents",sachet,non,
-Pâtes complètes,"Pâtes, riz et féculents",g,non,
-Quinoa,"Pâtes, riz et féculents",g,non,
-Rigatoni,"Pâtes, riz et féculents",g,non,
-Riz,"Pâtes, riz et féculents",g,non,
-Riz arborio,"Pâtes, riz et féculents",g,non,
-Riz basmati,"Pâtes, riz et féculents",g,non,
-Riz complet,"Pâtes, riz et féculents",g,non,
-Riz rond,"Pâtes, riz et féculents",g,non,
-Riz sauvage,"Pâtes, riz et féculents",g,non,
-Riz thaï,"Pâtes, riz et féculents",g,non,
-Sarrasin,"Pâtes, riz et féculents",g,non,
-Semoule,"Pâtes, riz et féculents",g,non,
-Spaghetti,"Pâtes, riz et féculents",g,non,
-Tagliatelles,"Pâtes, riz et féculents",g,non,
-Vermicelles,"Pâtes, riz et féculents",g,non,
-Vermicelles de riz,"Pâtes, riz et féculents",g,non,
-Ananas en conserve,Conserves et bocaux,boite,non,
-Anchois,Conserves et bocaux,boite,non,
-Cassoulet,Conserves et bocaux,boite,non,
-Champignons en conserve,Conserves et bocaux,boite,non,
-Châtaignes cuites,Conserves et bocaux,boite,non,
-Citron confit,Conserves et bocaux,pot,non,
-Concentré de tomate,Conserves et bocaux,boite,oui,boite
-Confit de canard,Conserves et bocaux,boite,non,
-Cornichons,Conserves et bocaux,pot,non,
-Coulis de tomate,Conserves et bocaux,g,non,
-Câpres,Conserves et bocaux,pot,oui,pot
-Cœurs d'artichaut,Conserves et bocaux,boite,non,
-Cœurs de palmier,Conserves et bocaux,boite,non,
-Flageolets,Conserves et bocaux,boite,non,
-Haricots blancs,Conserves et bocaux,boite,non,
-Haricots rouges,Conserves et bocaux,boite,non,
-Haricots verts en conserve,Conserves et bocaux,boite,non,
-Lentilles en conserve,Conserves et bocaux,boite,non,
-Macédoine de légumes,Conserves et bocaux,boite,non,
-Maquereaux en conserve,Conserves et bocaux,boite,non,
-Maïs,Conserves et bocaux,boite,non,
-Miettes de crabe,Conserves et bocaux,boite,non,
-Olives noires,Conserves et bocaux,pot,non,
-Olives vertes,Conserves et bocaux,pot,non,
-Pesto,Conserves et bocaux,pot,non,
-Petits pois en conserve,Conserves et bocaux,boite,non,
-Pois chiches,Conserves et bocaux,boite,non,
-Poivrons grillés,Conserves et bocaux,pot,non,
-Pêches au sirop,Conserves et bocaux,boite,non,
-Ratatouille,Conserves et bocaux,boite,non,
-Sardines,Conserves et bocaux,boite,non,
-Sauce bolognaise,Conserves et bocaux,pot,non,
-Sauce tomate cuisinée,Conserves et bocaux,pot,non,
-Soupe,Conserves et bocaux,piece,non,
-Thon,Conserves et bocaux,boite,non,
-Thon à l'huile,Conserves et bocaux,boite,non,
-Tomates concassées,Conserves et bocaux,boite,non,
-Tomates pelées,Conserves et bocaux,boite,non,
-Tomates séchées,Conserves et bocaux,pot,non,
-Crème de balsamique,"Huiles, vinaigres et condiments",cas,oui,bouteille
-Harissa,"Huiles, vinaigres et condiments",cac,oui,pot
-Huile d'arachide,"Huiles, vinaigres et condiments",cas,oui,bouteille
-Huile d'olive,"Huiles, vinaigres et condiments",cas,oui,bouteille
-Huile de coco,"Huiles, vinaigres et condiments",cas,oui,pot
-Huile de colza,"Huiles, vinaigres et condiments",cas,oui,bouteille
-Huile de noix,"Huiles, vinaigres et condiments",cas,oui,bouteille
-Huile de sésame,"Huiles, vinaigres et condiments",cas,oui,bouteille
-Huile de tournesol,"Huiles, vinaigres et condiments",cas,oui,bouteille
-Ketchup,"Huiles, vinaigres et condiments",cas,oui,bouteille
-Mayonnaise,"Huiles, vinaigres et condiments",cas,oui,pot
-Mirin,"Huiles, vinaigres et condiments",cas,oui,bouteille
-Miso,"Huiles, vinaigres et condiments",cas,oui,pot
-Moutarde,"Huiles, vinaigres et condiments",cac,oui,pot
-Moutarde à l'ancienne,"Huiles, vinaigres et condiments",cac,oui,pot
-Nuoc-mâm,"Huiles, vinaigres et condiments",cas,oui,bouteille
-Pâte de curry,"Huiles, vinaigres et condiments",cas,oui,pot
-Sauce barbecue,"Huiles, vinaigres et condiments",cas,oui,bouteille
-Sauce béarnaise,"Huiles, vinaigres et condiments",cas,oui,pot
-Sauce huître,"Huiles, vinaigres et condiments",cas,oui,bouteille
-Sauce soja,"Huiles, vinaigres et condiments",cas,oui,bouteille
-Sauce sweet chili,"Huiles, vinaigres et condiments",cas,oui,bouteille
-Sauce teriyaki,"Huiles, vinaigres et condiments",cas,oui,bouteille
-Sauce Worcestershire,"Huiles, vinaigres et condiments",cac,oui,bouteille
-Sriracha,"Huiles, vinaigres et condiments",cac,oui,bouteille
-Tabasco,"Huiles, vinaigres et condiments",cac,oui,bouteille
-Tahini,"Huiles, vinaigres et condiments",cas,oui,pot
-Vinaigre balsamique,"Huiles, vinaigres et condiments",cas,oui,bouteille
-Vinaigre blanc,"Huiles, vinaigres et condiments",cas,oui,bouteille
-Vinaigre de cidre,"Huiles, vinaigres et condiments",cas,oui,bouteille
-Vinaigre de riz,"Huiles, vinaigres et condiments",cas,oui,bouteille
-Vinaigre de vin,"Huiles, vinaigres et condiments",cas,oui,bouteille
-Vinaigre de Xérès,"Huiles, vinaigres et condiments",cas,oui,bouteille
-Vinaigrette,"Huiles, vinaigres et condiments",cas,oui,bouteille
-Wasabi,"Huiles, vinaigres et condiments",cac,oui,piece
-Ail en poudre,"Épices, herbes séchées et aides culinaires",cac,oui,pot
-Badiane,"Épices, herbes séchées et aides culinaires",piece,oui,pot
-Baies roses,"Épices, herbes séchées et aides culinaires",cac,oui,pot
-Basilic séché,"Épices, herbes séchées et aides culinaires",cac,oui,pot
-Bouillon de bœuf,"Épices, herbes séchées et aides culinaires",piece,oui,paquet
-Bouillon de légumes,"Épices, herbes séchées et aides culinaires",piece,oui,paquet
-Bouillon de volaille,"Épices, herbes séchées et aides culinaires",piece,oui,paquet
-Bouquet garni,"Épices, herbes séchées et aides culinaires",piece,oui,sachet
-Cannelle,"Épices, herbes séchées et aides culinaires",cac,oui,pot
-Cardamome,"Épices, herbes séchées et aides culinaires",cac,oui,pot
-Cinq-épices,"Épices, herbes séchées et aides culinaires",cac,oui,pot
-Clou de girofle,"Épices, herbes séchées et aides culinaires",piece,oui,pot
-Colombo,"Épices, herbes séchées et aides culinaires",cac,oui,pot
-Coriandre en poudre,"Épices, herbes séchées et aides culinaires",cac,oui,pot
-Cumin,"Épices, herbes séchées et aides culinaires",cac,oui,pot
-Curcuma,"Épices, herbes séchées et aides culinaires",cac,oui,pot
-Curry,"Épices, herbes séchées et aides culinaires",cac,oui,pot
-Fleur de sel,"Épices, herbes séchées et aides culinaires",pincee,oui,paquet
-Fond de veau,"Épices, herbes séchées et aides culinaires",cas,oui,pot
-Fumet de poisson,"Épices, herbes séchées et aides culinaires",cas,oui,pot
-Garam masala,"Épices, herbes séchées et aides culinaires",cac,oui,pot
-Gingembre en poudre,"Épices, herbes séchées et aides culinaires",cac,oui,pot
-Graines de sésame,"Épices, herbes séchées et aides culinaires",cas,oui,sachet
-Gros sel,"Épices, herbes séchées et aides culinaires",cac,oui,paquet
-Herbes de Provence,"Épices, herbes séchées et aides culinaires",cac,oui,pot
-Laurier,"Épices, herbes séchées et aides culinaires",feuille,oui,sachet
-Maïzena,"Épices, herbes séchées et aides culinaires",cas,oui,paquet
-Muscade,"Épices, herbes séchées et aides culinaires",pincee,oui,pot
-Origan,"Épices, herbes séchées et aides culinaires",cac,oui,pot
-Paprika,"Épices, herbes séchées et aides culinaires",cac,oui,pot
-Paprika fumé,"Épices, herbes séchées et aides culinaires",cac,oui,pot
-Persil séché,"Épices, herbes séchées et aides culinaires",cac,oui,pot
-Piment d'Espelette,"Épices, herbes séchées et aides culinaires",pincee,oui,pot
-Piment de Cayenne,"Épices, herbes séchées et aides culinaires",pincee,oui,pot
-Poivre,"Épices, herbes séchées et aides culinaires",pincee,oui,pot
-Quatre-épices,"Épices, herbes séchées et aides culinaires",cac,oui,pot
-Ras el hanout,"Épices, herbes séchées et aides culinaires",cac,oui,pot
-Romarin séché,"Épices, herbes séchées et aides culinaires",cac,oui,pot
-Safran,"Épices, herbes séchées et aides culinaires",pincee,oui,sachet
-Sel,"Épices, herbes séchées et aides culinaires",pincee,oui,paquet
-Thym séché,"Épices, herbes séchées et aides culinaires",cac,oui,pot
-Épices à pain d'épices,"Épices, herbes séchées et aides culinaires",cac,oui,pot
-Abricots secs,Épicerie sucrée et pâtisserie,g,non,
-Agar-agar,Épicerie sucrée et pâtisserie,g,oui,sachet
-Amandes,Épicerie sucrée et pâtisserie,g,non,
-Amandes effilées,Épicerie sucrée et pâtisserie,g,non,
-Arôme amande amère,Épicerie sucrée et pâtisserie,cac,oui,bouteille
-Bicarbonate de soude,Épicerie sucrée et pâtisserie,cac,oui,paquet
-Biscuits,Épicerie sucrée et pâtisserie,paquet,non,
-Biscuits à la cuillère,Épicerie sucrée et pâtisserie,paquet,non,
-Bonbons,Épicerie sucrée et pâtisserie,paquet,non,
-Cacao,Épicerie sucrée et pâtisserie,cas,oui,paquet
-Cassonade,Épicerie sucrée et pâtisserie,g,oui,paquet
-Chocolat au lait,Épicerie sucrée et pâtisserie,g,non,
-Chocolat blanc,Épicerie sucrée et pâtisserie,g,non,
-Chocolat noir,Épicerie sucrée et pâtisserie,g,non,
-Colorant alimentaire,Épicerie sucrée et pâtisserie,piece,non,
-Cranberries séchées,Épicerie sucrée et pâtisserie,g,non,
-Crème de marrons,Épicerie sucrée et pâtisserie,boite,non,
-Dattes,Épicerie sucrée et pâtisserie,g,non,
-Eau de fleur d'oranger,Épicerie sucrée et pâtisserie,cas,oui,bouteille
-Extrait de vanille,Épicerie sucrée et pâtisserie,cac,oui,bouteille
-Farine,Épicerie sucrée et pâtisserie,g,oui,paquet
-Farine complète,Épicerie sucrée et pâtisserie,g,oui,paquet
-Farine de sarrasin,Épicerie sucrée et pâtisserie,g,non,paquet
-Figues sèches,Épicerie sucrée et pâtisserie,g,non,
-Fécule de pomme de terre,Épicerie sucrée et pâtisserie,g,oui,paquet
-Gousse de vanille,Épicerie sucrée et pâtisserie,piece,non,
-Graines de chia,Épicerie sucrée et pâtisserie,g,non,
-Graines de courge,Épicerie sucrée et pâtisserie,g,non,
-Gâteaux secs,Épicerie sucrée et pâtisserie,paquet,non,
-Gélatine,Épicerie sucrée et pâtisserie,feuille,oui,paquet
-Lait concentré sucré,Épicerie sucrée et pâtisserie,boite,non,
-Levure boulangère,Épicerie sucrée et pâtisserie,sachet,oui,paquet
-Levure chimique,Épicerie sucrée et pâtisserie,sachet,oui,paquet
-Meringue,Épicerie sucrée et pâtisserie,paquet,non,
-Miel,Épicerie sucrée et pâtisserie,cas,oui,pot
-Noisettes,Épicerie sucrée et pâtisserie,g,non,
-Noisettes en poudre,Épicerie sucrée et pâtisserie,g,non,
-Noix,Épicerie sucrée et pâtisserie,g,non,
-Noix de cajou,Épicerie sucrée et pâtisserie,g,non,
-Noix de coco râpée,Épicerie sucrée et pâtisserie,g,non,
-Noix de pécan,Épicerie sucrée et pâtisserie,g,non,
-Petit-beurre,Épicerie sucrée et pâtisserie,paquet,non,
-Pignons de pin,Épicerie sucrée et pâtisserie,g,non,
-Poudre d'amande,Épicerie sucrée et pâtisserie,g,non,
-Pralin,Épicerie sucrée et pâtisserie,g,non,
-Pruneaux,Épicerie sucrée et pâtisserie,g,non,
-Pâte d'amande,Épicerie sucrée et pâtisserie,g,non,
-Pépites de chocolat,Épicerie sucrée et pâtisserie,g,non,
-Raisins secs,Épicerie sucrée et pâtisserie,g,non,
-Sauce caramel,Épicerie sucrée et pâtisserie,pot,non,
-Sirop d'agave,Épicerie sucrée et pâtisserie,cas,oui,bouteille
-Sirop d'érable,Épicerie sucrée et pâtisserie,cas,oui,bouteille
-Spéculoos,Épicerie sucrée et pâtisserie,paquet,non,
-Sucre,Épicerie sucrée et pâtisserie,g,oui,paquet
-Sucre en morceaux,Épicerie sucrée et pâtisserie,piece,oui,paquet
-Sucre glace,Épicerie sucrée et pâtisserie,g,oui,paquet
-Sucre perlé,Épicerie sucrée et pâtisserie,g,oui,paquet
-Sucre roux,Épicerie sucrée et pâtisserie,g,oui,paquet
-Sucre vanillé,Épicerie sucrée et pâtisserie,sachet,oui,paquet
-Vergeoise,Épicerie sucrée et pâtisserie,g,oui,paquet
-Barres de céréales,Petit-déjeuner,paquet,non,
-Beurre de cacahuète,Petit-déjeuner,pot,non,
-Café en capsules,Petit-déjeuner,paquet,non,
-Café en grains,Petit-déjeuner,paquet,non,
-Café moulu,Petit-déjeuner,paquet,non,
-Café soluble,Petit-déjeuner,pot,non,
-Chicorée,Petit-déjeuner,pot,non,
-Chocolat en poudre,Petit-déjeuner,paquet,non,
-Confiture,Petit-déjeuner,pot,non,
-Céréales,Petit-déjeuner,paquet,non,
-Flocons d'avoine,Petit-déjeuner,g,non,
-Granola,Petit-déjeuner,paquet,non,
-Madeleines,Petit-déjeuner,paquet,non,
-Muesli,Petit-déjeuner,paquet,non,
-Pain d'épices,Petit-déjeuner,piece,non,
-Pâte à tartiner,Petit-déjeuner,pot,non,
-Thé,Petit-déjeuner,paquet,non,
-Thé vert,Petit-déjeuner,paquet,non,
-Tisane,Petit-déjeuner,paquet,non,
+Blé précuit,Féculents,g,non,
+Boulgour,Féculents,g,non,
+Cannellonis,Féculents,g,non,
+Coquillettes,Féculents,g,non,
+Farfalle,Féculents,g,non,
+Fusilli,Féculents,g,non,
+Galettes de riz,Féculents,paquet,non,
+Lasagnes (feuilles),Féculents,g,non,
+Lentilles,Féculents,g,non,
+Lentilles corail,Féculents,g,non,
+Linguine,Féculents,g,non,
+Macaroni,Féculents,g,non,
+Nouilles chinoises,Féculents,g,non,
+Nouilles de riz,Féculents,g,non,
+Orzo,Féculents,g,non,
+Penne,Féculents,g,non,
+Petit épeautre,Féculents,g,non,
+Pois cassés,Féculents,g,non,
+Pois chiches secs,Féculents,g,non,
+Polenta,Féculents,g,non,
+Purée en flocons,Féculents,sachet,non,
+Pâtes,Féculents,g,non,
+Pâtes complètes,Féculents,g,non,
+Quinoa,Féculents,g,non,
+Rigatoni,Féculents,g,non,
+Riz,Féculents,g,non,
+Riz arborio,Féculents,g,non,
+Riz basmati,Féculents,g,non,
+Riz complet,Féculents,g,non,
+Riz rond,Féculents,g,non,
+Riz sauvage,Féculents,g,non,
+Riz thaï,Féculents,g,non,
+Sarrasin,Féculents,g,non,
+Semoule,Féculents,g,non,
+Spaghetti,Féculents,g,non,
+Tagliatelles,Féculents,g,non,
+Vermicelles,Féculents,g,non,
+Vermicelles de riz,Féculents,g,non,
+Ananas en conserve,Conserves,boite,non,
+Anchois,Conserves,boite,non,
+Cassoulet,Conserves,boite,non,
+Champignons en conserve,Conserves,boite,non,
+Châtaignes cuites,Conserves,boite,non,
+Citron confit,Conserves,pot,non,
+Concentré de tomate,Conserves,boite,oui,boite
+Confit de canard,Conserves,boite,non,
+Cornichons,Conserves,pot,non,
+Coulis de tomate,Conserves,g,non,
+Câpres,Conserves,pot,oui,pot
+Cœurs d'artichaut,Conserves,boite,non,
+Cœurs de palmier,Conserves,boite,non,
+Flageolets,Conserves,boite,non,
+Haricots blancs,Conserves,boite,non,
+Haricots rouges,Conserves,boite,non,
+Haricots verts en conserve,Conserves,boite,non,
+Lentilles en conserve,Conserves,boite,non,
+Macédoine de légumes,Conserves,boite,non,
+Maquereaux en conserve,Conserves,boite,non,
+Maïs,Conserves,boite,non,
+Miettes de crabe,Conserves,boite,non,
+Olives noires,Conserves,pot,non,
+Olives vertes,Conserves,pot,non,
+Pesto,Conserves,pot,non,
+Petits pois en conserve,Conserves,boite,non,
+Pois chiches,Conserves,boite,non,
+Poivrons grillés,Conserves,pot,non,
+Pêches au sirop,Conserves,boite,non,
+Ratatouille,Conserves,boite,non,
+Sardines,Conserves,boite,non,
+Sauce bolognaise,Conserves,pot,non,
+Sauce tomate cuisinée,Conserves,pot,non,
+Soupe,Conserves,piece,non,
+Thon,Conserves,boite,non,
+Thon à l'huile,Conserves,boite,non,
+Tomates concassées,Conserves,boite,non,
+Tomates pelées,Conserves,boite,non,
+Tomates séchées,Conserves,pot,non,
+Crème de balsamique,Condiments,cas,oui,bouteille
+Harissa,Condiments,cac,oui,pot
+Huile d'arachide,Condiments,cas,oui,bouteille
+Huile d'olive,Condiments,cas,oui,bouteille
+Huile de coco,Condiments,cas,oui,pot
+Huile de colza,Condiments,cas,oui,bouteille
+Huile de noix,Condiments,cas,oui,bouteille
+Huile de sésame,Condiments,cas,oui,bouteille
+Huile de tournesol,Condiments,cas,oui,bouteille
+Ketchup,Condiments,cas,oui,bouteille
+Mayonnaise,Condiments,cas,oui,pot
+Mirin,Condiments,cas,oui,bouteille
+Miso,Condiments,cas,oui,pot
+Moutarde,Condiments,cac,oui,pot
+Moutarde à l'ancienne,Condiments,cac,oui,pot
+Nuoc-mâm,Condiments,cas,oui,bouteille
+Pâte de curry,Condiments,cas,oui,pot
+Sauce barbecue,Condiments,cas,oui,bouteille
+Sauce béarnaise,Condiments,cas,oui,pot
+Sauce huître,Condiments,cas,oui,bouteille
+Sauce soja,Condiments,cas,oui,bouteille
+Sauce sweet chili,Condiments,cas,oui,bouteille
+Sauce teriyaki,Condiments,cas,oui,bouteille
+Sauce Worcestershire,Condiments,cac,oui,bouteille
+Sriracha,Condiments,cac,oui,bouteille
+Tabasco,Condiments,cac,oui,bouteille
+Tahini,Condiments,cas,oui,pot
+Vinaigre balsamique,Condiments,cas,oui,bouteille
+Vinaigre blanc,Condiments,cas,oui,bouteille
+Vinaigre de cidre,Condiments,cas,oui,bouteille
+Vinaigre de riz,Condiments,cas,oui,bouteille
+Vinaigre de vin,Condiments,cas,oui,bouteille
+Vinaigre de Xérès,Condiments,cas,oui,bouteille
+Vinaigrette,Condiments,cas,oui,bouteille
+Wasabi,Condiments,cac,oui,piece
+Ail en poudre,Épices,cac,oui,pot
+Badiane,Épices,piece,oui,pot
+Baies roses,Épices,cac,oui,pot
+Basilic séché,Épices,cac,oui,pot
+Bouillon de bœuf,Épices,piece,oui,paquet
+Bouillon de légumes,Épices,piece,oui,paquet
+Bouillon de volaille,Épices,piece,oui,paquet
+Bouquet garni,Épices,piece,oui,sachet
+Cannelle,Épices,cac,oui,pot
+Cardamome,Épices,cac,oui,pot
+Cinq-épices,Épices,cac,oui,pot
+Clou de girofle,Épices,piece,oui,pot
+Colombo,Épices,cac,oui,pot
+Coriandre en poudre,Épices,cac,oui,pot
+Cumin,Épices,cac,oui,pot
+Curcuma,Épices,cac,oui,pot
+Curry,Épices,cac,oui,pot
+Fleur de sel,Épices,pincee,oui,paquet
+Fond de veau,Épices,cas,oui,pot
+Fumet de poisson,Épices,cas,oui,pot
+Garam masala,Épices,cac,oui,pot
+Gingembre en poudre,Épices,cac,oui,pot
+Graines de sésame,Épices,cas,oui,sachet
+Gros sel,Épices,cac,oui,paquet
+Herbes de Provence,Épices,cac,oui,pot
+Laurier,Épices,feuille,oui,sachet
+Maïzena,Épices,cas,oui,paquet
+Muscade,Épices,pincee,oui,pot
+Origan,Épices,cac,oui,pot
+Paprika,Épices,cac,oui,pot
+Paprika fumé,Épices,cac,oui,pot
+Persil séché,Épices,cac,oui,pot
+Piment d'Espelette,Épices,pincee,oui,pot
+Piment de Cayenne,Épices,pincee,oui,pot
+Poivre,Épices,pincee,oui,pot
+Quatre-épices,Épices,cac,oui,pot
+Ras el hanout,Épices,cac,oui,pot
+Romarin séché,Épices,cac,oui,pot
+Safran,Épices,pincee,oui,sachet
+Sel,Épices,pincee,oui,paquet
+Thym séché,Épices,cac,oui,pot
+Épices à pain d'épices,Épices,cac,oui,pot
+Abricots secs,Épicerie sucrée,g,non,
+Agar-agar,Épicerie sucrée,g,oui,sachet
+Amandes,Épicerie sucrée,g,non,
+Amandes effilées,Épicerie sucrée,g,non,
+Arôme amande amère,Épicerie sucrée,cac,oui,bouteille
+Bicarbonate de soude,Épicerie sucrée,cac,oui,paquet
+Biscuits,Épicerie sucrée,paquet,non,
+Biscuits à la cuillère,Épicerie sucrée,paquet,non,
+Bonbons,Épicerie sucrée,paquet,non,
+Cacao,Épicerie sucrée,cas,oui,paquet
+Cassonade,Épicerie sucrée,g,oui,paquet
+Chocolat,Épicerie sucrée,g,non,
+Chocolat au lait,Épicerie sucrée,g,non,
+Chocolat blanc,Épicerie sucrée,g,non,
+Chocolat noir,Épicerie sucrée,g,non,
+Colorant alimentaire,Épicerie sucrée,piece,non,
+Cranberries séchées,Épicerie sucrée,g,non,
+Crème de marrons,Épicerie sucrée,boite,non,
+Dattes,Épicerie sucrée,g,non,
+Eau de fleur d'oranger,Épicerie sucrée,cas,oui,bouteille
+Extrait de vanille,Épicerie sucrée,cac,oui,bouteille
+Farine,Épicerie sucrée,g,oui,paquet
+Farine complète,Épicerie sucrée,g,oui,paquet
+Farine de sarrasin,Épicerie sucrée,g,non,paquet
+Figues sèches,Épicerie sucrée,g,non,
+Fécule de pomme de terre,Épicerie sucrée,g,oui,paquet
+Gousse de vanille,Épicerie sucrée,piece,non,
+Graines de chia,Épicerie sucrée,g,non,
+Graines de courge,Épicerie sucrée,g,non,
+Gâteaux secs,Épicerie sucrée,paquet,non,
+Gélatine,Épicerie sucrée,feuille,oui,paquet
+Lait concentré sucré,Épicerie sucrée,boite,non,
+Levure boulangère,Épicerie sucrée,sachet,oui,paquet
+Levure chimique,Épicerie sucrée,sachet,oui,paquet
+Meringue,Épicerie sucrée,paquet,non,
+Miel,Épicerie sucrée,cas,oui,pot
+Noisettes,Épicerie sucrée,g,non,
+Noisettes en poudre,Épicerie sucrée,g,non,
+Noix,Épicerie sucrée,g,non,
+Noix de cajou,Épicerie sucrée,g,non,
+Noix de coco râpée,Épicerie sucrée,g,non,
+Noix de pécan,Épicerie sucrée,g,non,
+Petit-beurre,Épicerie sucrée,paquet,non,
+Pignons de pin,Épicerie sucrée,g,non,
+Poudre d'amande,Épicerie sucrée,g,non,
+Pralin,Épicerie sucrée,g,non,
+Pruneaux,Épicerie sucrée,g,non,
+Pâte d'amande,Épicerie sucrée,g,non,
+Pépites de chocolat,Épicerie sucrée,g,non,
+Raisins secs,Épicerie sucrée,g,non,
+Sauce caramel,Épicerie sucrée,pot,non,
+Sirop d'agave,Épicerie sucrée,cas,oui,bouteille
+Sirop d'érable,Épicerie sucrée,cas,oui,bouteille
+Spéculoos,Épicerie sucrée,paquet,non,
+Sucre,Épicerie sucrée,g,oui,paquet
+Sucre en morceaux,Épicerie sucrée,piece,oui,paquet
+Sucre glace,Épicerie sucrée,g,oui,paquet
+Sucre perlé,Épicerie sucrée,g,oui,paquet
+Sucre roux,Épicerie sucrée,g,oui,paquet
+Sucre vanillé,Épicerie sucrée,sachet,oui,paquet
+Vergeoise,Épicerie sucrée,g,oui,paquet
+Barres de céréales,Épicerie sucrée,paquet,non,
+Beurre de cacahuète,Épicerie sucrée,pot,non,
+Café en capsules,Épicerie sucrée,paquet,non,
+Café en grains,Épicerie sucrée,paquet,non,
+Café moulu,Épicerie sucrée,paquet,non,
+Café soluble,Épicerie sucrée,pot,non,
+Chicorée,Épicerie sucrée,pot,non,
+Chocolat en poudre,Épicerie sucrée,paquet,non,
+Confiture,Épicerie sucrée,pot,non,
+Céréales,Épicerie sucrée,paquet,non,
+Flocons d'avoine,Épicerie sucrée,g,non,
+Granola,Épicerie sucrée,paquet,non,
+Madeleines,Épicerie sucrée,paquet,non,
+Muesli,Épicerie sucrée,paquet,non,
+Pain d'épices,Épicerie sucrée,piece,non,
+Pâte à tartiner,Épicerie sucrée,pot,non,
+Thé,Épicerie sucrée,paquet,non,
+Thé vert,Épicerie sucrée,paquet,non,
+Tisane,Épicerie sucrée,paquet,non,
 Biscuits apéritif,Apéritif,paquet,non,
 Blinis,Apéritif,paquet,non,
 Bretzels,Apéritif,paquet,non,
@@ -679,32 +681,32 @@ Protections hygiéniques,Hygiène et beauté,paquet,non,
 Rasoirs,Hygiène et beauté,paquet,non,
 Savon,Hygiène et beauté,piece,non,
 Shampooing,Hygiène et beauté,piece,non,
-Adoucissant,Entretien et maison,bouteille,non,
-Allumettes,Entretien et maison,paquet,non,
-Ampoules,Entretien et maison,piece,non,
-Désodorisant,Entretien et maison,piece,non,
-Détachant,Entretien et maison,bouteille,non,
-Essuie-tout,Entretien et maison,paquet,non,
-Ficelle de cuisine,Entretien et maison,piece,non,
-Film étirable,Entretien et maison,piece,non,
-Gants ménagers,Entretien et maison,paquet,non,
-Gel WC,Entretien et maison,bouteille,non,
-Javel,Entretien et maison,bouteille,non,
-Lessive,Entretien et maison,piece,non,
-Liquide de rinçage,Entretien et maison,bouteille,non,
-Liquide vaisselle,Entretien et maison,bouteille,non,
-Nettoyant multi-surfaces,Entretien et maison,piece,non,
-Nettoyant vitres,Entretien et maison,bouteille,non,
-Papier aluminium,Entretien et maison,piece,non,
-Papier cuisson,Entretien et maison,piece,non,
-Pastilles lave-vaisselle,Entretien et maison,paquet,non,
-Pics à brochette,Entretien et maison,paquet,non,
-Piles,Entretien et maison,paquet,non,
-Sacs congélation,Entretien et maison,paquet,non,
-Sacs poubelle,Entretien et maison,paquet,non,
-Sel pour lave-vaisselle,Entretien et maison,paquet,non,
-Vinaigre ménager,Entretien et maison,bouteille,non,
-Éponges,Entretien et maison,paquet,non,
+Adoucissant,Entretien,bouteille,non,
+Allumettes,Entretien,paquet,non,
+Ampoules,Entretien,piece,non,
+Désodorisant,Entretien,piece,non,
+Détachant,Entretien,bouteille,non,
+Essuie-tout,Entretien,paquet,non,
+Ficelle de cuisine,Entretien,piece,non,
+Film étirable,Entretien,piece,non,
+Gants ménagers,Entretien,paquet,non,
+Gel WC,Entretien,bouteille,non,
+Javel,Entretien,bouteille,non,
+Lessive,Entretien,piece,non,
+Liquide de rinçage,Entretien,bouteille,non,
+Liquide vaisselle,Entretien,bouteille,non,
+Nettoyant multi-surfaces,Entretien,piece,non,
+Nettoyant vitres,Entretien,bouteille,non,
+Papier aluminium,Entretien,piece,non,
+Papier cuisson,Entretien,piece,non,
+Pastilles lave-vaisselle,Entretien,paquet,non,
+Pics à brochette,Entretien,paquet,non,
+Piles,Entretien,paquet,non,
+Sacs congélation,Entretien,paquet,non,
+Sacs poubelle,Entretien,paquet,non,
+Sel pour lave-vaisselle,Entretien,paquet,non,
+Vinaigre ménager,Entretien,bouteille,non,
+Éponges,Entretien,paquet,non,
 Croquettes chat,Animalerie,sachet,non,
 Croquettes chien,Animalerie,sachet,non,
 Friandises chat,Animalerie,sachet,non,

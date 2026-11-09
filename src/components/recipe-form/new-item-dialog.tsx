@@ -94,7 +94,7 @@ export function NewItemDialog({
               </option>
               {aisles.map((a) => (
                 <option key={a.id} value={a.id}>
-                  {a.name}
+                  {a.emoji ? `${a.emoji} ${a.name}` : a.name}
                 </option>
               ))}
             </NativeSelect>

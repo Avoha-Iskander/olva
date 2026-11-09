@@ -33,7 +33,7 @@ export async function getList(id: string): Promise<Draft | null> {
   };
 }
 
-/** Une carte de « Mes listes en cours ». */
+/** Une carte de « Mes listes ». */
 export type ListSummary = {
   id: string;
   status: ListStatus;
@@ -217,6 +217,65 @@ export type ExtraItem = {
   unit: string;
 };
 
+/** Ligne lue en base (pré-liste ou ligne de liste) avec son article et son rayon. */
+type ExtraRow = {
+  item_id: string;
+  quantity: number;
+  unit: string;
+  items: {
+    name: string;
+    aisle_id: number;
+    aisles: { name: string; position: number } | null;
+  } | null;
+};
+
+/** Ligne lue en base → ExtraItem, rangée selon MES rayons (personnalisations comprises). */
+function rowToExtra(
+  row: ExtraRow,
+  overrides: Awaited<ReturnType<typeof loadOverrides>>["overrides"],
+  aisles: Awaited<ReturnType<typeof loadOverrides>>["aisles"],
+): ExtraItem {
+  const placed = applyOverride(
+    {
+      id: row.item_id,
+      aisleId: row.items?.aisle_id ?? 0,
+      aisleName: row.items?.aisles?.name,
+      aislePosition: row.items?.aisles?.position ?? 99,
+      isStaple: false,
+      purchaseUnit: null,
+    },
+    overrides.get(row.item_id),
+    aisles,
+  );
+  return {
+    itemId: row.item_id,
+    name: row.items?.name ?? "",
+    aislePosition: placed.aislePosition,
+    aisleName: placed.aisleName,
+    quantity: Number(row.quantity),
+    unit: row.unit,
+  };
+}
+
+/**
+ * « Ma pré-liste » (Mes listes → Ma pré-liste, US-LST-03) : mes achats habituels, hors de
+ * toute liste. Créée par défaut la première fois, comme à l'étape 3.
+ */
+export async function getMyPrelist(): Promise<ExtraItem[]> {
+  const supabase = await createClient();
+  await supabase.rpc("ensure_my_prelist");
+  const { data: prelist } = await supabase
+    .from("prelist_items")
+    .select("item_id, quantity, unit, position, items(name, aisle_id, aisles(name, position))")
+    .order("position");
+  const { overrides, aisles } = await loadOverrides(
+    supabase,
+    await currentUserId(supabase),
+    (prelist ?? []).map((row) => row.item_id),
+  );
+  return (prelist ?? []).map((row) => rowToExtra(row, overrides, aisles));
+}
+
 /** Étape 3 : ma pré-liste (créée par défaut la première fois) et les lignes déjà ajoutées. */
 export async function getExtras(listId: string): Promise<{
   prelist: ExtraItem[];
@@ -260,37 +319,7 @@ export async function getExtras(listId: string): Promise<{
     itemIds,
   );
 
-  const toExtra = (row: {
-    item_id: string;
-    quantity: number;
-    unit: string;
-    items: {
-      name: string;
-      aisle_id: number;
-      aisles: { name: string; position: number } | null;
-    } | null;
-  }): ExtraItem => {
-    const placed = applyOverride(
-      {
-        id: row.item_id,
-        aisleId: row.items?.aisle_id ?? 0,
-        aisleName: row.items?.aisles?.name,
-        aislePosition: row.items?.aisles?.position ?? 99,
-        isStaple: false,
-        purchaseUnit: null,
-      },
-      overrides.get(row.item_id),
-      aisles,
-    );
-    return {
-      itemId: row.item_id,
-      name: row.items?.name ?? "",
-      aislePosition: placed.aislePosition,
-      aisleName: placed.aisleName,
-      quantity: Number(row.quantity),
-      unit: row.unit,
-    };
-  };
+  const toExtra = (row: ExtraRow) => rowToExtra(row, overrides, aisles);
 
   return {
     prelist: (prelist ?? []).map(toExtra),

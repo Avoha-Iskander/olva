@@ -118,6 +118,7 @@ export function draftToForm(
         ? ingredients
         : [{ key: "import-0", itemId: null, itemName: "", quantityText: "", unit: "", note: "" }],
       steps: draft.steps.length ? draft.steps : [""],
+      notes: "", // un import laisse les notes vides (US-REC-08)
       bookTitle: "",
       bookPageText: draft.bookPage ? String(draft.bookPage) : "",
       sourceUrl: draft.sourceUrl ?? "", // import par lien : pré-rempli, modifiable

@@ -16,7 +16,7 @@ export default function OfflinePage() {
       <h1 className="text-2xl font-semibold tracking-tight">Vous êtes hors ligne</h1>
       <p className="text-muted-foreground max-w-sm">
         Cette page n&apos;a pas encore été ouverte sur ce téléphone. Les listes de courses déjà
-        ouvertes restent disponibles : retournez dans « Faire ses courses ».
+        ouvertes restent disponibles : retournez dans « Mes courses ».
       </p>
       <GoShopping />
     </main>
