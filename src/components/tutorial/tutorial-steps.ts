@@ -25,7 +25,7 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
   {
     target: "nav-listes",
     title: "3. Listes",
-    text: "La liste de courses se crée depuis le menu. Vous la complétez ensuite avec vos articles habituels.",
+    text: "La liste de courses se crée depuis le menu. Votre pré-liste, qui réunit vos achats habituels (lait, café, papier toilette…), s'y ajoute pour ne rien oublier, et vous la configurez à votre goût.",
   },
   {
     target: "nav-courses",
