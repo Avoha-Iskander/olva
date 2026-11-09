@@ -26,6 +26,7 @@ export function AppHeader() {
             <Link
               key={href}
               href={href}
+              data-tour={`nav-${href.slice(1)}`} // repère du tutoriel (US-CPT-06)
               aria-current={isActive(pathname, href) ? "page" : undefined}
               className={cn(
                 "text-muted-foreground hover:bg-accent hover:text-accent-foreground flex h-11 items-center gap-2 rounded-md px-3 text-sm font-medium transition-colors",
@@ -62,12 +63,13 @@ export function AppBottomNav() {
       className="bg-background/95 fixed inset-x-0 bottom-0 z-30 border-t pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden"
     >
       <ul className="grid grid-cols-4">
-        {NAV_ITEMS.map(({ href, shortLabel, icon: Icon }) => {
+        {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
           const active = isActive(pathname, href);
           return (
             <li key={href}>
               <Link
                 href={href}
+                data-tour={`nav-${href.slice(1)}`} // repère du tutoriel (US-CPT-06)
                 aria-current={active ? "page" : undefined}
                 className={cn(
                   "text-muted-foreground flex h-16 flex-col items-center justify-center gap-1 text-xs",
@@ -75,7 +77,7 @@ export function AppBottomNav() {
                 )}
               >
                 <Icon className="size-5" />
-                {shortLabel}
+                {label}
               </Link>
             </li>
           );

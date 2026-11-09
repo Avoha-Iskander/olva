@@ -6,13 +6,13 @@ import { Button } from "@/components/ui/button";
 import { listTitle } from "@/lib/list-title";
 import { listShoppableLists } from "@/lib/shopping";
 
-export const metadata = { title: "Faire ses courses — Olva" };
+export const metadata = { title: "Mes courses — Olva" };
 
-/** « Faire ses courses » (US-CRS-01) : les listes prêtes, les miennes et celles qu'on me partage. */
+/** « Mes courses » (US-CRS-01) : les listes prêtes, les miennes et celles qu'on me partage. */
 export default function ShoppingPage() {
   return (
     <main className="grid gap-4 px-4 py-6">
-      <h1 className="text-2xl font-semibold tracking-tight">Faire ses courses</h1>
+      <h1 className="text-2xl font-semibold tracking-tight">Mes courses</h1>
       <Suspense fallback={<p className="text-muted-foreground">Chargement…</p>}>
         <ShoppableLists />
       </Suspense>

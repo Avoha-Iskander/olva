@@ -7,14 +7,16 @@ import { expect, test } from "@playwright/test";
 const PAGES = [
   { path: "/recettes", heading: "Mes recettes" },
   { path: "/menus", heading: "Mes menus" },
-  { path: "/listes", heading: "Mes listes en cours" },
-  { path: "/courses", heading: "Faire ses courses" },
+  { path: "/listes", heading: "Mes listes" },
+  { path: "/courses", heading: "Mes courses" },
 ];
 
 test("l'accueil propose les 4 entrées du menu", async ({ page }) => {
   await page.goto("/");
-  for (const name of ["Mes recettes", "Menus", "Mes listes en cours", "Faire ses courses"]) {
-    await expect(page.getByRole("link", { name }).filter({ visible: true }).first()).toBeVisible();
+  for (const name of ["Recettes", "Menus", "Listes", "Courses"]) {
+    await expect(
+      page.getByRole("link", { name, exact: true }).filter({ visible: true }).first(),
+    ).toBeVisible();
   }
 });
 

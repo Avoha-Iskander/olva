@@ -99,7 +99,7 @@ Chaque utilisateur possède ses propres données ; il n'y a pas de « foyer ».
 - [ ] Catalogue d'articles (commun + personnalisations de chaque utilisateur), rayons, unités, conversions
 - [ ] Menus de la semaine (recettes + portions, sans jours) ; liste créée depuis un menu : revue des ingrédients → pré-liste et articles libres ; liste sans recette (décision 068)
 - [ ] Regroupement des ingrédients et conversions d'unités
-- [ ] Mes listes en cours
+- [ ] Mes listes
 - [ ] Mode courses : liste à cocher par rayon, temps réel, hors ligne
 - [ ] Report des articles non cochés + historique des listes
 - [ ] ~~Import des recettes du prototype Sheets~~ (abandonné, décision 067)
@@ -120,14 +120,14 @@ Chaque utilisateur possède ses propres données ; il n'y a pas de « foyer ».
 
 Menu principal (accueil) avec 4 entrées :
 
-1. **Mes recettes** — consulter, créer, importer, organiser en collections
-2. **Menus** — menus de la semaine ; la liste de courses se crée depuis un menu (section 6.3, décision 068)
-3. **Mes listes en cours** — listes en préparation, à reprendre ou modifier ; « Nouvelle liste » crée une liste sans recette
-4. **Faire ses courses** — ouvre une liste finalisée en mode cases à cocher
+1. **Recettes** (page « Mes recettes ») — consulter, créer, importer, organiser en collections
+2. **Menus** (page « Mes menus ») — menus de la semaine ; la liste de courses se crée depuis un menu (section 6.3, décision 068)
+3. **Listes** (page « Mes listes ») — listes en préparation, à reprendre ou modifier ; « Nouvelle liste » crée une liste sans recette
+4. **Courses** (page « Mes courses ») — ouvre une liste finalisée en mode cases à cocher
 
 Paramètres : nom affiché, nombre de personnes par défaut, mes partages (envoyés et reçus), compte.
 
-« Mes recettes » et « Mes listes en cours » affichent aussi ce qui m'est partagé, signalé par « Partagé par … ».
+« Mes recettes » et « Mes listes » affichent aussi ce qui m'est partagé, signalé par « Partagé par … ».
 
 ---
 
@@ -281,7 +281,7 @@ En tant que préparateur, je veux composer le menu de la semaine avec mes recett
 
 **US-LST-08 — Liste sans recette** · M
 
-- [ ] Dans « Mes listes en cours », « Nouvelle liste » crée une liste sans recette qui commence directement à la pré-liste et aux articles libres
+- [ ] Dans « Mes listes », « Nouvelle liste » crée une liste sans recette qui commence directement à la pré-liste et aux articles libres
 
 **Étape 1 — Revue des ingrédients** (listes créées depuis un menu)
 
@@ -303,6 +303,8 @@ En tant que préparateur, je veux revoir les ingrédients calculés à partir de
 
 - [ ] Une pré-liste de mes articles habituels (alimentaires et non alimentaires) est présentée ; je coche ce qui manque
 - [ ] Je peux ajouter ou retirer des articles de ma pré-liste
+- [ ] Mes listes → **« Ma pré-liste »** : je revois et je configure ma pré-liste hors de toute liste (ajouter, retirer, quantité habituelle), rangée par rayon (décision 072)
+- [ ] Un nouveau compte reçoit une pré-liste d'une trentaine d'achats courants (fruits et légumes, crèmerie, frais, épicerie, boissons, hygiène et entretien) ; les pré-listes existantes ne changent pas
 - [ ] Un article déjà apporté par les recettes de la liste est signalé **« Déjà prévu : [quantité] ([recettes]) »**, dans la pré-liste et dans l'auto-complétion des articles libres ; il n'est pas masqué (décision 070)
 
 **US-LST-04 — Ajouter un article libre** · M
@@ -316,10 +318,10 @@ En tant que préparateur, je veux revoir les ingrédients calculés à partir de
 
 - [ ] Un même article issu de plusieurs recettes ou ajouts apparaît sur une seule ligne, quantités additionnées (après conversion, voir US-CAT-04)
 
-**US-LST-06 — Mes listes en cours** · M
+**US-LST-06 — Mes listes** · M
 
 - [ ] Une liste peut être enregistrée en brouillon et reprise plus tard
-- [ ] Une liste finalisée devient disponible dans « Faire ses courses »
+- [ ] Une liste finalisée devient disponible dans « Mes courses »
 
 **US-LST-07 — Partager une liste** · M
 
@@ -339,7 +341,7 @@ En tant que préparateur, je veux revoir les ingrédients calculés à partir de
 - [ ] La liste d'arrivée garde son nom et ses partages ; la liste de départ est supprimée
 - [ ] Réservé au créateur de la liste de départ ; les brouillons ne se versent pas et ne reçoivent pas
 
-### 6.4 Faire ses courses
+### 6.4 Mes courses
 
 **US-CRS-01 — Liste à cocher par rayon** · M
 
@@ -374,6 +376,15 @@ En tant que préparateur, je veux revoir les ingrédients calculés à partir de
 - [ ] Un nouvel utilisateur reçoit 3 à 5 recettes d'exemple, étiquetées « exemple », supprimables d'un coup (« Supprimer les exemples »)
 - [ ] Les écrans vides affichent un message et une action claire
 
+**US-CPT-06 — Tutoriel de prise en main** · S
+
+- [ ] Juste après le parcours d'accueil, une bienvenue présente Olva (recettes, menus et courses dans une seule app), puis une **visite guidée sur la vraie interface** : chacun des 4 menus est mis en surbrillance tour à tour, avec une bulle d'une ou deux phrases
+- [ ] 6 étapes au plus ; « Suivant », « Précédent » et « Passer le tutoriel » à chaque étape ; la dernière propose « Ajouter ma première recette » (import photo)
+- [ ] Il se lance une seule fois tout seul ; Paramètres → « Revoir le tutoriel » le relance
+- [ ] Terminé ou passé, et la dernière étape vue, sont enregistrés dans le profil (mesure pendant la phase de test)
+- [ ] Une astuce s'affiche à la première ouverture du mode courses, puis plus sur cet appareil
+- [ ] Textes réunis dans un seul fichier ; mobile et ordinateur, clair et sombre, clavier (Échap = passer)
+
 **US-CPT-03 — Gérer mes partages** · M
 
 - [ ] Paramètres → « Mes partages » : ce que je partage (avec qui, quoi) et ce qu'on me partage
@@ -397,7 +408,7 @@ En tant que préparateur, je veux revoir les ingrédients calculés à partir de
 
 | Entité                  | Champs principaux                                                                                                                                    | Notes                                               |
 | ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------- |
-| `profiles`              | id (= utilisateur), nom_affiché, portions_par_défaut                                                                                                 | Créé automatiquement à l'inscription                |
+| `profiles`              | id (= utilisateur), nom_affiché, portions_par_défaut, thème, tutoriel (statut, étape)                                                                | Créé automatiquement à l'inscription                |
 | `recipes`               | id, owner_id, titre, portions, étapes, notes, livre_titre, livre_page, photo_url, photo_import_url, est_exemple, copiée_de                           |                                                     |
 | `collections`           | id, owner_id, nom                                                                                                                                    |                                                     |
 | `recipe_collections`    | recipe_id, collection_id                                                                                                                             |                                                     |
@@ -438,8 +449,8 @@ Toutes les tables sont protégées par Row Level Security : je vois mes données
 | Formulaire d'un menu        | Nom, choix des recettes + portions, créer une recette ; « Enregistrer le menu » / « Enregistrer et créer la liste »                                   | Mobile + desktop     |
 | Préparer la liste — étape 1 | Revue des ingrédients : ajuster, retirer ; ingrédients de base décochés                                                                               | Mobile + desktop     |
 | Préparer la liste — étape 2 | Pré-liste + champ auto-complétion                                                                                                                     | Mobile               |
-| Mes listes en cours         | Brouillons et listes prêtes                                                                                                                           | Mobile               |
-| Faire ses courses           | Groupée par rayon, cases larges, hors ligne                                                                                                           | Mobile               |
+| Mes listes                  | Brouillons et listes prêtes                                                                                                                           | Mobile               |
+| Mes courses                 | Groupée par rayon, cases larges, hors ligne                                                                                                           | Mobile               |
 | Historique                  | Listes terminées                                                                                                                                      | Mobile               |
 | Paramètres                  | Profil, portions par défaut, mes partages, compte                                                                                                     | Mobile + desktop     |
 
@@ -642,6 +653,8 @@ Toutes les tables sont protégées par Row Level Security : je vois mes données
 | 069 | 2026-11-07 | Retours d'Alex sur les menus : un menu se compose dans un **formulaire** (« Enregistrer le menu » / « Enregistrer et créer la liste », plus d'enregistrement automatique, rien de créé avant de valider) et se consulte sur une **fiche** qui n'affiche que ses recettes (portions et retrait par recette ; Modifier, Supprimer le menu ; créer ou voir la liste), sur le modèle des recettes. US-MEN-05                                                                                                                                                                                                                                                                                                                                                                                            | Écran unique avec toutes les recettes et enregistrement automatique (décision 068)                                                                                                                                      |
 | 070 | 2026-11-07 | **Lot 8 décalé d'une semaine** pour un lot 7ter d'améliorations : glisser pour supprimer ou renoncer à une liste ; verser une liste (articles non cochés, fusion US-MEN-03, liste de départ supprimée, réservé à son créateur, pas de brouillon) ; fin des courses → **nouvelle liste prête avec les articles restants, mêmes partages** (case cochée par défaut ; remplace la réserve à reporter de la décision 055) ; badge « Déjà prévu » ; thème Automatique / Clair / Sombre **dans le profil**, mémorisé sur l'appareil. Écartés : rangement des ajouts par rayon, foyer (après MVP)                                                                                                                                                                                                          | Lot 8 tout de suite ; thème sur l'appareil seulement ; report dans la pré-liste suivante                                                                                                                                |
 | 071 | 2026-11-09 | **Lot 8 décalé à nouveau** pour un lot 7quater, en 3 PR : **notes de recette** (US-REC-08 : texte libre après les étapes, copié avec la recette, visible en lecture par les personnes à qui elle est partagée) ; **rayons** (US-CAT-06 : noms raccourcis — Boucherie, Crèmerie, Féculents, Conserves, Condiments, Épices, Épicerie sucrée, Entretien —, Petit-déjeuner versé dans Épicerie sucrée, soit 20 rayons, un emoji devant chaque rayon ; les rayons restent communs) ; **tutoriel** (US-CPT-06 : bienvenue puis visite guidée sur la vraie interface, composant maison sans dépendance, lancé après le parcours d'accueil et relançable depuis Paramètres). « Partager toutes les listes » : l'option « Partager automatiquement mes nouvelles listes » suffit, **décision 045 maintenue** | Issues `post-mvp` et lot 8 tout de suite ; bibliothèque driver.js ; partage rétroactif des listes ; rayons renommés, fusionnés ou réordonnés par chaque utilisateur (après MVP : coût de maintenance, listes partagées) |
+| 072 | 2026-11-09 | Lot 7quater, PR 4 : bouton **« Ma pré-liste »** dans Mes listes (page `/listes/pre-liste`, d'abord prévu dans Menus, mêmes actions d'enregistrement qu'à l'étape 3) ; **nouvelle pré-liste par défaut** de 33 articles choisie par Alex (remplace la quinzaine de la décision 044), pour les nouveaux comptes seulement ; articles communs **Pâtes** et **Chocolat** ajoutés au catalogue                                                                                                                                                                                                                                                                                                                                                                                                           | Pré-liste dans Paramètres ; remplacer aussi les pré-listes existantes ; « Fromage » dans la pré-liste                                                                                                                   |
+| 073 | 2026-11-09 | Menu principal renommé : **« Mes listes »** (au lieu de « Mes listes en cours ») et **« Mes courses »** (au lieu de « Faire ses courses ») pour les titres de page ; les **onglets** portent un seul nom court partout (barre du bas, menu du haut, accueil) : **Recettes, Menus, Listes, Courses**                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 | Garder les noms d'origine                                                                                                                                                                                               |
 
 ---
 
