@@ -1,6 +1,15 @@
 "use client";
 
-import { ArrowDown, ArrowUp, Plus, Sparkles, Trash2, TriangleAlert } from "lucide-react";
+import {
+  ArrowDown,
+  ArrowUp,
+  ChevronDown,
+  ChevronUp,
+  Plus,
+  Sparkles,
+  Trash2,
+  TriangleAlert,
+} from "lucide-react";
 
 import { ItemCombobox } from "@/components/recipe-form/item-combobox";
 import { UNIT_OPTIONS } from "@/components/recipe-form/units";
@@ -12,8 +21,25 @@ import { type DraftHighlights, needsReview, type NewItemSuggestion } from "@/lib
 import { type FormIngredient, unitForChosenItem } from "@/lib/recipe-form";
 import { cn } from "@/lib/utils";
 
+/** Résumé d'une ligne repliée : « 250 g », « Farine », « tamisée ». */
+export function ingredientSummary(line: FormIngredient): {
+  amount: string;
+  name: string;
+  note: string;
+} {
+  const unit = UNIT_OPTIONS.find((u) => u.code === line.unit)?.label ?? "";
+  const quantity = line.quantityText.trim();
+  return {
+    amount: quantity ? `${quantity}${unit && line.unit !== "piece" ? ` ${unit}` : ""}` : "au goût",
+    name: line.itemName || "Article à choisir",
+    note: line.note.trim(),
+  };
+}
+
 /**
- * Une ligne d'ingrédient : article, quantité, unité, remarque, et boutons d'ordre.
+ * Une ligne d'ingrédient (décision 079) : repliée, elle tient sur une ligne (quantité,
+ * article, remarque) ; la toucher la déplie sur place pour modifier article, quantité,
+ * unité, remarque, ordre, ou la supprimer.
  * Dans un brouillon importé par photo, une ligne douteuse ou non reconnue est
  * surlignée « À vérifier », avec le nom lu et, si besoin, « Créer l'article ».
  */
@@ -28,6 +54,8 @@ export function IngredientRow({
   onRemove,
   onCreateItem,
   highlight,
+  open,
+  onToggle,
 }: {
   line: FormIngredient;
   index: number;
@@ -39,12 +67,41 @@ export function IngredientRow({
   onRemove: () => void;
   onCreateItem: (name: string, suggestion?: NewItemSuggestion | null) => void;
   highlight?: DraftHighlights["ingredients"][string];
+  /** Dépliée : formulaire complet ; repliée : une ligne de résumé. */
+  open: boolean;
+  onToggle: () => void;
 }) {
   const label = `Ingrédient ${index + 1}`;
   // « À vérifier » (fond ambre) seulement s'il y a quelque chose à faire ;
   // un article simplement proposé par l'IA reçoit une mention discrète
   const review = highlight && needsReview(highlight) ? highlight : null;
   const proposedOnly = highlight && !review && highlight.proposed ? highlight : null;
+  const summary = ingredientSummary(line);
+
+  // Repliée : un seul bouton, toute la ligne se touche pour la déplier
+  if (!open) {
+    return (
+      <li aria-label={label}>
+        <button
+          type="button"
+          onClick={onToggle}
+          aria-expanded={false}
+          className="hover:bg-accent flex min-h-11 w-full items-center gap-3 rounded-lg border px-3 py-2 text-left transition-colors"
+        >
+          <span className="text-muted-foreground w-20 shrink-0 text-sm">{summary.amount}</span>
+          <span className="min-w-0 flex-1 truncate">
+            {summary.name}
+            {summary.note && (
+              <span className="text-muted-foreground text-sm"> · {summary.note}</span>
+            )}
+          </span>
+          <ChevronDown className="text-muted-foreground size-4 shrink-0" aria-hidden="true" />
+          <span className="sr-only">Modifier</span>
+        </button>
+      </li>
+    );
+  }
+
   return (
     <li
       className={cn(
@@ -54,6 +111,17 @@ export function IngredientRow({
       )}
       aria-label={label}
     >
+      {/* En-tête de la ligne dépliée : le toucher la replie */}
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-expanded={true}
+        className="-m-1 flex min-h-11 items-center gap-2 rounded-md p-1 text-left font-medium"
+      >
+        <span className="min-w-0 flex-1 truncate">{summary.name}</span>
+        <ChevronUp className="text-muted-foreground size-4 shrink-0" aria-hidden="true" />
+        <span className="sr-only">Replier</span>
+      </button>
       {proposedOnly && (
         <p className="text-muted-foreground flex items-center gap-1.5 text-xs">
           <Sparkles className="size-3.5 shrink-0" aria-hidden />

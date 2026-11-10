@@ -51,6 +51,17 @@ test("créer, afficher puis supprimer une recette", async ({ page }) => {
     ).toBeVisible();
   });
 
+  await test.step("modifier : ingrédient replié sur une ligne, déplié au toucher", async () => {
+    // Décision 079 : la photo vient juste après le titre, les ingrédients sont compacts
+    await page.getByRole("link", { name: "Modifier", exact: true }).click();
+    const row = page.getByRole("listitem", { name: "Ingrédient 1" });
+    await expect(row.getByRole("button", { expanded: false })).toContainText("250 g");
+    await expect(page.getByLabel("Ingrédient 1 : quantité (vide = au goût)")).toHaveCount(0);
+    await row.getByRole("button", { expanded: false }).click();
+    await expect(page.getByLabel("Ingrédient 1 : quantité (vide = au goût)")).toHaveValue("250");
+    await page.goto(recipeUrl);
+  });
+
   await test.step("revenir sur « Nouvelle recette » : le formulaire est vierge", async () => {
     // Navigation dans l'app (et non rechargement) : Next.js garde les écrans quittés en
     // mémoire ; un écran de création doit pourtant repartir de zéro
