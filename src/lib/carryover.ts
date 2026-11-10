@@ -1,13 +1,11 @@
 /**
- * Fin des courses (US-CRS-03, décision 070) : les articles non cochés peuvent repartir
- * sur une NOUVELLE liste, prête, avec les mêmes partages. Fonction pure, testée.
+ * Fin des courses (US-CRS-03, décisions 070 et 080) : les articles non cochés peuvent
+ * repartir sur une NOUVELLE liste, prête, avec les mêmes partages. Fonction pure, testée.
  */
 
-/** Message de confirmation de « Terminer les courses ». */
-export function finishMessage(unchecked: number, ownerName: string | null): string {
-  if (unchecked === 0) return "Tous les articles sont dans le panier.";
-  const articles = `${unchecked} article${unchecked > 1 ? "s" : ""}`;
-  return `${articles} pas encore coché${unchecked > 1 ? "s" : ""}.${
-    ownerName ? ` La nouvelle liste éventuelle sera à ${ownerName}.` : ""
-  }`;
+/** Les articles non cochés, en une ligne : les 3 premiers, puis « et N autres ». */
+export function uncheckedSummary(names: string[], max = 3): string {
+  if (names.length <= max) return names.join(", ");
+  const others = names.length - max;
+  return `${names.slice(0, max).join(", ")} et ${others} autre${others > 1 ? "s" : ""}`;
 }

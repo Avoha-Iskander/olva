@@ -487,7 +487,7 @@ export function ShoppingList(props: Props) {
       {!finished && (
         <FinishShopping
           listId={listId}
-          unchecked={total - checked}
+          uncheckedNames={lines.filter((l) => !l.checked).map((l) => l.name)}
           ownerName={props.ownerName}
           blockedReason={
             !online
