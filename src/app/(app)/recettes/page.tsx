@@ -1,14 +1,10 @@
-import Link from "next/link";
-import { BookOpen } from "lucide-react";
 import { Suspense } from "react";
 
 import { AddRecipeMenu } from "@/components/recipes/add-recipe-menu";
-import { CollectionFilter } from "@/components/recipes/collection-filter";
 import { ExamplesBanner } from "@/components/recipes/examples-banner";
-import { RecipeCard } from "@/components/recipes/recipe-card";
+import { RecipeBrowser } from "@/components/recipes/recipe-browser";
 import { RecipeSearch } from "@/components/recipes/recipe-search";
 import { ShareLibraryButton } from "@/components/sharing/share-library-button";
-import { Button } from "@/components/ui/button";
 import { hasExamples, listMyCollections, listMyRecipes } from "@/lib/recipes";
 
 export const metadata = { title: "Mes recettes — Olva" };
@@ -41,59 +37,26 @@ async function RecipeResults({
 }) {
   const params = await searchParams;
   const search = typeof params.q === "string" ? params.q : undefined;
-  const collectionId = typeof params.collection === "string" ? params.collection : undefined;
+  const collectionId = typeof params.collection === "string" ? params.collection : null;
 
+  // Toutes les recettes de la recherche : le filtre par collection se fait ensuite dans le
+  // navigateur, sans recharger la page (décision 079)
   const [recipes, collections, showExamplesBanner] = await Promise.all([
-    listMyRecipes({ search, collectionId }),
+    listMyRecipes({ search }),
     listMyCollections(),
     hasExamples(),
   ]);
-  const hasFilter = Boolean(search || collectionId);
 
   return (
     <>
       {showExamplesBanner && <ExamplesBanner />}
-      <CollectionFilter collections={collections} activeId={collectionId} search={search} />
-      {recipes.length === 0 ? (
-        hasFilter ? (
-          <p className="text-muted-foreground py-10 text-center">
-            Aucune recette ne correspond à votre recherche.
-          </p>
-        ) : (
-          <EmptyState />
-        )
-      ) : (
-        <>
-          <p className="text-muted-foreground text-sm" aria-live="polite">
-            {recipes.length} recette{recipes.length > 1 ? "s" : ""}
-          </p>
-          <ul className="grid gap-3 sm:grid-cols-2">
-            {recipes.map((recipe) => (
-              <li key={recipe.id}>
-                <RecipeCard recipe={recipe} />
-              </li>
-            ))}
-          </ul>
-        </>
-      )}
+      <RecipeBrowser
+        recipes={recipes}
+        collections={collections}
+        initialCollectionId={collectionId}
+        searching={Boolean(search)}
+      />
     </>
-  );
-}
-
-function EmptyState() {
-  return (
-    <div className="flex flex-col items-center gap-4 rounded-xl border border-dashed px-6 py-12 text-center">
-      <BookOpen className="text-primary size-10" aria-hidden="true" />
-      <div className="grid gap-1">
-        <p className="font-medium">Aucune recette pour l&apos;instant</p>
-        <p className="text-muted-foreground text-sm">
-          Ajoutez vos recettes préférées pour préparer vos listes de courses en 2 minutes.
-        </p>
-      </div>
-      <Button asChild>
-        <Link href="/recettes/nouvelle">Créer ma première recette</Link>
-      </Button>
-    </div>
   );
 }
 

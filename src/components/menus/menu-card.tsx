@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState, useTransition } from "react";
-import { ChevronRight, Copy, Trash2, UtensilsCrossed } from "lucide-react";
+import { ChevronRight, Copy, Trash2, Users, UtensilsCrossed } from "lucide-react";
 
 import { deleteMenu, duplicateMenu, leaveMenu } from "@/app/(app)/menus/actions";
 import { CardActionsMenu } from "@/components/cards/card-actions-menu";
@@ -74,6 +74,13 @@ export function MenuCard({ menu }: { menu: MenuSummary }) {
                   </span>
                 )}
               </span>
+              {/* Mon menu partagé : avec qui (décision 079) */}
+              {menu.sharedWith.length > 0 && (
+                <span className="text-muted-foreground flex items-center gap-1 text-xs">
+                  <Users className="size-3" aria-hidden="true" />
+                  Partagé avec {menu.sharedWith.join(", ")}
+                </span>
+              )}
               <span className="text-muted-foreground truncate text-sm">
                 {count
                   ? `${count} recette${count > 1 ? "s" : ""} · ${menu.recipeTitles.join(", ")}`

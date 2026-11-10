@@ -36,12 +36,26 @@ export async function getList(id: string): Promise<Draft | null> {
 /** Une carte de « Mes listes ». */
 export type ListSummary = {
   id: string;
+  name: string | null; // nom choisi (US-LST-11) ; null : « Liste du [date] »
   status: ListStatus;
   createdAt: string;
   recipeTitles: string[];
   itemCount: number; // articles retenus
   sharedBy: string | null; // nom de la personne qui me partage la liste (null : la mienne)
+  sharedWith: string[]; // ma liste : noms des personnes avec qui je la partage (US-LST-11)
 };
+
+/** Noms des personnes avec qui une de MES listes est partagée (vide pour une liste reçue). */
+function sharedWithNames(
+  list: { owner_id: string; list_shares: { shared_with: string }[] },
+  userId: string | null,
+  names: Map<string, string>,
+): string[] {
+  if (list.owner_id !== userId) return [];
+  return list.list_shares
+    .map((s) => names.get(s.shared_with) ?? "Quelqu'un")
+    .sort((a, b) => a.localeCompare(b, "fr"));
+}
 
 /** Nom affiché des créateurs des listes qu'on me partage. */
 async function ownerNames(
@@ -65,17 +79,18 @@ export async function listMyLists(): Promise<ListSummary[]> {
   const { data } = await supabase
     .from("shopping_lists")
     .select(
-      "id, owner_id, status, created_at, shopping_list_recipes(position, recipes(title)), shopping_list_items(included)",
+      "id, owner_id, name, status, created_at, shopping_list_recipes(position, recipes(title)), shopping_list_items(included), list_shares(shared_with)",
     )
     .neq("status", "done")
     .order("updated_at", { ascending: false });
   const { userId, names } = await ownerNames(
     supabase,
-    (data ?? []).map((l) => l.owner_id),
+    (data ?? []).flatMap((l) => [l.owner_id, ...l.list_shares.map((s) => s.shared_with)]),
   );
 
   return (data ?? []).map((l) => ({
     id: l.id,
+    name: l.name,
     status: l.status as ListStatus,
     createdAt: l.created_at,
     recipeTitles: [...l.shopping_list_recipes]
@@ -84,6 +99,7 @@ export async function listMyLists(): Promise<ListSummary[]> {
       .filter((t): t is string => Boolean(t)),
     itemCount: l.shopping_list_items.filter((i) => i.included).length,
     sharedBy: l.owner_id === userId ? null : (names.get(l.owner_id) ?? "Quelqu'un"),
+    sharedWith: sharedWithNames(l, userId, names),
   }));
 }
 
@@ -99,20 +115,21 @@ export async function listFinishedLists(): Promise<FinishedSummary[]> {
   const { data } = await supabase
     .from("shopping_lists")
     .select(
-      "id, owner_id, status, created_at, finished_at, shopping_list_recipes(position, recipes(title)), shopping_list_items(included, checked)",
+      "id, owner_id, name, status, created_at, finished_at, shopping_list_recipes(position, recipes(title)), shopping_list_items(included, checked), list_shares(shared_with)",
     )
     .eq("status", "done")
     .order("finished_at", { ascending: false, nullsFirst: false })
     .limit(50);
   const { userId, names } = await ownerNames(
     supabase,
-    (data ?? []).map((l) => l.owner_id),
+    (data ?? []).flatMap((l) => [l.owner_id, ...l.list_shares.map((s) => s.shared_with)]),
   );
 
   return (data ?? []).map((l) => {
     const kept = l.shopping_list_items.filter((i) => i.included);
     return {
       id: l.id,
+      name: l.name,
       status: "done" as const,
       createdAt: l.created_at,
       finishedAt: l.finished_at,
@@ -123,6 +140,7 @@ export async function listFinishedLists(): Promise<FinishedSummary[]> {
       itemCount: kept.length,
       checkedCount: kept.filter((i) => i.checked).length,
       sharedBy: l.owner_id === userId ? null : (names.get(l.owner_id) ?? "Quelqu'un"),
+      sharedWith: sharedWithNames(l, userId, names),
     };
   });
 }
@@ -362,7 +380,7 @@ export async function getListPage(id: string) {
   const { data: list } = await supabase
     .from("shopping_lists")
     .select(
-      "id, owner_id, status, created_at, finished_at, shopping_list_recipes(recipes(id, title)), shopping_list_items(id, item_id, quantity, unit, included, recipe_ids, checked, checked_by, checked_at, items(name, aisle_id, aisles(name, position)))",
+      "id, owner_id, name, status, created_at, finished_at, list_shares(shared_with), shopping_list_recipes(recipes(id, title)), shopping_list_items(id, item_id, quantity, unit, included, recipe_ids, checked, checked_by, checked_at, items(name, aisle_id, aisles(name, position)))",
     )
     .eq("id", id)
     .maybeSingle();
@@ -415,6 +433,7 @@ export async function getListPage(id: string) {
 
   const { userId, names } = await ownerNames(supabase, [
     list.owner_id,
+    ...list.list_shares.map((s) => s.shared_with),
     ...list.shopping_list_items.map((l) => l.checked_by).filter((id): id is string => !!id),
   ]);
   return {
@@ -427,6 +446,8 @@ export async function getListPage(id: string) {
     finishedAt: list.finished_at,
     recipeTitles: [...titles.values()],
     lines,
+    name: list.name,
     sharedBy: list.owner_id === userId ? null : (names.get(list.owner_id) ?? "Quelqu'un"),
+    sharedWith: sharedWithNames(list, userId, names),
   };
 }

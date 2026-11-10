@@ -1,10 +1,11 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { ArrowLeft, Flag, Share2, ShoppingCart } from "lucide-react";
+import { ArrowLeft, Flag, Share2, ShoppingCart, Users } from "lucide-react";
 import { Suspense } from "react";
 
 import { FinishedList } from "@/components/lists/finished-list";
 import { ListEditor } from "@/components/lists/list-editor";
+import { ListName } from "@/components/lists/list-name";
 import { MergeListButton } from "@/components/lists/merge-list-dialog";
 import { ShareListButton } from "@/components/sharing/share-list-button";
 import { Button } from "@/components/ui/button";
@@ -50,7 +51,7 @@ async function ListContent({ params }: { params: PageProps<"/listes/[id]">["para
       <>
         <header className="grid gap-1">
           <h1 className="text-2xl font-semibold tracking-tight first-letter:uppercase">
-            {listTitle(list.createdAt)}
+            {listTitle(list.createdAt, list.name)}
           </h1>
           <p className="text-muted-foreground flex items-center gap-2 text-sm">
             <Flag className="size-4" aria-hidden="true" />
@@ -75,9 +76,8 @@ async function ListContent({ params }: { params: PageProps<"/listes/[id]">["para
   return (
     <>
       <header className="grid gap-1">
-        <h1 className="text-2xl font-semibold tracking-tight first-letter:uppercase">
-          {listTitle(list.createdAt)}
-        </h1>
+        {/* Titre renommable (US-LST-11) */}
+        <ListName listId={list.id} title={listTitle(list.createdAt, list.name)} name={list.name} />
         <p className="text-muted-foreground text-sm">
           {list.lines.length} article{list.lines.length > 1 ? "s" : ""}
           {list.recipeTitles.length > 0 && ` · ${list.recipeTitles.join(", ")}`}
@@ -86,6 +86,12 @@ async function ListContent({ params }: { params: PageProps<"/listes/[id]">["para
           <p className="text-muted-foreground flex items-center gap-2 text-sm">
             <Share2 className="size-4" aria-hidden="true" />
             Partagée par {list.sharedBy} : vous pouvez la modifier
+          </p>
+        )}
+        {list.sharedWith.length > 0 && (
+          <p className="text-muted-foreground flex items-center gap-2 text-sm">
+            <Users className="size-4" aria-hidden="true" />
+            Partagée avec {list.sharedWith.join(", ")}
           </p>
         )}
       </header>
@@ -105,8 +111,9 @@ async function ListContent({ params }: { params: PageProps<"/listes/[id]">["para
             sourceId={list.id}
             targets={myLists
               .filter((l) => l.id !== list.id && (l.status === "ready" || l.status === "shopping"))
-              .map(({ id: targetId, createdAt, sharedBy }) => ({
+              .map(({ id: targetId, name, createdAt, sharedBy }) => ({
                 id: targetId,
+                name,
                 createdAt,
                 sharedBy,
               }))}

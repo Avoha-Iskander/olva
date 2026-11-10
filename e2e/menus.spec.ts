@@ -148,3 +148,24 @@ test("recette ajoutée au menu après coup : « Ajouter à la liste » la fusion
     await deleteRecipe(page, title);
   });
 });
+
+test("terminer un menu, puis le remettre en cours", async ({ page }) => {
+  const menuId = await createMenu(page, ["Crêpes"]);
+  const card = (p: typeof page) => p.locator(`a[href="/menus/${menuId}"]`);
+
+  try {
+    await page.getByRole("button", { name: "Terminer le menu" }).click();
+    await expect(page).toHaveURL(/\/menus\?onglet=termines$/);
+    await expect(card(page)).toBeVisible();
+    await page.goto("/menus");
+    await expect(card(page)).toHaveCount(0);
+
+    await page.goto(`/menus/${menuId}`);
+    await page.getByRole("button", { name: "Remettre en cours" }).click();
+    await expect(page.getByRole("button", { name: "Terminer le menu" })).toBeVisible();
+    await page.goto("/menus");
+    await expect(card(page)).toBeVisible();
+  } finally {
+    await deleteMenu(page, menuId);
+  }
+});

@@ -354,3 +354,20 @@ export async function addMenuRecipeToList(
   refresh();
   return { ok: results.every((r) => !r.error) };
 }
+
+/**
+ * « Terminer le menu » / « Remettre en cours » (US-MEN-04, décision 079) : le menu passe
+ * dans l'onglet « Terminés », ou en revient. Créateur et co-éditeurs (règles d'accès).
+ */
+export async function setMenuFinished(menuId: string, finished: boolean): Promise<{ ok: boolean }> {
+  const id = parseId(menuId);
+  if (!id) return { ok: false };
+  const supabase = await createClient();
+  const { error, count } = await supabase
+    .from("menus")
+    .update({ finished_at: finished ? new Date().toISOString() : null }, { count: "exact" })
+    .eq("id", id);
+  revalidatePath("/menus");
+  revalidatePath(`/menus/${id}`);
+  return { ok: !error && count === 1 };
+}

@@ -2,8 +2,8 @@ import { expect, test } from "./fixtures";
 import { deleteList, itemName, openShopping, prepareList, tap } from "./helpers";
 
 /**
- * Fin des courses (US-CRS-03, décision 070) : cocher un article, terminer en gardant la
- * case « nouvelle liste » : la liste passe dans l'historique et une nouvelle liste prête
+ * Fin des courses (US-CRS-03, décision 070) : cocher un article, choisir « Nouvelle liste »
+ * (décision 080) : la liste passe dans l'historique et une nouvelle liste prête
  * reprend les seuls articles non cochés. Les deux listes sont supprimées à la fin.
  */
 test("terminer les courses : historique et nouvelle liste avec les restes", async ({ page }) => {
@@ -27,15 +27,13 @@ test("terminer les courses : historique et nouvelle liste avec les restes", asyn
       await page.waitForTimeout(1_000); // le temps que la coche soit enregistrée
       await page.getByRole("button", { name: "Terminer les courses" }).click();
       const dialog = page.getByRole("dialog");
+      // Décision 080 : « ⚠️ N articles non cochés » et trois choix
       await expect(dialog).toContainText(
-        `${remaining} article${remaining > 1 ? "s" : ""} pas encore coché`,
+        `${remaining} article${remaining > 1 ? "s" : ""} non coché`,
       );
-      await expect(
-        dialog.getByRole("checkbox", {
-          name: "Créer une nouvelle liste avec les articles restants",
-        }),
-      ).toBeChecked();
-      await dialog.getByRole("button", { name: "Terminer", exact: true }).click();
+      await expect(dialog.getByRole("button", { name: /^Terminer sans les garder/ })).toBeVisible();
+      await expect(dialog.getByRole("button", { name: /^Continuer/ })).toBeVisible();
+      await dialog.getByRole("button", { name: /^Nouvelle liste/ }).click();
       listIds[0].finished = true;
     });
 

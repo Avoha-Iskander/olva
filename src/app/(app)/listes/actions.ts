@@ -394,3 +394,22 @@ export async function mergeListInto(
   revalidatePath(`/courses/${to.id}`);
   redirect(`/listes/${to.id}`);
 }
+
+/**
+ * Renommer une liste (US-LST-11) : créateur et co-éditeurs. Un nom vide remet le titre
+ * par défaut « Liste du [date] ».
+ */
+export async function renameList(listId: string, name: string): Promise<{ ok: boolean }> {
+  const id = z.uuid().safeParse(listId);
+  const parsed = z.string().trim().max(60).safeParse(name);
+  if (!id.success || !parsed.success) return { ok: false };
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("rename_list", {
+    target_list: id.data,
+    new_name: parsed.data,
+  });
+  revalidatePath("/listes");
+  revalidatePath(`/listes/${id.data}`);
+  revalidatePath("/courses");
+  return { ok: !error };
+}

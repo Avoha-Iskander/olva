@@ -16,6 +16,8 @@ export type Menu = {
   id: string;
   name: string;
   sharedBy: string | null; // menu qu'on me partage : nom du créateur (null : c'est le mien)
+  sharedWith: string[]; // mon menu : personnes avec qui je le partage (décision 079)
+  finishedAt: string | null; // menu terminé (onglet « Terminés ») ; null : en cours
   createdAt: string;
   recipes: MenuRecipe[];
   list: MenuList | null;
@@ -26,6 +28,8 @@ export type MenuSummary = {
   id: string;
   name: string;
   sharedBy: string | null; // menu qu'on me partage (co-édition, décision 077)
+  sharedWith: string[]; // mon menu : personnes avec qui je le partage (décision 079)
+  finishedAt: string | null; // menu terminé ; null : en cours
   createdAt: string;
   recipeTitles: string[];
   list: MenuList | null;
@@ -60,18 +64,20 @@ export async function listMyMenus(): Promise<MenuSummary[]> {
   const { data } = await supabase
     .from("menus")
     .select(
-      "id, owner_id, name, created_at, menu_recipes(added_at, recipes(title)), shopping_lists(id, status, created_at, shopping_list_recipes(recipe_id))",
+      "id, owner_id, name, created_at, finished_at, menu_shares(shared_with), menu_recipes(added_at, recipes(title)), shopping_lists(id, status, created_at, shopping_list_recipes(recipe_id))",
     )
     .order("created_at", { ascending: false });
   const names = await sharerNames(
     supabase,
-    (data ?? []).map((m) => m.owner_id),
+    (data ?? []).flatMap((m) => [m.owner_id, ...m.menu_shares.map((s) => s.shared_with)]),
   );
 
   return (data ?? []).map((m) => ({
     id: m.id,
     name: m.name,
     sharedBy: names.get(m.owner_id) ?? null,
+    sharedWith: sharedWithNames(m, names),
+    finishedAt: m.finished_at,
     createdAt: m.created_at,
     recipeTitles: [...m.menu_recipes]
       .sort((a, b) => a.added_at.localeCompare(b.added_at))
@@ -82,8 +88,9 @@ export async function listMyMenus(): Promise<MenuSummary[]> {
 }
 
 /**
- * Créateurs des menus qu'on me partage → nom affiché. Mes propres menus n'y sont pas :
- * pour eux, `get` renvoie undefined (donc « pas partagé »).
+ * Personnes liées à mes menus (créateurs des menus qu'on me partage, personnes avec qui je
+ * partage les miens) → nom affiché. Je n'y suis pas : pour mes propres menus, `get` sur le
+ * créateur renvoie undefined (donc « pas partagé par quelqu'un »).
  */
 async function sharerNames(
   supabase: Awaited<ReturnType<typeof createClient>>,
@@ -108,17 +115,22 @@ export async function getMenu(id: string): Promise<Menu | null> {
   const { data: menu } = await supabase
     .from("menus")
     .select(
-      "id, owner_id, name, created_at, menu_recipes(recipe_id, servings, added_at, recipes(id)), shopping_lists(id, status, created_at, shopping_list_recipes(recipe_id))",
+      "id, owner_id, name, created_at, finished_at, menu_shares(shared_with), menu_recipes(recipe_id, servings, added_at, recipes(id)), shopping_lists(id, status, created_at, shopping_list_recipes(recipe_id))",
     )
     .eq("id", id)
     .maybeSingle();
   if (!menu) return null;
-  const names = await sharerNames(supabase, [menu.owner_id]);
+  const names = await sharerNames(supabase, [
+    menu.owner_id,
+    ...menu.menu_shares.map((s) => s.shared_with),
+  ]);
 
   return {
     id: menu.id,
     name: menu.name,
     sharedBy: names.get(menu.owner_id) ?? null,
+    sharedWith: sharedWithNames(menu, names),
+    finishedAt: menu.finished_at,
     createdAt: menu.created_at,
     recipes: [...menu.menu_recipes]
       .filter((r) => r.recipes) // recette encore lisible (à moi ou partagée avec moi)
@@ -126,4 +138,18 @@ export async function getMenu(id: string): Promise<Menu | null> {
       .map((r) => ({ recipeId: r.recipe_id, servings: r.servings, addedAt: r.added_at })),
     list: latestList(menu.shopping_lists),
   };
+}
+
+/**
+ * Mon menu : noms des personnes avec qui je le partage (US-MEN-04, décision 079).
+ * Menu reçu (son créateur est dans `names`) : rien, on affiche « Partagé par … ».
+ */
+function sharedWithNames(
+  menu: { owner_id: string; menu_shares: { shared_with: string }[] },
+  names: Map<string, string>,
+): string[] {
+  if (names.has(menu.owner_id)) return [];
+  return menu.menu_shares
+    .map((s) => names.get(s.shared_with) ?? "Quelqu'un")
+    .sort((a, b) => a.localeCompare(b, "fr"));
 }
