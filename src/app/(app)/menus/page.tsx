@@ -6,6 +6,7 @@ import { MenuCard } from "@/components/menus/menu-card";
 import { ShareAutoMenusButton } from "@/components/sharing/share-menu-button";
 import { Button } from "@/components/ui/button";
 import { listMyMenus } from "@/lib/menus";
+import { cn } from "@/lib/utils";
 
 export const metadata = { title: "Mes menus — Olva" };
 
@@ -21,8 +22,16 @@ function NewMenuButton({ label }: { label: string }) {
   );
 }
 
-/** « Mes menus » (US-MEN-04) : du plus récent au plus ancien. */
-export default function MenusPage() {
+const TABS = [
+  { key: "en-cours", label: "En cours" },
+  { key: "termines", label: "Terminés" },
+] as const;
+
+/**
+ * « Mes menus » (US-MEN-04) : du plus récent au plus ancien, en deux onglets comme Mes
+ * listes (décision 079). L'onglet est dans l'adresse (?onglet=termines).
+ */
+export default function MenusPage({ searchParams }: PageProps<"/menus">) {
   return (
     <main className="grid gap-4 px-4 py-6">
       {/* Mobile : boutons sous le titre ; ordinateur : sur la même ligne (décision 076) */}
@@ -35,16 +44,39 @@ export default function MenusPage() {
         </div>
       </div>
       <Suspense fallback={<p className="text-muted-foreground">Chargement…</p>}>
-        <Menus />
+        <Menus searchParams={searchParams} />
       </Suspense>
     </main>
   );
 }
 
-async function Menus() {
-  const menus = await listMyMenus();
+async function Menus({ searchParams }: { searchParams: PageProps<"/menus">["searchParams"] }) {
+  const [{ onglet }, all] = await Promise.all([searchParams, listMyMenus()]);
+  const current = onglet === "termines" ? "termines" : "en-cours";
+  const menus = all.filter((m) => (current === "termines") === (m.finishedAt !== null));
 
-  if (menus.length === 0) {
+  const tabs = (
+    <nav aria-label="Menus" className="bg-muted grid grid-cols-2 gap-1 rounded-lg p-1">
+      {TABS.map((tab) => (
+        <Link
+          key={tab.key}
+          href={tab.key === "en-cours" ? "/menus" : "/menus?onglet=termines"}
+          aria-current={current === tab.key ? "page" : undefined}
+          className={cn(
+            "flex h-11 items-center justify-center rounded-md text-sm font-medium transition-colors",
+            current === tab.key
+              ? "bg-background shadow-sm"
+              : "text-muted-foreground hover:text-foreground",
+          )}
+        >
+          {tab.label}
+        </Link>
+      ))}
+    </nav>
+  );
+
+  // Aucun menu du tout : invitation à créer le premier
+  if (all.length === 0) {
     return (
       <div className="flex flex-col items-center gap-4 rounded-xl border border-dashed px-6 py-12 text-center">
         <UtensilsCrossed className="text-primary size-10" aria-hidden="true" />
@@ -61,12 +93,23 @@ async function Menus() {
   }
 
   return (
-    <ul className="grid gap-3">
-      {menus.map((menu) => (
-        <li key={menu.id}>
-          <MenuCard menu={menu} />
-        </li>
-      ))}
-    </ul>
+    <>
+      {tabs}
+      {menus.length === 0 ? (
+        <p className="text-muted-foreground py-10 text-center">
+          {current === "termines"
+            ? "Aucun menu terminé. Terminez un menu depuis sa fiche une fois la semaine passée."
+            : "Aucun menu en cours."}
+        </p>
+      ) : (
+        <ul className="grid gap-3">
+          {menus.map((menu) => (
+            <li key={menu.id}>
+              <MenuCard menu={menu} />
+            </li>
+          ))}
+        </ul>
+      )}
+    </>
   );
 }
