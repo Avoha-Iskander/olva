@@ -17,7 +17,12 @@ import { listTitle } from "@/lib/list-title";
 import { cn } from "@/lib/utils";
 
 /** Une liste qui peut recevoir les articles (prête ou en courses). */
-export type MergeTarget = { id: string; createdAt: string; sharedBy: string | null };
+export type MergeTarget = {
+  id: string;
+  name: string | null;
+  createdAt: string;
+  sharedBy: string | null;
+};
 
 /**
  * « Verser dans une autre liste » (US-LST-10) : choisir la liste d'arrivée, puis confirmer.
@@ -71,7 +76,7 @@ export function MergeListDialog({
                   <ShoppingBasket className="text-primary size-5 shrink-0" aria-hidden="true" />
                   <span className="grid min-w-0">
                     <span className="font-medium first-letter:uppercase">
-                      {listTitle(t.createdAt)}
+                      {listTitle(t.createdAt, t.name)}
                     </span>
                     {t.sharedBy && (
                       <span className="text-muted-foreground flex items-center gap-1 text-xs">

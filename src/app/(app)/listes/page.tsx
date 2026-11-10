@@ -124,7 +124,7 @@ async function OpenLists() {
               !list.sharedBy && open.some((l) => l.id === list.id)
                 ? open
                     .filter((l) => l.id !== list.id)
-                    .map(({ id, createdAt, sharedBy }) => ({ id, createdAt, sharedBy }))
+                    .map(({ id, name, createdAt, sharedBy }) => ({ id, name, createdAt, sharedBy }))
                 : undefined
             }
             href={listHref({
@@ -133,6 +133,8 @@ async function OpenLists() {
               hasRecipes: list.recipeTitles.length > 0,
             })}
             status={list.status}
+            name={list.name}
+            sharedWith={list.sharedWith}
             createdAt={list.createdAt}
             recipeTitles={list.recipeTitles}
             itemCount={list.itemCount}
@@ -181,6 +183,8 @@ async function FinishedLists() {
             listId={list.id}
             href={`/listes/${list.id}`}
             status="done"
+            name={list.name}
+            sharedWith={list.sharedWith}
             createdAt={list.createdAt}
             recipeTitles={list.recipeTitles}
             itemCount={list.itemCount}

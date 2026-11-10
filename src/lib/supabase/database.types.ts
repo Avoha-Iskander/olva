@@ -328,6 +328,7 @@ export type Database = {
       menus: {
         Row: {
           created_at: string
+          finished_at: string | null
           id: string
           name: string
           owner_id: string
@@ -335,6 +336,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          finished_at?: string | null
           id?: string
           name: string
           owner_id?: string
@@ -342,6 +344,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          finished_at?: string | null
           id?: string
           name?: string
           owner_id?: string
@@ -859,6 +862,7 @@ export type Database = {
           finished_at: string | null
           id: string
           menu_id: string | null
+          name: string | null
           owner_id: string
           status: string
           updated_at: string
@@ -868,6 +872,7 @@ export type Database = {
           finished_at?: string | null
           id?: string
           menu_id?: string | null
+          name?: string | null
           owner_id?: string
           status?: string
           updated_at?: string
@@ -877,6 +882,7 @@ export type Database = {
           finished_at?: string | null
           id?: string
           menu_id?: string | null
+          name?: string | null
           owner_id?: string
           status?: string
           updated_at?: string
@@ -982,6 +988,10 @@ export type Database = {
         Returns: undefined
       }
       ensure_my_profile: { Args: never; Returns: undefined }
+      rename_list: {
+        Args: { new_name: string; target_list: string }
+        Returns: undefined
+      }
       preview_share_link: {
         Args: { token: string }
         Returns: {

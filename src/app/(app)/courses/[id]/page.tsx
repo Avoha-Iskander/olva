@@ -45,7 +45,7 @@ async function Content({ params }: { params: PageProps<"/courses/[id]">["params"
     <>
       <header className="grid gap-1">
         <h1 className="text-2xl font-semibold tracking-tight first-letter:uppercase">
-          {listTitle(list.createdAt)}
+          {listTitle(list.createdAt, list.name)}
         </h1>
         {list.sharedBy && (
           <p className="text-muted-foreground text-sm">Liste partagée par {list.sharedBy}</p>
