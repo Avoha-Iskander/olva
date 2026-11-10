@@ -1,20 +1,17 @@
 import { describe, expect, it } from "vitest";
 
-import { finishMessage } from "@/lib/carryover";
+import { uncheckedSummary } from "@/lib/carryover";
 
-describe("finishMessage", () => {
-  it("tout est pris", () => {
-    expect(finishMessage(0, null)).toBe("Tous les articles sont dans le panier.");
+describe("uncheckedSummary", () => {
+  it("jusqu'à 3 articles : tous", () => {
+    expect(uncheckedSummary(["Beurre"])).toBe("Beurre");
+    expect(uncheckedSummary(["Beurre", "Lait", "Sucre"])).toBe("Beurre, Lait, Sucre");
   });
 
-  it("articles restants, au singulier et au pluriel", () => {
-    expect(finishMessage(1, null)).toBe("1 article pas encore coché.");
-    expect(finishMessage(3, null)).toBe("3 articles pas encore cochés.");
-  });
-
-  it("liste qu'on me partage : la nouvelle liste sera à son créateur", () => {
-    expect(finishMessage(2, "Marie")).toBe(
-      "2 articles pas encore cochés. La nouvelle liste éventuelle sera à Marie.",
+  it("au-delà : les 3 premiers et le nombre restant", () => {
+    expect(uncheckedSummary(["Beurre", "Lait", "Sucre", "Œufs"])).toBe(
+      "Beurre, Lait, Sucre et 1 autre",
     );
+    expect(uncheckedSummary(["A", "B", "C", "D", "E"])).toBe("A, B, C et 2 autres");
   });
 });
