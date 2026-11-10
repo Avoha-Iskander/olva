@@ -182,10 +182,14 @@ export async function deleteRecipeFromList(recipeId: string): Promise<{ ok: bool
   return { ok: await removeRecipe(recipeId) };
 }
 
+/** Collections créées avec les recettes d'exemple (décision 081). */
+const EXAMPLE_COLLECTIONS = ["Plats", "Desserts", "Classiques"];
+
 /**
  * « Supprimer les exemples » : efface d'un coup mes recettes d'exemple.
- * Les exemples n'ont pas de photo (un exemple modifié n'est plus un exemple),
- * il n'y a donc rien à nettoyer dans l'espace de stockage.
+ * Leurs photos sont communes à tous (décision 075) : rien à nettoyer dans le stockage.
+ * Les collections des exemples sont supprimées si elles sont vides ensuite ; une
+ * collection où j'ai rangé mes propres recettes est gardée.
  */
 export async function deleteExamples(): Promise<{ ok: boolean }> {
   const { supabase, userId } = await requireUser();
@@ -194,6 +198,19 @@ export async function deleteExamples(): Promise<{ ok: boolean }> {
     .delete()
     .eq("owner_id", userId)
     .eq("is_example", true);
+
+  if (!error) {
+    const { data: collections } = await supabase
+      .from("collections")
+      .select("id, name, recipe_collections(recipe_id)")
+      .eq("owner_id", userId)
+      .in("name", EXAMPLE_COLLECTIONS);
+    const empty = (collections ?? [])
+      .filter((c) => c.recipe_collections.length === 0)
+      .map((c) => c.id);
+    if (empty.length) await supabase.from("collections").delete().in("id", empty);
+  }
+
   revalidatePath("/recettes");
   return { ok: !error };
 }
