@@ -24,8 +24,10 @@ import {
   countHighlights,
   countProposed,
   type DraftHighlights,
+  type IngredientHighlight,
   learnedAliases,
   type NewItemSuggestion,
+  needsReview,
   NO_HIGHLIGHTS,
 } from "@/lib/import-draft";
 import { compressAndUploadPhoto } from "@/lib/photo-upload";
@@ -68,6 +70,10 @@ type RecipeFormProps = {
  * pour les lignes affichées au chargement (sinon React signale une incohérence) :
  * on passe donc une clé fixe au départ, et une clé aléatoire seulement après un clic.
  */
+/** Ligne « À vérifier » d'un import par photo : reste dépliée. */
+const isToReview = (highlight?: IngredientHighlight) =>
+  Boolean(highlight && needsReview(highlight));
+
 const newLine = (key: string = crypto.randomUUID()): FormIngredient => ({
   key,
   itemId: null,
@@ -146,6 +152,11 @@ export function RecipeForm(props: RecipeFormProps) {
   } | null>(null);
   const [pending, startTransition] = useTransition();
   const [confirmDelete, setConfirmDelete] = useState(false);
+  // Ligne d'ingrédient dépliée (une seule à la fois, décision 079) : au départ, la
+  // première ligne sans article (nouvelle recette)
+  const [openLine, setOpenLine] = useState<string | null>(
+    () => state.ingredients.find((l) => !l.itemId)?.key ?? null,
+  );
 
   const update = (patch: Partial<RecipeFormState>) => setState((s) => ({ ...s, ...patch }));
   const updateLine = (key: string, patch: Partial<FormIngredient>) => {
@@ -289,6 +300,28 @@ export function RecipeForm(props: RecipeFormProps) {
         </CardContent>
       </Card>
 
+      {/* Photo juste après le titre (décision 079) */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Photo</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <PhotoPicker
+            currentUrl={initial?.photoUrl ?? null}
+            file={photoFile}
+            removed={photoRemoved}
+            onFileChange={(file) => {
+              setPhotoFile(file);
+              setPhotoRemoved(false);
+            }}
+            onRemove={() => {
+              setPhotoFile(null);
+              setPhotoRemoved(true);
+            }}
+          />
+        </CardContent>
+      </Card>
+
       <Card>
         <CardHeader>
           <CardTitle className="text-lg">Ingrédients</CardTitle>
@@ -315,6 +348,14 @@ export function RecipeForm(props: RecipeFormProps) {
                   setNewItem({ lineKey: line.key, name, suggestion })
                 }
                 highlight={highlights.ingredients[line.key]}
+                // Toujours dépliées : la ligne choisie, celles « À vérifier » d'un import
+                // et celles en erreur (sinon le message serait caché)
+                open={
+                  openLine === line.key ||
+                  Boolean(errors[`ingredient-${line.key}`]) ||
+                  isToReview(highlights.ingredients[line.key])
+                }
+                onToggle={() => setOpenLine((current) => (current === line.key ? null : line.key))}
               />
             ))}
           </ul>
@@ -322,7 +363,12 @@ export function RecipeForm(props: RecipeFormProps) {
             type="button"
             variant="outline"
             className="justify-self-start"
-            onClick={() => update({ ingredients: [...state.ingredients, newLine()] })}
+            onClick={() => {
+              // L'ingrédient ajouté s'ouvre déplié
+              const line = newLine();
+              update({ ingredients: [...state.ingredients, line] });
+              setOpenLine(line.key);
+            }}
           >
             <Plus />
             Ajouter un ingrédient
@@ -366,27 +412,6 @@ export function RecipeForm(props: RecipeFormProps) {
           >
             {errors.notes ?? `${state.notes.length} / ${NOTES_MAX} caractères`}
           </p>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Photo</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <PhotoPicker
-            currentUrl={initial?.photoUrl ?? null}
-            file={photoFile}
-            removed={photoRemoved}
-            onFileChange={(file) => {
-              setPhotoFile(file);
-              setPhotoRemoved(false);
-            }}
-            onRemove={() => {
-              setPhotoFile(null);
-              setPhotoRemoved(true);
-            }}
-          />
         </CardContent>
       </Card>
 
