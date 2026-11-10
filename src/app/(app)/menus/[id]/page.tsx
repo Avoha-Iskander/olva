@@ -1,9 +1,10 @@
-import { ArrowLeft, Pencil } from "lucide-react";
+import { ArrowLeft, Pencil, Users } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 
 import { DeleteMenuButton } from "@/components/menus/delete-menu-button";
+import { FinishMenuButton } from "@/components/menus/finish-menu-button";
 import { MenuView } from "@/components/menus/menu-view";
 import { ShareMenuButton } from "@/components/sharing/share-menu-button";
 import { Button } from "@/components/ui/button";
@@ -61,6 +62,13 @@ async function Menu({ params }: { params: PageProps<"/menus/[id]">["params"] }) 
           {menu.sharedBy && (
             <p className="text-muted-foreground text-sm">Menu partagé par {menu.sharedBy}</p>
           )}
+          {menu.sharedWith.length > 0 && (
+            <p className="text-muted-foreground flex items-center gap-1 text-sm">
+              <Users className="size-4" aria-hidden="true" />
+              Partagé avec {menu.sharedWith.join(", ")}
+            </p>
+          )}
+          {menu.finishedAt && <p className="text-muted-foreground text-sm">Menu terminé</p>}
         </div>
         <div className="flex flex-wrap gap-2">
           {/* Seul le créateur partage son menu (décision 077) */}
@@ -74,6 +82,8 @@ async function Menu({ params }: { params: PageProps<"/menus/[id]">["params"] }) 
         </div>
       </div>
       <MenuView menuId={menu.id} recipes={menuRecipes} list={menu.list} />
+      {/* Terminer le menu ou le remettre en cours (US-MEN-04, décision 079) */}
+      <FinishMenuButton menuId={menu.id} finished={menu.finishedAt !== null} />
       {/* Seul le créateur supprime le menu ; la personne y renonce depuis Mes menus */}
       {!menu.sharedBy && <DeleteMenuButton menuId={menu.id} hasList={menu.list !== null} />}
     </>
