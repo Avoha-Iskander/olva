@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState, useTransition } from "react";
-import { ChevronRight, Combine, LogOut, Share2, ShoppingBasket, Trash2 } from "lucide-react";
+import { ChevronRight, Combine, LogOut, Share2, ShoppingBasket, Trash2, Users } from "lucide-react";
 
 import { deleteList, leaveList } from "@/app/(app)/listes/actions";
 import { CardActionsMenu } from "@/components/cards/card-actions-menu";
@@ -37,6 +37,8 @@ const STATUS_LABEL: Record<ListStatus, string> = {
 export function ListCard({
   href,
   status,
+  name,
+  sharedWith,
   createdAt,
   recipeTitles,
   itemCount,
@@ -47,6 +49,8 @@ export function ListCard({
 }: {
   href: string;
   status: ListStatus;
+  name: string | null; // nom choisi (US-LST-11)
+  sharedWith: string[]; // ma liste : personnes avec qui je la partage
   createdAt: string;
   recipeTitles: string[];
   itemCount: number;
@@ -60,8 +64,7 @@ export function ListCard({
   const [confirm, setConfirm] = useState(false);
   const [failed, setFailed] = useState(false);
   const [pending, startTransition] = useTransition();
-  const title = listTitle(createdAt);
-  const lowerTitle = `${title.charAt(0).toLowerCase()}${title.slice(1)}`;
+  const title = listTitle(createdAt, name);
   // Ma liste : Supprimer ; liste partagée avec moi : Renoncer
   const leave = sharedBy !== null;
   const actionLabel = leave ? "Renoncer" : "Supprimer";
@@ -100,6 +103,12 @@ export function ListCard({
                   Partagée par {sharedBy}
                 </span>
               )}
+              {sharedWith.length > 0 && (
+                <span className="text-muted-foreground flex items-center gap-1 text-xs">
+                  <Users className="size-3" aria-hidden="true" />
+                  Partagée avec {sharedWith.join(", ")}
+                </span>
+              )}
               <span className="text-muted-foreground truncate text-sm">
                 {detail ?? (
                   <>
@@ -112,7 +121,7 @@ export function ListCard({
             <ChevronRight className="text-muted-foreground size-5 shrink-0" aria-hidden="true" />
           </Link>
           <CardActionsMenu
-            label={`Actions pour la ${lowerTitle}`}
+            label={`Actions pour « ${title} »`}
             actions={[
               ...(canMerge ? [{ ...mergeAction, label: "Verser…" }] : []),
               {
@@ -143,7 +152,7 @@ export function ListCard({
             </DialogTitle>
             <DialogDescription>
               {leave
-                ? `Vous ne verrez plus la ${lowerTitle}. Elle reste à ${sharedBy}.`
+                ? `Vous ne verrez plus « ${title} ». Elle reste à ${sharedBy}.`
                 : `${title} sera supprimée définitivement. Vos recettes ne sont pas touchées.`}
             </DialogDescription>
           </DialogHeader>

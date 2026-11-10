@@ -53,7 +53,7 @@ async function ShoppableLists() {
             </span>
             <span className="grid min-w-0 flex-1 gap-1">
               <span className="font-medium first-letter:uppercase">
-                {listTitle(list.createdAt)}
+                {listTitle(list.createdAt, list.name)}
               </span>
               {list.sharedBy && (
                 <span className="text-muted-foreground flex items-center gap-1 text-xs">
