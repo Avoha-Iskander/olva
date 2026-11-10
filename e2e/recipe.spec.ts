@@ -56,9 +56,14 @@ test("créer, afficher puis supprimer une recette", async ({ page }) => {
     await page.getByRole("link", { name: "Modifier", exact: true }).click();
     const row = page.getByRole("listitem", { name: "Ingrédient 1" });
     await expect(row.getByRole("button", { expanded: false })).toContainText("250 g");
-    await expect(page.getByLabel("Ingrédient 1 : quantité (vide = au goût)")).toHaveCount(0);
+    // (Next.js garde le formulaire de création, caché, en mémoire : on ne regarde que
+    // les champs visibles)
+    const quantity = page
+      .getByLabel("Ingrédient 1 : quantité (vide = au goût)")
+      .filter({ visible: true });
+    await expect(quantity).toHaveCount(0);
     await row.getByRole("button", { expanded: false }).click();
-    await expect(page.getByLabel("Ingrédient 1 : quantité (vide = au goût)")).toHaveValue("250");
+    await expect(quantity).toHaveValue("250");
     await page.goto(recipeUrl);
   });
 
