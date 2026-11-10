@@ -56,28 +56,31 @@ export async function listMyRecipes({
   if (!recipes?.length) return [];
 
   const ids = recipes.map((r) => r.id);
-  const userId = await currentUserId(supabase);
-  const sharerIds = [...new Set(recipes.map((r) => r.owner_id).filter((id) => id !== userId))];
-  const names = await getDisplayNames(supabase, sharerIds);
-
-  // Collections de chaque recette (une seule requête pour toutes)
-  const { data: links } = await supabase
-    .from("recipe_collections")
-    .select("recipe_id, collections(id, name)")
-    .in("recipe_id", ids);
-
   // Liens temporaires vers les miniatures (photos privées)
   // (les photos des exemples sont servies par l'app : pas besoin de lien temporaire)
   const thumbPaths = recipes
     .map((r) => r.thumb_path)
     .filter((p): p is string => Boolean(p) && !isExamplePhoto(p));
-  const signed = thumbPaths.length
-    ? (
-        await supabase.storage
+
+  // Trois lectures indépendantes, lancées en même temps plutôt que l'une après l'autre
+  // (décision 079) : noms des personnes qui partagent, collections, liens des miniatures
+  const [{ userId, names }, { data: links }, signed] = await Promise.all([
+    currentUserId(supabase).then(async (userId) => {
+      const sharerIds = [...new Set(recipes.map((r) => r.owner_id).filter((id) => id !== userId))];
+      return { userId, names: await getDisplayNames(supabase, sharerIds) };
+    }),
+    // Collections de chaque recette (une seule requête pour toutes)
+    supabase
+      .from("recipe_collections")
+      .select("recipe_id, collections(id, name)")
+      .in("recipe_id", ids),
+    thumbPaths.length
+      ? supabase.storage
           .from("recipe-photos")
           .createSignedUrls(thumbPaths, SIGNED_URL_SECONDS)
-      ).data
-    : [];
+          .then((r) => r.data)
+      : Promise.resolve([]),
+  ]);
   const urlByPath = new Map((signed ?? []).map((s) => [s.path, s.signedUrl]));
 
   // Par ordre alphabétique (décision 063), aussi pendant une recherche
