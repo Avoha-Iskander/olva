@@ -30,7 +30,7 @@ import {
   needsReview,
   NO_HIGHLIGHTS,
 } from "@/lib/import-draft";
-import { compressAndUploadPhoto } from "@/lib/photo-upload";
+import { compressAndUploadPhoto, PhotoPrepareError } from "@/lib/photo-upload";
 import { quantityToInput } from "@/lib/quantity";
 import {
   type FormErrors,
@@ -212,8 +212,14 @@ export function RecipeForm(props: RecipeFormProps) {
           return setMessage(saved.message);
         }
         router.push(await urlAfterCreate(saved.id, props.returnToMenu ?? null));
-      } catch {
-        setMessage("L'envoi de la photo a échoué. Vérifiez votre connexion et réessayez.");
+      } catch (caught) {
+        // Seul un envoi raté parle de connexion ; une photo impossible à préparer sur ce
+        // téléphone (compression échouée, fichier d'origine inutilisable) a son message
+        setMessage(
+          caught instanceof PhotoPrepareError
+            ? "Cette photo n'a pas pu être préparée sur ce téléphone. Essayez une autre photo."
+            : "L'envoi de la photo a échoué. Vérifiez votre connexion et réessayez.",
+        );
       }
     });
   }

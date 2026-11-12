@@ -104,10 +104,14 @@ describe("safeFetch", () => {
     });
   });
 
-  it("refuse un type de contenu inattendu", async () => {
+  it("refuse un type de contenu inattendu, et dit lequel", async () => {
     lookup.mockResolvedValue([{ address: "93.184.216.34", family: 4 }]);
     fetchMock.mockResolvedValue(html("{}", { "content-type": "application/pdf" }));
-    expect(await safeFetch("https://exemple.fr/", options)).toEqual({ ok: false, reason: "type" });
+    expect(await safeFetch("https://exemple.fr/", options)).toEqual({
+      ok: false,
+      reason: "type",
+      contentType: "application/pdf",
+    });
   });
 
   it("signale une page en erreur (ex. site qui bloque)", async () => {

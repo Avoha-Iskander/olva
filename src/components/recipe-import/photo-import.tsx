@@ -4,7 +4,10 @@ import { Camera, ImagePlus, LoaderCircle, PenLine, ScanText, X } from "lucide-re
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
 
-import { importRecipeFromPhoto } from "@/app/(app)/recettes/import/actions";
+import {
+  importRecipeFromPhoto,
+  recordClientImportFailure,
+} from "@/app/(app)/recettes/import/actions";
 import { RecipeForm } from "@/components/recipe-form/recipe-form";
 import { ModelPicker } from "@/components/recipe-import/model-picker";
 import { saveImportDirectly } from "@/components/recipe-import/save-import";
@@ -13,7 +16,12 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useFreshSession } from "@/hooks/use-fresh-session";
 import type { Aisle, CatalogueItem } from "@/lib/catalogue";
 import { draftToForm, NO_HIGHLIGHTS, withoutCover } from "@/lib/import-draft";
-import { compressAndUploadImportPages } from "@/lib/photo-upload";
+import { checkImportFile, errorText, rejectedFilesMessage } from "@/lib/import-files";
+import {
+  compressAndUploadImportPages,
+  PhotoPrepareError,
+  PhotoUploadError,
+} from "@/lib/photo-upload";
 
 /** Nombre maximal de pages pour une recette (SPEC décision 049). */
 const MAX_PAGES = 3;
@@ -69,15 +77,33 @@ function PhotoImportFlow(props: Props) {
   }, [pages]);
   useEffect(() => () => pagesRef.current.forEach((p) => URL.revokeObjectURL(p.previewUrl)), []);
 
-  function addFiles(files: FileList | null) {
-    if (!files?.length) return;
-    const added = [...files]
-      .filter((f) => f.type.startsWith("image/"))
+  /**
+   * Pages choisies. Un fichier est gardé s'il est une image d'après son type, ses premiers
+   * octets ou son nom (cf. import-files.ts) : certains Android donnent un type VIDE aux
+   * captures d'écran. Un fichier écarté n'est plus ignoré en silence : message + trace.
+   */
+  async function addFiles(files: File[]) {
+    if (!files.length) return;
+    const checked = await Promise.all(
+      files.map(async (file) => {
+        const head = new Uint8Array(await file.slice(0, 16).arrayBuffer());
+        return { file, check: checkImportFile(file, head) };
+      }),
+    );
+    const accepted = checked.filter((c) => c.check.ok).map((c) => c.file);
+    const rejected = checked.flatMap((c) => (c.check.ok ? [] : [c.check.reason]));
+
+    const added = accepted
       .slice(0, MAX_PAGES - pages.length)
       .map((file) => ({ id: crypto.randomUUID(), file, previewUrl: URL.createObjectURL(file) }));
     setPages((list) => [...list, ...added]);
     setSent(null); // les pages ont changé : il faudra les renvoyer
-    setError(undefined);
+    if (rejected.length) {
+      setError(rejectedFilesMessage(rejected.length));
+      for (const reason of rejected) void recordClientImportFailure({ reason });
+    } else {
+      setError(undefined);
+    }
   }
 
   function removePage(id: string) {
@@ -91,18 +117,24 @@ function PhotoImportFlow(props: Props) {
   function read() {
     setError(undefined);
     startTransition(async () => {
+      // Étape en cours, suivie ici : l'état `step` lu dans le catch serait celui du clic
+      let phase: "upload" | "read" | "save" = "upload";
       try {
         // 1. Envoi des pages (sauf si elles sont déjà parties lors d'un essai précédent)
         let paths = sent?.paths;
         if (!paths) {
           setStep("uploading");
-          paths = await compressAndUploadImportPages(
+          const uploaded = await compressAndUploadImportPages(
             pages.map((p) => p.file),
             props.userId,
             props.recipeId,
           );
+          paths = uploaded.paths;
+          // Compression impossible mais photo d'origine envoyée : on le trace quand même
+          for (const reason of uploaded.notes) void recordClientImportFailure({ reason });
         }
         // 2. Lecture par Claude, côté serveur
+        phase = "read";
         setStep("reading");
         const result = await importRecipeFromPhoto({
           photoPaths: paths,
@@ -115,6 +147,7 @@ function PhotoImportFlow(props: Props) {
           const cover = result.draft.coverPage;
           const photoFile = cover === null ? null : (pages[cover]?.file ?? null);
           // Rien à vérifier : la recette est enregistrée et sa fiche s'ouvre (décision 060)
+          phase = "save";
           setStep("saving");
           const recipeUrl = await saveImportDirectly({
             draft: result.draft,
@@ -140,8 +173,19 @@ function PhotoImportFlow(props: Props) {
         }
         setSent({ paths, importId: result.importId });
         setError(result.message);
-      } catch {
-        setError("L'envoi des photos a échoué. Vérifiez votre connexion et réessayez.");
+      } catch (caught) {
+        // La cause décide du message : seul un ENVOI raté parle de connexion
+        if (caught instanceof PhotoUploadError) {
+          setError("L'envoi des photos a échoué. Vérifiez votre connexion et réessayez.");
+        } else if (caught instanceof PhotoPrepareError) {
+          setError(
+            "Cette photo n'a pas pu être préparée sur ce téléphone. Essayez une autre photo, ou une capture d'écran.",
+          );
+        } else {
+          setError("L'import n'a pas abouti. Réessayez dans un instant.");
+        }
+        // Avant la lecture par Claude, l'échec n'apparaîtrait nulle part : on le trace
+        if (phase === "upload") void recordClientImportFailure({ reason: errorText(caught) });
       } finally {
         setStep(null);
       }
@@ -213,7 +257,8 @@ function PhotoImportFlow(props: Props) {
         tabIndex={-1}
         aria-hidden
         onChange={(e) => {
-          addFiles(e.target.files);
+          // Copie AVANT de vider le champ : vider le champ vide aussi sa liste de fichiers
+          void addFiles([...(e.target.files ?? [])]);
           e.target.value = ""; // permet de reprendre la même photo
         }}
       />
@@ -226,7 +271,8 @@ function PhotoImportFlow(props: Props) {
         tabIndex={-1}
         aria-hidden
         onChange={(e) => {
-          addFiles(e.target.files);
+          // Copie AVANT de vider le champ : vider le champ vide aussi sa liste de fichiers
+          void addFiles([...(e.target.files ?? [])]);
           e.target.value = "";
         }}
       />
