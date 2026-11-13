@@ -7,6 +7,7 @@
  */
 import { z } from "zod";
 
+import { sanitizeExtraction } from "@/lib/ai/sanitize-extraction";
 import { UNITS } from "@/lib/units";
 
 /** Codes d'unité acceptés (les mêmes que la table units). */
@@ -134,13 +135,15 @@ export const extractRecipeTool = {
 };
 
 /**
- * Vérifie la réponse de l'IA et la nettoie : une quantité sans unité devient
+ * Vérifie la réponse de l'IA (après sanitizeExtraction) et la nettoie : une quantité sans unité devient
  * « pièce », une unité sans quantité est ignorée (règle « quantité et unité vont ensemble »).
  */
 export function parseExtraction(
   input: unknown,
 ): { ok: true; recipe: ExtractedRecipe } | { ok: false; error: string } {
-  const parsed = extractedRecipeSchema.safeParse(input);
+  // Réponse d'abord nettoyée (texte trop long, unité en toutes lettres…) : un seul
+  // champ de travers ne doit plus faire échouer tout l'import (cf. sanitize-extraction)
+  const parsed = extractedRecipeSchema.safeParse(sanitizeExtraction(input));
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "invalide" };
   const recipe = parsed.data;
   return {

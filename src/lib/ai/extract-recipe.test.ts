@@ -76,9 +76,9 @@ describe("extractRecipeFromImages", () => {
   });
 
   it("refuse une réponse au mauvais format (on pourra réessayer)", async () => {
-    create.mockResolvedValue(
-      toolAnswer({ is_recipe: true, ingredients: [{ name: "Lait", quantity: 1, unit: "tasse" }] }),
-    );
+    // Une unité inconnue est désormais réparée (sanitize-extraction) : ici, la liste
+    // d'ingrédients elle-même n'a pas le bon format
+    create.mockResolvedValue(toolAnswer({ is_recipe: true, ingredients: "Lait, sucre" }));
     const result = await extractRecipeFromImages(
       [page("x", "image/jpeg")],
       "claude-haiku-5-5",
