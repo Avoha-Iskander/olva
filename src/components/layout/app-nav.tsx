@@ -16,7 +16,7 @@ const isActive = isNavActive;
 export function AppHeader() {
   const pathname = usePathname();
   return (
-    <header className="bg-background/95 sticky top-0 z-30 border-b backdrop-blur">
+    <header className="bg-background/95 sticky top-0 z-30 border-b backdrop-blur print:hidden">
       <div className="mx-auto flex h-14 max-w-5xl items-center gap-4 px-4">
         <Link href="/" className="text-xl font-semibold tracking-tight">
           Olva
@@ -60,7 +60,7 @@ export function AppBottomNav() {
   return (
     <nav
       aria-label="Menu principal"
-      className="bg-background/95 fixed inset-x-0 bottom-0 z-30 border-t pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden"
+      className="bg-background/95 fixed inset-x-0 bottom-0 z-30 border-t pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden print:hidden"
     >
       <ul className="grid grid-cols-4">
         {NAV_ITEMS.map(({ href, label, icon: Icon }) => {

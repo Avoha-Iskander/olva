@@ -5,7 +5,9 @@ import { Suspense } from "react";
 
 import { ShoppingList } from "@/components/shopping/shopping-list";
 import { FirstVisitTip } from "@/components/tutorial/first-visit-tip";
+import { PrintShoppingListButton } from "@/components/shopping/printable-shopping-list";
 import { getCatalogue } from "@/lib/catalogue";
+import { FEATURES, hasFeature } from "@/lib/features";
 import { listTitle } from "@/lib/list-title";
 import { listHref } from "@/lib/lists";
 import { getShoppingList } from "@/lib/shopping";
@@ -18,7 +20,7 @@ export default function ShoppingListPage({ params }: PageProps<"/courses/[id]">)
     <main className="grid gap-4 px-4 py-6">
       <Link
         href="/courses"
-        className="text-muted-foreground hover:text-foreground -ml-1 flex min-h-11 w-fit items-center gap-2 text-sm"
+        className="text-muted-foreground hover:text-foreground -ml-1 flex min-h-11 w-fit items-center gap-2 text-sm print:hidden"
       >
         <ArrowLeft className="size-4" />
         Mes courses
@@ -32,7 +34,11 @@ export default function ShoppingListPage({ params }: PageProps<"/courses/[id]">)
 
 async function Content({ params }: { params: PageProps<"/courses/[id]">["params"] }) {
   const { id } = await params;
-  const [list, catalogue] = await Promise.all([getShoppingList(id), getCatalogue()]);
+  const [list, catalogue, canPrint] = await Promise.all([
+    getShoppingList(id),
+    getCatalogue(),
+    hasFeature(FEATURES.printShoppingList),
+  ]);
   if (!list) notFound();
   // Une liste encore en préparation se termine d'abord (étapes 1 à 3)
   if (list.status === "draft") {
@@ -43,19 +49,27 @@ async function Content({ params }: { params: PageProps<"/courses/[id]">["params"
 
   return (
     <>
-      <header className="grid gap-1">
-        <h1 className="text-2xl font-semibold tracking-tight first-letter:uppercase">
-          {listTitle(list.createdAt, list.name)}
-        </h1>
-        {list.sharedBy && (
-          <p className="text-muted-foreground text-sm">Liste partagée par {list.sharedBy}</p>
-        )}
+      <header className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="grid gap-1">
+          <h1 className="text-2xl font-semibold tracking-tight first-letter:uppercase">
+            {listTitle(list.createdAt, list.name)}
+          </h1>
+          {list.sharedBy && (
+            <p className="text-muted-foreground text-sm print:hidden">
+              Liste partagée par {list.sharedBy}
+            </p>
+          )}
+        </div>
+        {/* Réservé aux comptes qui ont la fonctionnalité (décision 082) */}
+        {canPrint && <PrintShoppingListButton />}
       </header>
       {/* Astuce de la première visite en mode courses (US-CPT-06) */}
-      <FirstVisitTip id="courses">
-        Touchez un article pour le cocher. Si la liste est partagée, l&apos;autre personne voit vos
-        coches en direct.
-      </FirstVisitTip>
+      <div className="print:hidden">
+        <FirstVisitTip id="courses">
+          Touchez un article pour le cocher. Si la liste est partagée, l&apos;autre personne voit
+          vos coches en direct.
+        </FirstVisitTip>
+      </div>
       <ShoppingList
         // Un écran neuf pour chaque liste (file d'attente et abonnement propres à la liste)
         key={list.id}
@@ -67,6 +81,7 @@ async function Content({ params }: { params: PageProps<"/courses/[id]">["params"
         ownerName={list.sharedBy}
         catalogue={catalogue.items}
         aisles={catalogue.aisles}
+        canPrint={canPrint}
       />
     </>
   );
