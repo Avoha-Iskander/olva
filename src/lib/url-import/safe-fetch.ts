@@ -88,6 +88,7 @@ export type SafeFetchResult =
   | {
       ok: false;
       reason: "invalid" | "blocked" | "timeout" | "too_large" | "http" | "type" | "network";
+      contentType?: string; // type refusé (reason « type ») : utile pour expliquer l'échec
     };
 
 /**
@@ -130,7 +131,7 @@ export async function safeFetch(
       if (!response.ok || !response.body) return { ok: false, reason: "http" };
 
       const contentType = response.headers.get("content-type") ?? "";
-      if (!options.accept(contentType)) return { ok: false, reason: "type" };
+      if (!options.accept(contentType)) return { ok: false, reason: "type", contentType };
       const announced = Number(response.headers.get("content-length") ?? 0);
       if (announced > options.maxBytes) return { ok: false, reason: "too_large" };
 

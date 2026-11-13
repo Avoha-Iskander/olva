@@ -32,23 +32,35 @@ describe("parseExtraction", () => {
     expect(result.recipe).toMatchObject({ title_uncertain: false, ingredients: [], steps: [] });
   });
 
-  it("lit le numéro de la photo de couverture, et refuse un numéro impossible", () => {
+  it("lit le numéro de la photo de couverture, et ignore un numéro impossible", () => {
     const result = parseExtraction({ ...valid, cover_page: 2 });
     if (!result.ok) throw new Error(result.error);
     expect(result.recipe.cover_page).toBe(2);
-    expect(parseExtraction({ ...valid, cover_page: 0 }).ok).toBe(false);
+    // Numéro impossible : retiré, la recette est gardée (correctif du 13/11)
+    expect(parseExtraction({ ...valid, cover_page: 0 })).toMatchObject({
+      ok: true,
+      recipe: { cover_page: null },
+    });
   });
 
-  it("refuse une unité inventée", () => {
+  it("n'accepte jamais une unité inventée telle quelle : retirée et ingrédient à vérifier", () => {
     expect(
-      parseExtraction({ ...valid, ingredients: [{ name: "Lait", quantity: 1, unit: "tasse" }] }).ok,
-    ).toBe(false);
+      parseExtraction({ ...valid, ingredients: [{ name: "Lait", quantity: 1, unit: "tasse" }] }),
+    ).toMatchObject({
+      ok: true,
+      recipe: { ingredients: [{ name: "Lait", unit: "piece", note: "tasse", uncertain: true }] },
+    });
   });
 
-  it("refuse une quantité négative", () => {
+  it("n'accepte jamais une quantité négative : elle devient « au goût »", () => {
     expect(
-      parseExtraction({ ...valid, ingredients: [{ name: "Lait", quantity: -1, unit: "l" }] }).ok,
-    ).toBe(false);
+      parseExtraction({ ...valid, ingredients: [{ name: "Lait", quantity: -1, unit: "l" }] }),
+    ).toMatchObject({ ok: true, recipe: { ingredients: [{ quantity: null, unit: null }] } });
+  });
+
+  it("refuse une réponse vraiment mal formée", () => {
+    expect(parseExtraction({ ingredients: "du lait" }).ok).toBe(false);
+    expect(parseExtraction({ is_recipe: "oui" }).ok).toBe(false);
   });
 
   it("accepte « ce n'est pas une recette » avec une raison", () => {

@@ -1,5 +1,6 @@
 "use server";
 
+import { headers } from "next/headers";
 import { z } from "zod";
 
 import {
@@ -19,6 +20,7 @@ import { coverIndex, type ImportDraft } from "@/lib/import-draft";
 import { loadMyCatalogue } from "@/lib/my-catalogue";
 import { createClient } from "@/lib/supabase/server";
 import { hasReadableContent, pageToPromptText, readRecipePage } from "@/lib/url-import/recipe-page";
+import { isImageLink } from "@/lib/url-import/image-link";
 import { parsePublicUrl, safeFetch } from "@/lib/url-import/safe-fetch";
 import { cleanSharedUrl, isInstagram } from "@/lib/url-import/shared-link";
 
@@ -331,6 +333,16 @@ export async function importRecipeFromUrl(
     timeoutMs: 10_000,
   });
   if (!fetched.ok) {
+    // Lien d'une IMAGE au lieu de la page (cas réel : « …/photo.jpg » copié par appui
+    // long sur l'image) : on le dit clairement, plutôt qu'un « type de page » obscur
+    if (fetched.reason === "type" && isImageLink(sourceUrl, fetched.contentType)) {
+      await markFailed(
+        supabase,
+        importId,
+        `Lien d'image (${fetched.contentType || "type inconnu"})`,
+      );
+      return failed(importId, IMAGE_LINK_MESSAGE, false);
+    }
     await markFailed(supabase, importId, `Lecture de la page : ${fetched.reason}`);
     // Délai dépassé ou site injoignable : ça peut passer en réessayant
     const retryable = fetched.reason === "timeout" || fetched.reason === "network";
@@ -444,4 +456,29 @@ async function fetchDishPhoto(imageUrl: string): Promise<ImportDraft["photo"]> {
   const mediaType = detectImageType(fetched.body);
   if (!mediaType) return null;
   return { data: Buffer.from(fetched.body).toString("base64"), mediaType };
+}
+
+/** Lien d'une image copié à la place de celui de la page (import par lien). */
+const IMAGE_LINK_MESSAGE =
+  "Vous avez copié le lien de l'image : copiez plutôt l'adresse de la page de la recette, ou utilisez l'import par photo.";
+
+const clientFailureSchema = z.object({ reason: z.string().trim().min(1).max(500) });
+
+/**
+ * Trace d'un échec survenu SUR LE TÉLÉPHONE, avant la lecture par Claude : fichier
+ * écarté, compression ou envoi impossible. Une ligne « failed » dans recipe_imports,
+ * avec la raison et l'appareil (navigateur), pour diagnostiquer sans rien demander.
+ * Sans effet visible pour l'utilisateur, et sans conséquence si elle échoue.
+ */
+export async function recordClientImportFailure(input: z.infer<typeof clientFailureSchema>) {
+  const parsed = clientFailureSchema.safeParse(input);
+  if (!parsed.success) return;
+  const supabase = await createClient();
+  const { data: claims } = await supabase.auth.getClaims();
+  if (!claims?.claims?.sub) return;
+  const device = (await headers()).get("user-agent")?.slice(0, 200);
+  await supabase.from("recipe_imports").insert({
+    status: "failed",
+    error: `Téléphone — ${parsed.data.reason}${device ? ` · ${device}` : ""}`,
+  });
 }
