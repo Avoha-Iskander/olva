@@ -157,3 +157,22 @@
     @apply bg-background text-foreground font-sans;
   }
 }
+
+/* Impression (« Imprimer la liste », décision 082) : papier blanc, encre noire,
+   même si l'app est en mode sombre ; les gris restent lisibles */
+@media print {
+  @page {
+    margin: 12mm;
+  }
+  html,
+  body,
+  main h1,
+  .print-sheet,
+  .print-sheet * {
+    background: #fff !important;
+    color: #000 !important;
+  }
+  .print-sheet .line-through {
+    color: #6b7280 !important;
+  }
+}

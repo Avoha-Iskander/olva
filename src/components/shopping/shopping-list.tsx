@@ -40,6 +40,7 @@ import {
 } from "@/lib/shopping-lines";
 import { createClient } from "@/lib/supabase/client";
 import { formatQuantity } from "@/lib/units";
+import { PrintableShoppingList } from "@/components/shopping/printable-shopping-list";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -51,6 +52,7 @@ type Props = {
   ownerName: string | null; // liste qu'on me partage : nom de son créateur
   catalogue: CatalogueItem[];
   aisles: Aisle[];
+  canPrint?: boolean; // fonctionnalité « Imprimer la liste » activée pour ce compte (décision 082)
 };
 
 /** En ligne ? Suivi des événements « online » / « offline » du navigateur. */
@@ -331,186 +333,192 @@ export function ShoppingList(props: Props) {
   const banner = syncBanner(online, pending.length, syncing);
 
   return (
-    <div
-      className="grid gap-6"
-      data-realtime={live ? "connecte" : "deconnecte"}
-      data-hors-ligne-pret={offlineReady ? "oui" : "non"}
-    >
-      {/* Progression : reste visible en haut pendant qu'on fait défiler */}
-      <div className="bg-background/95 sticky top-0 z-10 -mx-4 grid gap-2 border-b px-4 py-3 backdrop-blur">
-        <p className="text-sm font-medium" aria-live="polite">
-          {checked === total && total > 0
-            ? "Tout est dans le panier !"
-            : `${checked} / ${total} article${total > 1 ? "s" : ""} dans le panier`}
-        </p>
-        <div
-          className="bg-muted h-2 overflow-hidden rounded-full"
-          role="progressbar"
-          aria-label="Progression des courses"
-          aria-valuemin={0}
-          aria-valuemax={total}
-          aria-valuenow={checked}
-        >
+    <>
+      {/* Version papier (masquée à l'écran) : suit l'état de la liste au moment d'imprimer */}
+      {props.canPrint && <PrintableShoppingList groups={groups} />}
+      <div
+        className="grid gap-6 print:hidden"
+        data-realtime={live ? "connecte" : "deconnecte"}
+        data-hors-ligne-pret={offlineReady ? "oui" : "non"}
+      >
+        {/* Progression : reste visible en haut pendant qu'on fait défiler */}
+        <div className="bg-background/95 sticky top-0 z-10 -mx-4 grid gap-2 border-b px-4 py-3 backdrop-blur">
+          <p className="text-sm font-medium" aria-live="polite">
+            {checked === total && total > 0
+              ? "Tout est dans le panier !"
+              : `${checked} / ${total} article${total > 1 ? "s" : ""} dans le panier`}
+          </p>
           <div
-            className="bg-primary h-full rounded-full transition-[width]"
-            style={{ width: total ? `${(checked / total) * 100}%` : "0%" }}
-          />
+            className="bg-muted h-2 overflow-hidden rounded-full"
+            role="progressbar"
+            aria-label="Progression des courses"
+            aria-valuemin={0}
+            aria-valuemax={total}
+            aria-valuenow={checked}
+          >
+            <div
+              className="bg-primary h-full rounded-full transition-[width]"
+              style={{ width: total ? `${(checked / total) * 100}%` : "0%" }}
+            />
+          </div>
+          {banner && (
+            <div
+              role="status"
+              className="flex items-start gap-2 rounded-lg bg-amber-50 p-2 text-sm text-amber-900 dark:bg-amber-950/40 dark:text-amber-200"
+            >
+              {online ? (
+                <RefreshCw className="mt-0.5 size-4 shrink-0 animate-spin" aria-hidden="true" />
+              ) : (
+                <CloudOff className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+              )}
+              <p>
+                {banner}
+                {!online && (
+                  <span className="block text-xs">
+                    Décocher un article déjà enregistré : en ligne seulement.
+                  </span>
+                )}
+              </p>
+            </div>
+          )}
+          {failed && (
+            <p role="alert" className="text-destructive text-sm">
+              L&apos;enregistrement a échoué. Vérifiez votre connexion et réessayez.
+            </p>
+          )}
         </div>
-        {banner && (
+
+        {finished && (
           <div
             role="status"
-            className="flex items-start gap-2 rounded-lg bg-amber-50 p-2 text-sm text-amber-900 dark:bg-amber-950/40 dark:text-amber-200"
+            className="bg-secondary flex flex-wrap items-center gap-3 rounded-xl p-4 text-sm"
           >
-            {online ? (
-              <RefreshCw className="mt-0.5 size-4 shrink-0 animate-spin" aria-hidden="true" />
-            ) : (
-              <CloudOff className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
-            )}
-            <p>
-              {banner}
-              {!online && (
-                <span className="block text-xs">
-                  Décocher un article déjà enregistré : en ligne seulement.
-                </span>
-              )}
-            </p>
+            <Flag className="size-5 shrink-0" aria-hidden="true" />
+            <p className="flex-1">Ces courses sont terminées.</p>
+            <Button asChild size="sm">
+              <Link href={`/listes/${listId}`}>Voir le récapitulatif</Link>
+            </Button>
           </div>
         )}
-        {failed && (
-          <p role="alert" className="text-destructive text-sm">
-            L&apos;enregistrement a échoué. Vérifiez votre connexion et réessayez.
-          </p>
+
+        {lines.length === 0 && (
+          <p className="text-muted-foreground py-6 text-center text-sm">La liste est vide.</p>
         )}
-      </div>
 
-      {finished && (
-        <div
-          role="status"
-          className="bg-secondary flex flex-wrap items-center gap-3 rounded-xl p-4 text-sm"
-        >
-          <Flag className="size-5 shrink-0" aria-hidden="true" />
-          <p className="flex-1">Ces courses sont terminées.</p>
-          <Button asChild size="sm">
-            <Link href={`/listes/${listId}`}>Voir le récapitulatif</Link>
-          </Button>
-        </div>
-      )}
-
-      {lines.length === 0 && (
-        <p className="text-muted-foreground py-6 text-center text-sm">La liste est vide.</p>
-      )}
-
-      {groups.map((group) => (
-        <section key={group.aisle} className="grid gap-2" aria-label={group.aisle}>
-          <AisleHeading
-            aisle={group.aisle}
-            suffix={group.remaining === 0 ? " · fini" : undefined}
-          />
-          <ul className="divide-border bg-card divide-y rounded-xl border">
-            {group.lines.map((line) => {
-              const checkedBy =
-                line.checked && line.checkedBy && line.checkedBy !== userId
-                  ? (names[line.checkedBy] ?? "quelqu'un")
-                  : null;
-              return (
-                <li key={line.id}>
-                  {/* Toute la ligne est cliquable : grande cible, utilisable d'une main */}
-                  <label className="flex min-h-14 cursor-pointer items-center gap-4 px-4 py-3 select-none">
-                    <input
-                      type="checkbox"
-                      className="peer sr-only"
-                      checked={line.checked}
-                      // Hors ligne, une coche déjà enregistrée ne se décoche pas (coché gagne)
-                      disabled={finished || !canToggle(line, online, pending)}
-                      onChange={() => void toggle(line)}
-                    />
-                    <span
-                      aria-hidden="true"
-                      className={cn(
-                        "flex size-7 shrink-0 items-center justify-center rounded-md border-2 transition-colors",
-                        "peer-focus-visible:ring-ring/50 peer-focus-visible:ring-[3px]",
-                        line.checked
-                          ? "border-primary bg-primary text-primary-foreground"
-                          : "border-muted-foreground/40",
-                      )}
-                    >
-                      {line.checked && <Check className="size-5" strokeWidth={3} />}
-                    </span>
-                    <span className="grid min-w-0 flex-1">
+        {groups.map((group) => (
+          <section key={group.aisle} className="grid gap-2" aria-label={group.aisle}>
+            <AisleHeading
+              aisle={group.aisle}
+              suffix={group.remaining === 0 ? " · fini" : undefined}
+            />
+            <ul className="divide-border bg-card divide-y rounded-xl border">
+              {group.lines.map((line) => {
+                const checkedBy =
+                  line.checked && line.checkedBy && line.checkedBy !== userId
+                    ? (names[line.checkedBy] ?? "quelqu'un")
+                    : null;
+                return (
+                  <li key={line.id}>
+                    {/* Toute la ligne est cliquable : grande cible, utilisable d'une main */}
+                    <label className="flex min-h-14 cursor-pointer items-center gap-4 px-4 py-3 select-none">
+                      <input
+                        type="checkbox"
+                        className="peer sr-only"
+                        checked={line.checked}
+                        // Hors ligne, une coche déjà enregistrée ne se décoche pas (coché gagne)
+                        disabled={finished || !canToggle(line, online, pending)}
+                        onChange={() => void toggle(line)}
+                      />
                       <span
-                        data-item-name
+                        aria-hidden="true"
                         className={cn(
-                          "font-medium",
-                          line.checked && "text-muted-foreground line-through",
+                          "flex size-7 shrink-0 items-center justify-center rounded-md border-2 transition-colors",
+                          "peer-focus-visible:ring-ring/50 peer-focus-visible:ring-[3px]",
+                          line.checked
+                            ? "border-primary bg-primary text-primary-foreground"
+                            : "border-muted-foreground/40",
                         )}
                       >
-                        {line.name}
+                        {line.checked && <Check className="size-5" strokeWidth={3} />}
                       </span>
-                      {checkedBy && (
-                        <span className="text-muted-foreground text-xs">coché par {checkedBy}</span>
-                      )}
-                    </span>
-                    <span
-                      className={cn(
-                        "shrink-0 text-sm tabular-nums",
-                        line.checked ? "text-muted-foreground" : "font-medium",
-                      )}
-                    >
-                      {formatQuantity(line.quantity, line.unit)}
-                    </span>
-                  </label>
-                </li>
-              );
-            })}
-          </ul>
-        </section>
-      ))}
+                      <span className="grid min-w-0 flex-1">
+                        <span
+                          data-item-name
+                          className={cn(
+                            "font-medium",
+                            line.checked && "text-muted-foreground line-through",
+                          )}
+                        >
+                          {line.name}
+                        </span>
+                        {checkedBy && (
+                          <span className="text-muted-foreground text-xs">
+                            coché par {checkedBy}
+                          </span>
+                        )}
+                      </span>
+                      <span
+                        className={cn(
+                          "shrink-0 text-sm tabular-nums",
+                          line.checked ? "text-muted-foreground" : "font-medium",
+                        )}
+                      >
+                        {formatQuantity(line.quantity, line.unit)}
+                      </span>
+                    </label>
+                  </li>
+                );
+              })}
+            </ul>
+          </section>
+        ))}
 
-      <div className={cn("grid gap-2", finished && "hidden")}>
-        <p className="text-sm font-medium">Un oubli ?</p>
-        {online ? (
-          <ItemCombobox
-            items={items}
-            selectedId={null}
-            selectedName=""
-            placeholder={adding ? "Ajout…" : "Ajouter un article…"}
-            onSelect={add}
-            onCreate={setNewItemName}
+        <div className={cn("grid gap-2", finished && "hidden")}>
+          <p className="text-sm font-medium">Un oubli ?</p>
+          {online ? (
+            <ItemCombobox
+              items={items}
+              selectedId={null}
+              selectedName=""
+              placeholder={adding ? "Ajout…" : "Ajouter un article…"}
+              onSelect={add}
+              onCreate={setNewItemName}
+            />
+          ) : (
+            <p className="text-muted-foreground text-sm">
+              Ajouter un article : possible au retour du réseau.
+            </p>
+          )}
+        </div>
+
+        {!finished && (
+          <FinishShopping
+            listId={listId}
+            uncheckedNames={lines.filter((l) => !l.checked).map((l) => l.name)}
+            ownerName={props.ownerName}
+            blockedReason={
+              !online
+                ? "Terminer : possible au retour du réseau."
+                : pending.length || syncing
+                  ? "Envoi des coches en cours…"
+                  : null
+            }
           />
-        ) : (
-          <p className="text-muted-foreground text-sm">
-            Ajouter un article : possible au retour du réseau.
-          </p>
         )}
-      </div>
 
-      {!finished && (
-        <FinishShopping
-          listId={listId}
-          uncheckedNames={lines.filter((l) => !l.checked).map((l) => l.name)}
-          ownerName={props.ownerName}
-          blockedReason={
-            !online
-              ? "Terminer : possible au retour du réseau."
-              : pending.length || syncing
-                ? "Envoi des coches en cours…"
-                : null
-          }
+        <NewItemDialog
+          key={newItemName ?? "closed"}
+          open={newItemName !== null}
+          initialName={newItemName ?? ""}
+          aisles={props.aisles}
+          onOpenChange={(open) => !open && setNewItemName(null)}
+          onCreated={(item) => {
+            setItems((list) => [...list, item].sort((a, b) => a.name.localeCompare(b.name, "fr")));
+            setNewItemName(null);
+            add(item);
+          }}
         />
-      )}
-
-      <NewItemDialog
-        key={newItemName ?? "closed"}
-        open={newItemName !== null}
-        initialName={newItemName ?? ""}
-        aisles={props.aisles}
-        onOpenChange={(open) => !open && setNewItemName(null)}
-        onCreated={(item) => {
-          setItems((list) => [...list, item].sort((a, b) => a.name.localeCompare(b.name, "fr")));
-          setNewItemName(null);
-          add(item);
-        }}
-      />
-    </div>
+      </div>
+    </>
   );
 }
